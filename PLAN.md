@@ -6,28 +6,62 @@ state, decisions, and the next session's entry point. See
 
 ## Status
 
-**S1 complete (engine skeleton).** Fixed-timestep 60Hz sim loop decoupled
-from `requestAnimationFrame`, canvas bootstrap, procedural stick-figure
-rendering with `idle`/`walk` states, and one hardcoded demo unit walking
-back and forth with edge-pause turns. Verified in-browser: animation reads
-correctly (limbs splay on walk, near-vertical sway on idle), zero console
-errors, sim tick rate holds steady ~60/s independent of display refresh
-(sampled delta of 61 ticks over ~1000ms).
+**S2 complete (units + combat).** Miner/Warrior/Archer entities from
+`config.js`'s `UNIT_STATS`, target acquisition, melee resolution,
+projectile-arc ranged combat, death + cleanup, and global Attack/Defend/
+Retreat commands, exercised through a temporary debug harness (`1/2/3`
+spawn player units, `7/8/9` spawn an AI-stand-in squad defaulted to
+`attack`, `q/w/e` set the player team's command). Tick order is
+`movement → combat → projectiles → deaths` (movement acts on last tick's
+target, combat re-acquires/resolves on this tick's positions and has the
+final say on render state).
 
-Files in place: `index.html`, `src/config.js`, `src/sim/world.js`,
-`src/sim/loop.js`, `src/sim/systems/movement.js`,
-`src/render/stickFigure.js`, `src/render/renderer.js`, `src/main.js`.
-`src/sim/**` deliberately has zero browser-global dependencies so it can
-be reused unmodified by the S3 headless runner (`tools/headless.js`, see
-§2.5). `camera.js` and `input/` were intentionally not created yet — out
-of scope until S3 and S2/S4 respectively.
+Verified via direct sim-state inspection (see note below on why, not
+screenshots): AI-stand-in squad marches on its own with zero input;
+mixed-squad combat resolves HP loss, deaths, and cleanup correctly with
+no ghost entities; warrior beats archer at close range; archer lands
+several free hits on an approaching warrior before losing a close fight;
+miner never fights and flees to `fleeX` the instant a threat enters
+`threatRange`; defend engages anything in range while holding position,
+retreat immediately disengages (clears `targetId`) and returns home. Zero
+console errors across every scenario.
 
-Repo is now git-initialized; this checkpoint is committed.
+One real bug found and fixed during verification: `bindDebugKeys` didn't
+ignore OS/browser key auto-repeat, so a held key fired many duplicate
+spawns. Fixed with `if (event.repeat) return;` in `src/input/keyboard.js`.
 
-**Next entry point: S2 — Units + combat.** Build Miner/Warrior/Archer
-entities from `config.js` stats, targeting/acquisition, melee resolution,
-projectile arc for Archer, death + cleanup, and global Attack/Defend/
-Retreat commands wired to a temporary debug control (no build menu yet).
+**Verification note:** partway through this session's testing the browser
+tab went into a backgrounded/hidden state (`document.visibilityState:
+"hidden"`), which throttles `requestAnimationFrame` and also appears to
+make browser-automation screenshots unreliable for that tab (they stopped
+reflecting current canvas content). Neither is a game bug. Added
+`window.__forceTicks(n)` to `main.js` (same precedent as S1's
+`__tickCount` debug hook) to manually step the sim regardless of tab
+visibility, and relied on direct state inspection (`window.__world`) for
+the rest of verification. An earlier screenshot, taken before the tab
+backgrounded, did visually confirm the legend, HP bars, and per-kind body
+coloring render correctly. Worth keeping in mind for S3+ verification —
+either keep the tab foregrounded throughout, or lean on `__forceTicks` +
+state inspection from the start rather than discovering the throttling
+mid-session.
+
+Files added: `src/sim/systems/combat.js`, `src/sim/systems/projectiles.js`,
+`src/sim/systems/commands.js`, `src/input/keyboard.js`. Modified:
+`config.js` (+`UNIT_STATS` and S2 constants, S1 demo-only constants
+removed), `sim/world.js` (`createUnit` expanded, +`createProjectile`,
++`findNearestEnemyWithin`), `sim/systems/movement.js` (rewritten,
+command/target-driven), `render/stickFigure.js` (+kind color,
+`attacking`/`dying` poses), `render/renderer.js` (+HP bars, projectiles,
+debug legend), `main.js` (rewired + `__forceTicks`). No `camera.js`,
+`ui.js`, build menu, or statues yet — still out of scope until S3.
+
+Repo checkpoint committed.
+
+**Next entry point: S3 — Economy + match loop.** Mining loop, gold
+counter, build menu UI, supply structures with cap math + statue-gating
+enforcement, statues with HP, win/lose detection + rematch, and
+`tools/headless.js` v1 (scripted-input runner asserting cap enforcement,
+gold-never-negative, statue immunity while structures stand — see §2.5).
 Stop condition and full scope are in §5.
 
 ---

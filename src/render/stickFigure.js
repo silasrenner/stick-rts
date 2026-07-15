@@ -1,3 +1,5 @@
+import { CONFIG } from '../config.js';
+
 const HEAD_RADIUS = 8;
 const TORSO_LENGTH = 26;
 const LEG_LENGTH = 24;
@@ -5,15 +7,26 @@ const ARM_LENGTH = 20;
 
 const WALK_LIMB_AMPLITUDE = 0.6; // rad
 const IDLE_SWAY_AMPLITUDE = 0.08; // rad
+const ATTACK_LUNGE_ANGLE = 1.4; // rad, front arm at moment of attack
 
 const TEAM_COLORS = {
   player: '#4da6ff',
   ai: '#ff5c5c',
 };
 
+const KIND_COLORS = {
+  miner: '#c9b37e',
+  warrior: '#d8dae2',
+  archer: '#7fd18f',
+};
+
 // unit.x/unit.y is the ground point between the figure's feet.
 export function drawStickFigure(ctx, unit) {
   const isWalking = unit.state === 'walking';
+  const isAttacking = unit.attackAnimTimer > 0;
+  const isDying = unit.state === 'dying';
+
+  const bodyColor = KIND_COLORS[unit.kind] ?? '#e8e8ee';
   const teamColor = TEAM_COLORS[unit.team] ?? '#cccccc';
 
   const hipY = -LEG_LENGTH;
@@ -25,10 +38,21 @@ export function drawStickFigure(ctx, unit) {
     ? Math.sin(unit.animPhase + Math.PI) * WALK_LIMB_AMPLITUDE
     : Math.sin(unit.animPhase) * IDLE_SWAY_AMPLITUDE;
 
+  const frontArmAngle = isAttacking
+    ? lerp(ATTACK_LUNGE_ANGLE, armSwing, 1 - unit.attackAnimTimer / CONFIG.ATTACK_ANIM_DURATION)
+    : armSwing;
+
   ctx.save();
   ctx.translate(unit.x, unit.y);
   ctx.scale(unit.facing, 1);
-  ctx.strokeStyle = '#e8e8ee';
+
+  if (isDying) {
+    const progress = 1 - unit.deathTimer / CONFIG.DEATH_DURATION;
+    ctx.globalAlpha = Math.max(0, 1 - progress);
+    ctx.rotate((Math.PI / 2) * progress);
+  }
+
+  ctx.strokeStyle = bodyColor;
   ctx.lineWidth = 3;
   ctx.lineCap = 'round';
 
@@ -42,8 +66,8 @@ export function drawStickFigure(ctx, unit) {
   drawLimb(ctx, 0, hipY, LEG_LENGTH, legSwing);
   drawLimb(ctx, 0, hipY, LEG_LENGTH, -legSwing);
 
-  // arms, opposite phase to legs on the same side (natural gait)
-  drawLimb(ctx, 0, shoulderY, ARM_LENGTH, armSwing);
+  // arms — front arm lunges forward on attack, opposite phase to legs otherwise
+  drawLimb(ctx, 0, shoulderY, ARM_LENGTH, frontArmAngle);
   drawLimb(ctx, 0, shoulderY, ARM_LENGTH, -armSwing);
 
   // head
@@ -69,4 +93,8 @@ function drawLimb(ctx, originX, originY, length, angle) {
   ctx.moveTo(originX, originY);
   ctx.lineTo(endX, endY);
   ctx.stroke();
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
 }
