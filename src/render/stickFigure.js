@@ -9,7 +9,7 @@ const WALK_LIMB_AMPLITUDE = 0.6; // rad
 const IDLE_SWAY_AMPLITUDE = 0.08; // rad
 const ATTACK_LUNGE_ANGLE = 1.4; // rad, front arm at moment of attack
 
-const TEAM_COLORS = {
+export const TEAM_COLORS = {
   player: '#4da6ff',
   ai: '#ff5c5c',
 };

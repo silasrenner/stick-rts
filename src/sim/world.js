@@ -6,6 +6,20 @@ export function createWorld() {
   return {
     units: [],
     projectiles: [],
+    structures: [],
+    teams: {
+      player: { gold: CONFIG.STARTING_GOLD, command: 'defend' },
+      ai: { gold: CONFIG.STARTING_GOLD, command: 'defend' },
+    },
+    mines: {
+      player: { x: CONFIG.PLAYER_HOME_X + CONFIG.MINE_OFFSET, y: CONFIG.GROUND_Y, slots: CONFIG.MINE_SLOTS },
+      ai: { x: CONFIG.AI_HOME_X - CONFIG.MINE_OFFSET, y: CONFIG.GROUND_Y, slots: CONFIG.MINE_SLOTS },
+    },
+    statues: {
+      player: createStatue('player', CONFIG.PLAYER_HOME_X, CONFIG.GROUND_Y),
+      ai: createStatue('ai', CONFIG.AI_HOME_X, CONFIG.GROUND_Y),
+    },
+    matchState: 'playing',
   };
 }
 
@@ -45,6 +59,40 @@ export function createUnit(kind, team, x, y) {
 
     attackAnimTimer: 0,
     deathTimer: 0,
+
+    // mining (miners only, but harmless as unused fields on other kinds)
+    miningState: 'toMine',
+    mineTimer: 0,
+    carrying: 0,
+  };
+}
+
+export function createStructure(team, x, y) {
+  return {
+    id: nextId++,
+    kind: 'structure',
+    team,
+    x,
+    y,
+    hp: CONFIG.STRUCTURE_HP,
+    maxHp: CONFIG.STRUCTURE_HP,
+    state: 'standing',
+    destroyTimer: 0,
+    isStructure: true,
+  };
+}
+
+export function createStatue(team, x, y) {
+  return {
+    id: nextId++,
+    kind: 'statue',
+    team,
+    x,
+    y,
+    hp: CONFIG.STATUE_HP,
+    maxHp: CONFIG.STATUE_HP,
+    state: 'standing',
+    isStatue: true,
   };
 }
 
@@ -64,12 +112,26 @@ export function createProjectile(team, x, y, targetX, targetY, targetId, damage,
   };
 }
 
+// True for units not toppling and structures/statues not destroyed.
+export function isAliveEntity(entity) {
+  return !!entity && entity.state !== 'dying' && entity.state !== 'destroyed';
+}
+
+export function findEntityById(world, id) {
+  return (
+    world.units.find((u) => u.id === id) ??
+    world.structures.find((s) => s.id === id) ??
+    Object.values(world.statues).find((s) => s.id === id) ??
+    null
+  );
+}
+
 // Nearest living enemy unit within range, or null.
 export function findNearestEnemyWithin(world, unit, range) {
   let nearest = null;
   let nearestDist = Infinity;
   for (const other of world.units) {
-    if (other.team === unit.team || other.state === 'dying') continue;
+    if (other.team === unit.team || !isAliveEntity(other)) continue;
     const dist = Math.abs(other.x - unit.x);
     if (dist <= range && dist < nearestDist) {
       nearest = other;

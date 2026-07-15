@@ -1,5 +1,6 @@
 import { CONFIG } from '../../config.js';
-import { createProjectile, findNearestEnemyWithin } from '../world.js';
+import { createProjectile, findEntityById, isAliveEntity } from '../world.js';
+import { findAttackTarget } from './supply.js';
 
 // Runs after movement, using this tick's positions: acquires/refreshes
 // targets and resolves attacks for anyone already in range. Sets
@@ -17,12 +18,10 @@ export function updateCombat(world, dt) {
       continue;
     }
 
-    let target = unit.targetId
-      ? world.units.find((u) => u.id === unit.targetId && u.state !== 'dying')
-      : null;
-
-    if (!target) {
-      target = findNearestEnemyWithin(world, unit, unit.acquireRange);
+    // targetId may point at a unit, structure, or statue (see supply.js's findAttackTarget)
+    let target = unit.targetId ? findEntityById(world, unit.targetId) : null;
+    if (!target || !isAliveEntity(target)) {
+      target = findAttackTarget(world, unit);
       unit.targetId = target ? target.id : null;
     }
     if (!target) continue;
@@ -40,18 +39,29 @@ export function updateCombat(world, dt) {
           createProjectile(unit.team, unit.x, unit.y, target.x, target.y, target.id, unit.damage, unit.projectileSpeed)
         );
       } else {
-        applyDamage(target, unit.damage);
+        applyDamage(world, target, unit.damage);
       }
     }
   }
 }
 
-export function applyDamage(unit, amount) {
-  if (unit.state === 'dying') return;
-  unit.hp = Math.max(0, unit.hp - amount);
-  if (unit.hp <= 0) {
-    unit.state = 'dying';
-    unit.deathTimer = CONFIG.DEATH_DURATION;
+// Handles units, structures, and statues generically — the death-side
+// effect differs by entity kind: units topple, structures fade out, a
+// destroyed statue ends the match.
+export function applyDamage(world, entity, amount) {
+  if (!isAliveEntity(entity)) return;
+  entity.hp = Math.max(0, entity.hp - amount);
+  if (entity.hp > 0) return;
+
+  if (entity.isStatue) {
+    entity.state = 'destroyed';
+    world.matchState = entity.team === 'player' ? 'lost' : 'won';
+  } else if (entity.isStructure) {
+    entity.state = 'destroyed';
+    entity.destroyTimer = CONFIG.STRUCTURE_DESTROY_DURATION;
+  } else {
+    entity.state = 'dying';
+    entity.deathTimer = CONFIG.DEATH_DURATION;
   }
 }
 

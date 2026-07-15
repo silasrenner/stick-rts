@@ -6,63 +6,80 @@ state, decisions, and the next session's entry point. See
 
 ## Status
 
-**S2 complete (units + combat).** Miner/Warrior/Archer entities from
-`config.js`'s `UNIT_STATS`, target acquisition, melee resolution,
-projectile-arc ranged combat, death + cleanup, and global Attack/Defend/
-Retreat commands, exercised through a temporary debug harness (`1/2/3`
-spawn player units, `7/8/9` spawn an AI-stand-in squad defaulted to
-`attack`, `q/w/e` set the player team's command). Tick order is
-`movement → combat → projectiles → deaths` (movement acts on last tick's
-target, combat re-acquires/resolves on this tick's positions and has the
-final say on render state).
+**S3 complete (economy + match loop).** Mining (toMine→mining→toBase
+cycle), per-team gold, a real mouse-driven build menu (build menu UI
+supersedes S2's free player hotkeys), supply structures with cap math and
+statue-gating, statues with HP, win/lose detection with a working
+rematch, and `tools/headless.js` v1. Both teams run the *same* economy —
+the AI-stand-in side (no AI exists until S5) is driven through the exact
+`buyUnit`/`buyStructure` functions the player's build menu calls, just
+triggered by debug hotkeys (`7/8/9` unit, `0` structure, `i/o/p`
+commands) instead of clicks, so nothing about the economy/cap/gating path
+is special-cased or faked for the dummy side. Tick order is now
+`mining → movement → combat → projectiles → deaths → structureDeaths`,
+factored into one shared `sim/tick.js:runTick(world, dt)` used by both
+`main.js` and `tools/headless.js` — the payoff of keeping `sim/**`
+browser-global-free since S1.
 
-Verified via direct sim-state inspection (see note below on why, not
-screenshots): AI-stand-in squad marches on its own with zero input;
-mixed-squad combat resolves HP loss, deaths, and cleanup correctly with
-no ghost entities; warrior beats archer at close range; archer lands
-several free hits on an approaching warrior before losing a close fight;
-miner never fights and flees to `fleeX` the instant a threat enters
-`threatRange`; defend engages anything in range while holding position,
-retreat immediately disengages (clears `targetId`) and returns home. Zero
-console errors across every scenario.
+Verified via direct sim-state inspection plus real click/DOM interaction
+(not just debug hooks) and confirmed clean at every step: mining deposits
+exactly `GOLD_PER_TRIP` per trip; build-menu purchases are blocked with a
+clear reason (`gold`/`cap`/`maxStructures`) and no gold is deducted on a
+blocked attempt; buying a structure immediately raises the cap and
+unblocks a previously-blocked purchase; an enemy statue verified to stay
+at exactly full HP for as long as its structure lives and starts taking
+damage the tick after the structure is destroyed (exact tick-level
+confirmation of Resolved Decision #5's gating rule); destroying a
+structure drops the cap instantly while already-over-cap units are not
+removed (StarCraft rule); a full match reaches `matchState`
+`won`/`lost` correctly, the sim then verifiably freezes (100+ more forced
+ticks produce zero state change), and a **real mouse click** on the
+Rematch button — not the debug hook — cleanly resets gold, units,
+structures, and statues; a team driven to 0 gold/0 miners still loses
+cleanly rather than soft-locking. Zero console errors throughout.
+`node tools/headless.js` runs a scripted symmetric match for 5000 ticks
+outside the browser with all three invariants (gold non-negative, cap
+never exceeded, statue immune while structures stand) holding.
 
-One real bug found and fixed during verification: `bindDebugKeys` didn't
-ignore OS/browser key auto-repeat, so a held key fired many duplicate
-spawns. Fixed with `if (event.repeat) return;` in `src/input/keyboard.js`.
+One real bug found and fixed during verification: the build menu kept
+rendering as clickable during the win/lose screen even though clicks were
+already correctly blocked there — `drawBuildMenu` now returns early when
+`matchState !== 'playing'`. Also tightened during implementation (not a
+bug found in testing, just completing the design correctly): `targetId`
+can now reference a structure or statue, not just a unit, so
+`movement.js`'s own target-revalidation had to switch from
+`world.units.find` to the generic `findEntityById` + `isAliveEntity` —
+this was implied by the plan's design but not spelled out file-by-file
+for `movement.js`.
 
-**Verification note:** partway through this session's testing the browser
-tab went into a backgrounded/hidden state (`document.visibilityState:
-"hidden"`), which throttles `requestAnimationFrame` and also appears to
-make browser-automation screenshots unreliable for that tab (they stopped
-reflecting current canvas content). Neither is a game bug. Added
-`window.__forceTicks(n)` to `main.js` (same precedent as S1's
-`__tickCount` debug hook) to manually step the sim regardless of tab
-visibility, and relied on direct state inspection (`window.__world`) for
-the rest of verification. An earlier screenshot, taken before the tab
-backgrounded, did visually confirm the legend, HP bars, and per-kind body
-coloring render correctly. Worth keeping in mind for S3+ verification —
-either keep the tab foregrounded throughout, or lean on `__forceTicks` +
-state inspection from the start rather than discovering the throttling
-mid-session.
-
-Files added: `src/sim/systems/combat.js`, `src/sim/systems/projectiles.js`,
-`src/sim/systems/commands.js`, `src/input/keyboard.js`. Modified:
-`config.js` (+`UNIT_STATS` and S2 constants, S1 demo-only constants
-removed), `sim/world.js` (`createUnit` expanded, +`createProjectile`,
-+`findNearestEnemyWithin`), `sim/systems/movement.js` (rewritten,
-command/target-driven), `render/stickFigure.js` (+kind color,
-`attacking`/`dying` poses), `render/renderer.js` (+HP bars, projectiles,
-debug legend), `main.js` (rewired + `__forceTicks`). No `camera.js`,
-`ui.js`, build menu, or statues yet — still out of scope until S3.
+Files added: `sim/tick.js`, `sim/systems/mining.js`, `sim/systems/
+economy.js`, `sim/systems/supply.js`, `render/structures.js`,
+`render/ui.js`, `input/mouse.js`, `tools/headless.js`. Modified:
+`config.js` (+economy/supply/mining constants and slot/mine offsets,
+`GROUND_Y` moved up from 480→440 to leave room for the HUD/build menu),
+`sim/world.js` (+`createStatue`/`createStructure`, `world.teams/mines/
+statues/structures/matchState`, +`isAliveEntity`/`findEntityById`),
+`sim/systems/movement.js` (miner branch delegates to `mining.
+getMinerDesiredX`; target lookup generalized), `sim/systems/combat.js`
+(`applyDamage(world, entity, amount)` now branches by entity kind;
+acquisition uses `supply.findAttackTarget`), `sim/systems/projectiles.js`
+(generic `findEntityById` lookup for impact resolution),
+`sim/systems/commands.js` (also records `world.teams[team].command` so
+units bought mid-match inherit the team's current stance instead of
+always defaulting to defend), `render/stickFigure.js` (`TEAM_COLORS`
+exported for reuse), `render/renderer.js` (draws mine/statue/structures,
+calls `ui.js`), `main.js` (build menu clicks, ai debug hotkeys via
+`buyUnit`/`buyStructure`, `resetMatch`, switched to `sim/tick.js`'s
+`runTick`). No `camera.js` yet — battlefield still fits one screen.
 
 Repo checkpoint committed.
 
-**Next entry point: S3 — Economy + match loop.** Mining loop, gold
-counter, build menu UI, supply structures with cap math + statue-gating
-enforcement, statues with HP, win/lose detection + rematch, and
-`tools/headless.js` v1 (scripted-input runner asserting cap enforcement,
-gold-never-negative, statue immunity while structures stand — see §2.5).
-Stop condition and full scope are in §5.
+**Next entry point: S4 — Heroes.** All three hero kits (Forgemaster/
+Hawkeye/Vanguard), purchase from the build menu, direct-control toggle
+(movement/attack/special keys, camera snap on toggle — first real need
+for `camera.js`), non-controlled hero follows the current army command
+via basic AI, death + cooldown + escalating re-purchase cost, switchable
+hero choice on re-purchase. Stop condition and full scope are in §5.
 
 ---
 

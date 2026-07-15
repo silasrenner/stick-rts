@@ -1,5 +1,6 @@
 import { CONFIG } from '../../config.js';
-import { findNearestEnemyWithin } from '../world.js';
+import { findNearestEnemyWithin, findEntityById, isAliveEntity } from '../world.js';
+import { getMinerDesiredX } from './mining.js';
 
 // Acts on the target/command decisions from the previous combat tick.
 // Sets state to 'idle'/'walking'; combat.js may override to 'attacking'
@@ -13,13 +14,18 @@ export function updateMovement(world, dt) {
 
     if (unit.isMiner) {
       const threat = findNearestEnemyWithin(world, unit, unit.threatRange);
-      desiredX = threat ? unit.fleeX : unit.homeX;
+      if (threat) {
+        desiredX = unit.fleeX;
+      } else {
+        const decision = getMinerDesiredX(unit, world);
+        desiredX = decision.desiredX;
+        holding = decision.holding;
+      }
     } else {
-      const target = unit.targetId
-        ? world.units.find((u) => u.id === unit.targetId && u.state !== 'dying')
-        : null;
+      // targetId may now point at a unit, structure, or statue (see supply.js's findAttackTarget)
+      const target = unit.targetId ? findEntityById(world, unit.targetId) : null;
 
-      if (target) {
+      if (target && isAliveEntity(target)) {
         const dist = Math.abs(target.x - unit.x);
         if (dist <= unit.range) {
           desiredX = unit.x;

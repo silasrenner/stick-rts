@@ -1,3 +1,4 @@
+import { findEntityById } from '../world.js';
 import { applyDamage } from './combat.js';
 
 export function updateProjectiles(world, dt) {
@@ -9,8 +10,8 @@ export function updateProjectiles(world, dt) {
       continue;
     }
 
-    const target = world.units.find((u) => u.id === projectile.targetId && u.state !== 'dying');
-    if (target) applyDamage(target, projectile.damage);
+    const target = findEntityById(world, projectile.targetId);
+    if (target) applyDamage(world, target, projectile.damage);
   }
   world.projectiles = remaining;
 }
