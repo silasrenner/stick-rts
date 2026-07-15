@@ -4,10 +4,12 @@ import { getMinerDesiredX } from './mining.js';
 
 // Acts on the target/command decisions from the previous combat tick.
 // Sets state to 'idle'/'walking'; combat.js may override to 'attacking'
-// afterward in this same tick.
+// afterward in this same tick. Controlled heroes are skipped entirely —
+// their movement is player-driven (see heroes.js's updateHeroControl).
 export function updateMovement(world, dt) {
   for (const unit of world.units) {
     if (unit.state === 'dying') continue;
+    if (unit.isHero && unit.controlled) continue;
 
     let desiredX;
     let holding = false;
@@ -33,6 +35,11 @@ export function updateMovement(world, dt) {
         } else {
           desiredX = target.x;
         }
+      } else if (unit.minesGold) {
+        // forgemaster: no combat target right now, so work the mine
+        const decision = getMinerDesiredX(unit, world);
+        desiredX = decision.desiredX;
+        holding = decision.holding;
       } else if (unit.command === 'attack') {
         desiredX = unit.enemyHomeX;
       } else {

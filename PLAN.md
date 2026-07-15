@@ -6,80 +6,90 @@ state, decisions, and the next session's entry point. See
 
 ## Status
 
-**S3 complete (economy + match loop).** Mining (toMine→mining→toBase
-cycle), per-team gold, a real mouse-driven build menu (build menu UI
-supersedes S2's free player hotkeys), supply structures with cap math and
-statue-gating, statues with HP, win/lose detection with a working
-rematch, and `tools/headless.js` v1. Both teams run the *same* economy —
-the AI-stand-in side (no AI exists until S5) is driven through the exact
-`buyUnit`/`buyStructure` functions the player's build menu calls, just
-triggered by debug hotkeys (`7/8/9` unit, `0` structure, `i/o/p`
-commands) instead of clicks, so nothing about the economy/cap/gating path
-is special-cased or faked for the dummy side. Tick order is now
-`mining → movement → combat → projectiles → deaths → structureDeaths`,
-factored into one shared `sim/tick.js:runTick(world, dt)` used by both
-`main.js` and `tools/headless.js` — the payoff of keeping `sim/**`
-browser-global-free since S1.
+**S4 complete (heroes).** All three hero kits — Forgemaster (economy/
+support), Hawkeye (amped archer), Vanguard (amped warrior) — purchasable
+from the build menu (dynamic escalating cost, `heroAlive`/`heroCooldown`
+gating), a direct-control toggle (`H`) with continuous arrow/WASD
+movement, manual keypress attack (`J`) and special (`K`), death →
+30s cooldown → 1.5×-escalated re-purchase with switchable hero choice.
+This is also the session where `render/camera.js` became real: the
+battlefield is now `WORLD_WIDTH` 7000 vs. a `VIEWPORT_WIDTH` 1400 canvas
+(~20%, inside the brief's 10–30% range — final ratio still an S6 tuning
+job), with continuous hero-follow, edge-scroll, and viewport culling
+(off-screen entities exist in `world` but are never drawn — the concrete
+mechanism behind "no enemy info leaks off-screen," now actually
+testable). The already-pending battlefield-width tweak from earlier this
+session (`CANVAS_WIDTH` 960→1400, since folded into the `VIEWPORT_WIDTH`
+rename) is included in this checkpoint too.
 
-Verified via direct sim-state inspection plus real click/DOM interaction
-(not just debug hooks) and confirmed clean at every step: mining deposits
-exactly `GOLD_PER_TRIP` per trip; build-menu purchases are blocked with a
-clear reason (`gold`/`cap`/`maxStructures`) and no gold is deducted on a
-blocked attempt; buying a structure immediately raises the cap and
-unblocks a previously-blocked purchase; an enemy statue verified to stay
-at exactly full HP for as long as its structure lives and starts taking
-damage the tick after the structure is destroyed (exact tick-level
-confirmation of Resolved Decision #5's gating rule); destroying a
-structure drops the cap instantly while already-over-cap units are not
-removed (StarCraft rule); a full match reaches `matchState`
-`won`/`lost` correctly, the sim then verifiably freezes (100+ more forced
-ticks produce zero state change), and a **real mouse click** on the
-Rematch button — not the debug hook — cleanly resets gold, units,
-structures, and statues; a team driven to 0 gold/0 miners still loses
-cleanly rather than soft-locking. Zero console errors throughout.
-`node tools/headless.js` runs a scripted symmetric match for 5000 ticks
-outside the browser with all three invariants (gold non-negative, cap
-never exceeded, statue immune while structures stand) holding.
+Verified exhaustively via direct sim-state inspection (tight single-script
+timing to avoid real-time drift between tool calls — see note below) plus
+real click/DOM interaction: Forgemaster mines at exactly 3× gold per trip,
+its aura reduces a nearby ally's reset cooldown to the exact expected
+value (0.425s = 0.5 × 0.85), and its reactive knockback pushes a melee
+attacker back by ~20px on hit; Hawkeye's piercing special hit 3 clustered
+enemies for exactly 30 damage each in one shot; Vanguard's charge special
+moved precisely to just outside melee range, and its normal attack
+(cleave) hit 6 clustered enemies for the same 16 damage each; a
+controlled hero deals damage only on keypress (2s of passive proximity
+produced zero auto-damage); an *uncontrolled* hero follows army commands
+exactly like a regular unit (attack/retreat moved it by exactly
+`speed × time`) with no special-casing, as designed; heroes are confirmed
+exempt from the population cap; camera clamps correctly at both world
+edges and centers exactly on a controlled hero (offset = viewport/2);
+death → cooldown-rejection → post-cooldown escalated-cost repurchase →
+hero-kind-switch all confirmed with exact numbers. Edge cases (special/
+attack/toggle with no hero at all, attack with no target in range,
+double-toggling control) all confirmed as silent no-ops with zero console
+errors. `node tools/headless.js` still passes all invariants unmodified.
 
-One real bug found and fixed during verification: the build menu kept
-rendering as clickable during the win/lose screen even though clicks were
-already correctly blocked there — `drawBuildMenu` now returns early when
-`matchState !== 'playing'`. Also tightened during implementation (not a
-bug found in testing, just completing the design correctly): `targetId`
-can now reference a structure or statue, not just a unit, so
-`movement.js`'s own target-revalidation had to switch from
-`world.units.find` to the generic `findEntityById` + `isAliveEntity` —
-this was implied by the plan's design but not spelled out file-by-file
-for `movement.js`.
+**Verification note:** the tab was visible/foregrounded for most of this
+session (unlike S2/S3's backgrounded-tab issue), which meant the normal
+`requestAnimationFrame` loop kept advancing the sim in real time *between*
+tool calls — enough real seconds elapse per round trip that a controlled
+hero (no auto-defense) can be killed by an auto-attacking enemy entirely
+in the background. Cost two test resets in this session. Fix: for timing-
+sensitive checks, do setup + action + assertion inside one `javascript_exec`
+call rather than splitting across calls.
 
-Files added: `sim/tick.js`, `sim/systems/mining.js`, `sim/systems/
-economy.js`, `sim/systems/supply.js`, `render/structures.js`,
-`render/ui.js`, `input/mouse.js`, `tools/headless.js`. Modified:
-`config.js` (+economy/supply/mining constants and slot/mine offsets,
-`GROUND_Y` moved up from 480→440 to leave room for the HUD/build menu),
-`sim/world.js` (+`createStatue`/`createStructure`, `world.teams/mines/
-statues/structures/matchState`, +`isAliveEntity`/`findEntityById`),
-`sim/systems/movement.js` (miner branch delegates to `mining.
-getMinerDesiredX`; target lookup generalized), `sim/systems/combat.js`
-(`applyDamage(world, entity, amount)` now branches by entity kind;
-acquisition uses `supply.findAttackTarget`), `sim/systems/projectiles.js`
-(generic `findEntityById` lookup for impact resolution),
-`sim/systems/commands.js` (also records `world.teams[team].command` so
-units bought mid-match inherit the team's current stance instead of
-always defaulting to defend), `render/stickFigure.js` (`TEAM_COLORS`
-exported for reuse), `render/renderer.js` (draws mine/statue/structures,
-calls `ui.js`), `main.js` (build menu clicks, ai debug hotkeys via
-`buyUnit`/`buyStructure`, `resetMatch`, switched to `sim/tick.js`'s
-`runTick`). No `camera.js` yet — battlefield still fits one screen.
+One brief-driven correctness fix caught during implementation (not a bug
+found by testing, but a rule that would have been silently wrong):
+`economy.js`'s `getUnitCount` originally counted heroes toward the
+population cap; the brief explicitly exempts heroes, so it now excludes
+them (`!u.isHero`).
+
+Files added: `sim/systems/heroes.js`, `render/camera.js`,
+`input/keyState.js`. Modified: `config.js` (`CANVAS_WIDTH` renamed
+`VIEWPORT_WIDTH`, +`WORLD_WIDTH`, home/flee positions now relative to
+world, +hero cost/cooldown/kit constants, +edge-scroll/cull constants),
+`sim/world.js` (`createUnit` pulls from `HERO_STATS` for hero kinds,
++`isHero`/`controlled`/`specialTimer`/`minesGold`, +`findAllEnemiesWithin`,
+team `heroDeathCount`/`heroCooldownTimer`), `sim/systems/economy.js`
+(+`buyHero`/`getHeroCost`/`hasLivingHero`, hero-cap-exemption fix),
+`sim/systems/combat.js` (extracted `resolveAttack` shared with
+`heroes.js`; vanguard cleave, forgemaster knockback, hero-death cooldown/
+escalation branch; skips controlled heroes), `sim/systems/movement.js` +
+`sim/systems/mining.js` (new `minesGold` flag decouples "works the mine"
+from "never fights, flees" — needed so Forgemaster can mine *and* still
+defend itself, unlike a plain miner), `sim/tick.js` (`runTick(world, dt,
+input)`, +hero cooldown/control updates), `render/stickFigure.js` (hero
+scale, star marker, controlled-highlight ring), `render/renderer.js`
+(camera translate + culling for all world-space draws), `render/ui.js`
+(3 hero build-menu buttons w/ live cost), `input/mouse.js`
+(+`bindMouseMove`), `main.js` (H/J/K handlers, ai `4/5/6` hero-buy
+hotkeys, keyState → `runTick` input, camera creation/update).
 
 Repo checkpoint committed.
 
-**Next entry point: S4 — Heroes.** All three hero kits (Forgemaster/
-Hawkeye/Vanguard), purchase from the build menu, direct-control toggle
-(movement/attack/special keys, camera snap on toggle — first real need
-for `camera.js`), non-controlled hero follows the current army command
-via basic AI, death + cooldown + escalating re-purchase cost, switchable
-hero choice on re-purchase. Stop condition and full scope are in §5.
+**Next entry point: S5 — AI.** Shared parameterized behavior tree (build
+order, decision-tick frequency, retreat discipline, hero purchase timing,
+composition-counter weighting, scouting/vision per `ai/vision.js` — AI is
+scouting-gated like the player, confirmed decision from Session 0);
+Easy/Medium/Hard parameter sets; extend `tools/headless.js` to run AI-
+vs-AI batches. This is also where the AI-stand-in debug hotkeys
+(`4–0`, `i/o/p`) get replaced by actual AI decisions — worth checking
+whether any of S2–S4's debug-harness code should be retired at that
+point. Stop condition and full scope are in §5.
 
 ---
 
@@ -384,6 +394,5 @@ adding one.
 
 ## 6. Next Session Entry Point
 
-**S1 — Engine skeleton**, once this plan is approved. No code exists yet;
-repo is not yet git-initialized (first commit — of this approved plan and
-then S1's skeleton — happens once implementation starts).
+Superseded by the **Status** section at the top of this file, which is
+kept current at the end of every session — check there, not here.

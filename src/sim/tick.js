@@ -3,12 +3,19 @@ import { updateMovement } from './systems/movement.js';
 import { updateCombat, updateDeaths } from './systems/combat.js';
 import { updateProjectiles } from './systems/projectiles.js';
 import { updateStructureDeaths } from './systems/supply.js';
+import { updateHeroCooldowns, updateHeroControl } from './systems/heroes.js';
+
+const NO_INPUT = { player: { moveLeft: false, moveRight: false } };
 
 // Single source of truth for tick order, shared by the browser (main.js)
 // and the headless runner (tools/headless.js) so they can never drift.
-export function runTick(world, dt) {
+// `input` defaults to all-false so headless scripted matches (which never
+// direct-control a hero) don't need to pass anything.
+export function runTick(world, dt, input = NO_INPUT) {
   if (world.matchState !== 'playing') return;
 
+  updateHeroCooldowns(world, dt);
+  updateHeroControl(world, input, dt);
   updateMining(world, dt);
   updateMovement(world, dt);
   updateCombat(world, dt);

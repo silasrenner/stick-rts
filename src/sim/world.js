@@ -8,8 +8,8 @@ export function createWorld() {
     projectiles: [],
     structures: [],
     teams: {
-      player: { gold: CONFIG.STARTING_GOLD, command: 'defend' },
-      ai: { gold: CONFIG.STARTING_GOLD, command: 'defend' },
+      player: { gold: CONFIG.STARTING_GOLD, command: 'defend', heroDeathCount: 0, heroCooldownTimer: 0 },
+      ai: { gold: CONFIG.STARTING_GOLD, command: 'defend', heroDeathCount: 0, heroCooldownTimer: 0 },
     },
     mines: {
       player: { x: CONFIG.PLAYER_HOME_X + CONFIG.MINE_OFFSET, y: CONFIG.GROUND_Y, slots: CONFIG.MINE_SLOTS },
@@ -24,7 +24,8 @@ export function createWorld() {
 }
 
 export function createUnit(kind, team, x, y) {
-  const stats = CONFIG.UNIT_STATS[kind];
+  const isHero = CONFIG.HERO_STATS[kind] !== undefined;
+  const stats = isHero ? CONFIG.HERO_STATS[kind] : CONFIG.UNIT_STATS[kind];
   const homeX = team === 'player' ? CONFIG.PLAYER_HOME_X : CONFIG.AI_HOME_X;
   const enemyHomeX = team === 'player' ? CONFIG.AI_HOME_X : CONFIG.PLAYER_HOME_X;
   const fleeX = team === 'player' ? CONFIG.PLAYER_FLEE_X : CONFIG.AI_FLEE_X;
@@ -49,7 +50,11 @@ export function createUnit(kind, team, x, y) {
     threatRange: stats.threatRange,
     speed: stats.speed,
     projectileSpeed: stats.projectileSpeed,
-    isMiner: kind === 'miner',
+    isMiner: kind === 'miner', // never fights, flees on threat
+    minesGold: kind === 'miner' || kind === 'forgemaster', // works the mine cycle; forgemaster still fights back
+    isHero,
+    controlled: false,
+    specialTimer: 0,
 
     homeX,
     enemyHomeX,
@@ -124,6 +129,11 @@ export function findEntityById(world, id) {
     Object.values(world.statues).find((s) => s.id === id) ??
     null
   );
+}
+
+// All living enemy units within range (for cleave/piercing effects).
+export function findAllEnemiesWithin(world, unit, range) {
+  return world.units.filter((other) => other.team !== unit.team && isAliveEntity(other) && Math.abs(other.x - unit.x) <= range);
 }
 
 // Nearest living enemy unit within range, or null.

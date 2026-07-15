@@ -1,17 +1,20 @@
 import { CONFIG } from '../config.js';
-import { canAfford, getUnitCount } from '../sim/systems/economy.js';
+import { canAfford, getUnitCount, hasLivingHero, getHeroCost } from '../sim/systems/economy.js';
 import { getCap, livingStructures } from '../sim/systems/supply.js';
 
 const BUILD_MENU_ITEMS = [
-  { kind: 'miner', action: 'unit', label: 'Miner', cost: CONFIG.UNIT_STATS.miner.cost },
-  { kind: 'warrior', action: 'unit', label: 'Warrior', cost: CONFIG.UNIT_STATS.warrior.cost },
-  { kind: 'archer', action: 'unit', label: 'Archer', cost: CONFIG.UNIT_STATS.archer.cost },
-  { kind: 'structure', action: 'structure', label: 'Structure', cost: CONFIG.STRUCTURE_COST },
+  { kind: 'miner', action: 'unit', label: 'Miner', costFn: () => CONFIG.UNIT_STATS.miner.cost },
+  { kind: 'warrior', action: 'unit', label: 'Warrior', costFn: () => CONFIG.UNIT_STATS.warrior.cost },
+  { kind: 'archer', action: 'unit', label: 'Archer', costFn: () => CONFIG.UNIT_STATS.archer.cost },
+  { kind: 'structure', action: 'structure', label: 'Structure', costFn: () => CONFIG.STRUCTURE_COST },
+  { kind: 'forgemaster', action: 'hero', label: 'Forgemaster', costFn: (world) => getHeroCost(world, 'player') },
+  { kind: 'hawkeye', action: 'hero', label: 'Hawkeye', costFn: (world) => getHeroCost(world, 'player') },
+  { kind: 'vanguard', action: 'hero', label: 'Vanguard', costFn: (world) => getHeroCost(world, 'player') },
 ];
 
-const BUTTON_WIDTH = 130;
+const BUTTON_WIDTH = 120;
 const BUTTON_HEIGHT = 26;
-const BUTTON_GAP = 10;
+const BUTTON_GAP = 8;
 const BUTTON_MARGIN_BOTTOM = 6;
 
 export function getBuildMenuButtons(canvas) {
@@ -26,9 +29,12 @@ export function getBuildMenuButtons(canvas) {
 }
 
 export function isBuildButtonEnabled(world, button) {
-  if (!canAfford(world, 'player', button.cost)) return false;
+  const cost = button.costFn(world);
+  if (!canAfford(world, 'player', cost)) return false;
   if (button.action === 'unit') return getUnitCount(world, 'player') < getCap(world, 'player');
-  return livingStructures(world, 'player').length < CONFIG.MAX_STRUCTURES;
+  if (button.action === 'structure') return livingStructures(world, 'player').length < CONFIG.MAX_STRUCTURES;
+  // hero
+  return !hasLivingHero(world, 'player') && world.teams.player.heroCooldownTimer <= 0;
 }
 
 export function drawBuildMenu(ctx, world) {
@@ -36,17 +42,18 @@ export function drawBuildMenu(ctx, world) {
 
   for (const button of getBuildMenuButtons(ctx.canvas)) {
     const enabled = isBuildButtonEnabled(world, button);
+    const cost = button.costFn(world);
     const { x, y, w, h } = button.rect;
 
     ctx.globalAlpha = enabled ? 1 : 0.4;
-    ctx.fillStyle = '#2c2c33';
+    ctx.fillStyle = button.action === 'hero' ? '#3a3320' : '#2c2c33';
     ctx.fillRect(x, y, w, h);
     ctx.strokeStyle = '#55555f';
     ctx.lineWidth = 1;
     ctx.strokeRect(x, y, w, h);
     ctx.fillStyle = '#e8e8ee';
-    ctx.font = '11px monospace';
-    ctx.fillText(`${button.label} (${button.cost}g)`, x + 6, y + 17);
+    ctx.font = '10px monospace';
+    ctx.fillText(`${button.label} (${cost}g)`, x + 5, y + 17);
     ctx.globalAlpha = 1;
   }
 }
@@ -56,6 +63,7 @@ export function drawHUD(ctx, world, uiMessage) {
   const cap = getCap(world, 'player');
   const count = getUnitCount(world, 'player');
   const command = world.teams.player.command;
+  const heroCooldown = world.teams.player.heroCooldownTimer;
 
   ctx.fillStyle = '#e8e8ee';
   ctx.font = '13px monospace';
@@ -63,9 +71,14 @@ export function drawHUD(ctx, world, uiMessage) {
   ctx.fillText(`Units: ${count}/${cap}`, 10, 32);
   ctx.fillText(`Command: ${command[0].toUpperCase()}${command.slice(1)}`, 10, 48);
 
+  if (heroCooldown > 0) {
+    ctx.fillStyle = '#e0a030';
+    ctx.fillText(`Hero respawns in ${Math.ceil(heroCooldown)}s`, 10, 64);
+  }
+
   if (uiMessage && uiMessage.text) {
     ctx.fillStyle = '#e0a030';
-    ctx.fillText(uiMessage.text, 10, 64);
+    ctx.fillText(uiMessage.text, 10, 80);
   }
 }
 
