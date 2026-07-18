@@ -18,6 +18,8 @@ export const CONFIG = {
   EDGE_SCROLL_SPEED: 900, // px/s
   CAMERA_CULL_MARGIN: 100, // px beyond the viewport edge before an entity stops being drawn
 
+  AI_SIGHT_RANGE: 260, // px; how close an AI unit must be to see an enemy for scouting purposes
+
   DEATH_DURATION: 0.5, // seconds a unit spends toppling before removal
   ATTACK_ANIM_DURATION: 0.18, // seconds the attack lunge pose holds
   PROJECTILE_ARC_HEIGHT: 40, // px

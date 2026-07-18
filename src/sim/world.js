@@ -8,8 +8,24 @@ export function createWorld() {
     projectiles: [],
     structures: [],
     teams: {
-      player: { gold: CONFIG.STARTING_GOLD, command: 'defend', heroDeathCount: 0, heroCooldownTimer: 0 },
-      ai: { gold: CONFIG.STARTING_GOLD, command: 'defend', heroDeathCount: 0, heroCooldownTimer: 0 },
+      player: {
+        gold: CONFIG.STARTING_GOLD,
+        command: 'defend',
+        heroDeathCount: 0,
+        heroCooldownTimer: 0,
+        difficulty: null, // null = human-controlled; the AI behavior tree skips any team with no difficulty set
+        decisionTimer: 0,
+        buildIndex: 0,
+      },
+      ai: {
+        gold: CONFIG.STARTING_GOLD,
+        command: 'defend',
+        heroDeathCount: 0,
+        heroCooldownTimer: 0,
+        difficulty: null,
+        decisionTimer: 0,
+        buildIndex: 0,
+      },
     },
     mines: {
       player: { x: CONFIG.PLAYER_HOME_X + CONFIG.MINE_OFFSET, y: CONFIG.GROUND_Y, slots: CONFIG.MINE_SLOTS },
@@ -20,6 +36,8 @@ export function createWorld() {
       ai: createStatue('ai', CONFIG.AI_HOME_X, CONFIG.GROUND_Y),
     },
     matchState: 'playing',
+    matchElapsedTime: 0,
+    aiMemory: {},
   };
 }
 

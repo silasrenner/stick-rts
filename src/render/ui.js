@@ -86,6 +86,31 @@ export function getRematchButtonRect(canvas) {
   return { x: canvas.width / 2 - 60, y: canvas.height / 2 + 20, w: 120, h: 30 };
 }
 
+const DIFFICULTY_ORDER = ['easy', 'medium', 'hard'];
+const DIFFICULTY_BUTTON_WIDTH = 90;
+const DIFFICULTY_BUTTON_HEIGHT = 24;
+const DIFFICULTY_BUTTON_GAP = 10;
+
+// Below the Rematch button — clicking one resets the match at that
+// difficulty, fulfilling the brief's "win/lose screen offers rematch and
+// difficulty change."
+export function getDifficultyButtonRects(canvas) {
+  const totalWidth =
+    DIFFICULTY_ORDER.length * DIFFICULTY_BUTTON_WIDTH + (DIFFICULTY_ORDER.length - 1) * DIFFICULTY_BUTTON_GAP;
+  const startX = canvas.width / 2 - totalWidth / 2;
+  const y = canvas.height / 2 + 64;
+
+  return DIFFICULTY_ORDER.map((difficulty, i) => ({
+    difficulty,
+    rect: {
+      x: startX + i * (DIFFICULTY_BUTTON_WIDTH + DIFFICULTY_BUTTON_GAP),
+      y,
+      w: DIFFICULTY_BUTTON_WIDTH,
+      h: DIFFICULTY_BUTTON_HEIGHT,
+    },
+  }));
+}
+
 export function drawWinLoseOverlay(ctx, world) {
   if (world.matchState === 'playing') return;
 
@@ -106,6 +131,26 @@ export function drawWinLoseOverlay(ctx, world) {
   ctx.fillStyle = '#e8e8ee';
   ctx.font = '14px monospace';
   ctx.fillText('Rematch', rect.x + rect.w / 2, rect.y + rect.h / 2 + 5);
+
+  ctx.font = '11px monospace';
+  ctx.fillStyle = '#8a8a96';
+  ctx.fillText('Difficulty', ctx.canvas.width / 2, ctx.canvas.height / 2 + 58);
+
+  const activeDifficulty = world.teams.ai.difficulty;
+  for (const { difficulty, rect: btnRect } of getDifficultyButtonRects(ctx.canvas)) {
+    const active = difficulty === activeDifficulty;
+    ctx.fillStyle = active ? '#3a4d3a' : '#2c2c33';
+    ctx.fillRect(btnRect.x, btnRect.y, btnRect.w, btnRect.h);
+    ctx.strokeStyle = active ? '#4caf50' : '#55555f';
+    ctx.strokeRect(btnRect.x, btnRect.y, btnRect.w, btnRect.h);
+    ctx.fillStyle = '#e8e8ee';
+    ctx.font = '12px monospace';
+    ctx.fillText(
+      difficulty[0].toUpperCase() + difficulty.slice(1),
+      btnRect.x + btnRect.w / 2,
+      btnRect.y + btnRect.h / 2 + 4
+    );
+  }
 
   ctx.restore();
 }

@@ -1,11 +1,25 @@
-// Headless invariant runner: drives a scripted match through the same
-// src/sim/** modules the browser uses (see sim/tick.js), with no canvas
-// or DOM. Uses dynamic import() so this stays a plain CommonJS script —
-// no package.json/build step needed to run it.
+// Headless runner: drives matches through the same src/sim/** modules the
+// browser uses (see sim/tick.js), with no canvas or DOM. Uses dynamic
+// import() so this stays a plain CommonJS script — no package.json/build
+// step needed to run it.
 //
-// Usage: node tools/headless.js
+// Usage:
+//   node tools/headless.js
+//     Scripted invariant check (default): gold never negative, cap never
+//     exceeded, statue immune while structures stand.
+//
+//   node tools/headless.js --batch --player=<easy|medium|hard> --enemy=<easy|medium|hard> --trials=N [--ticks=N]
+//     Runs N AI-vs-AI trials at the given difficulty pairing and reports
+//     win rate / match length — the AI-vs-AI evaluation tool PLAN.md §2.5
+//     designed this file toward from the start.
 
-async function main() {
+function getArg(args, name, fallback) {
+  const prefix = `--${name}=`;
+  const found = args.find((a) => a.startsWith(prefix));
+  return found ? found.slice(prefix.length) : fallback;
+}
+
+async function runInvariantCheck() {
   const { createWorld, isAliveEntity } = await import('../src/sim/world.js');
   const { runTick } = await import('../src/sim/tick.js');
   const { buyUnit, buyStructure, getUnitCount } = await import('../src/sim/systems/economy.js');
@@ -75,7 +89,67 @@ async function main() {
   process.exit(0);
 }
 
-main().catch((err) => {
-  console.error('Headless runner crashed:', err);
-  process.exit(1);
-});
+async function runBatch(args) {
+  const { createWorld } = await import('../src/sim/world.js');
+  const { runTick } = await import('../src/sim/tick.js');
+
+  const playerDifficulty = getArg(args, 'player', 'medium');
+  const enemyDifficulty = getArg(args, 'enemy', 'medium');
+  const trials = parseInt(getArg(args, 'trials', '10'), 10);
+  const maxTicks = parseInt(getArg(args, 'ticks', '60000'), 10); // ~1000 simulated seconds — matches can take several minutes
+
+  const dt = 1 / 60;
+  const results = [];
+
+  for (let trial = 0; trial < trials; trial++) {
+    const world = createWorld();
+    world.teams.player.difficulty = playerDifficulty;
+    world.teams.ai.difficulty = enemyDifficulty;
+
+    let ticks = 0;
+    for (; ticks < maxTicks; ticks++) {
+      runTick(world, dt);
+      if (world.matchState !== 'playing') break;
+    }
+
+    results.push({ outcome: world.matchState, ticks });
+  }
+
+  console.log(`AI-vs-AI batch: player=${playerDifficulty} vs enemy=${enemyDifficulty}, ${trials} trial(s)\n`);
+
+  let playerWins = 0;
+  let enemyWins = 0;
+  let undecided = 0;
+  let totalTicks = 0;
+
+  results.forEach((r, i) => {
+    const winner = r.outcome === 'won' ? 'player' : r.outcome === 'lost' ? 'enemy' : 'undecided';
+    if (winner === 'player') playerWins++;
+    else if (winner === 'enemy') enemyWins++;
+    else undecided++;
+    totalTicks += r.ticks;
+    console.log(`  trial ${i + 1}: ${winner} wins (${(r.ticks / 60).toFixed(1)}s)`);
+  });
+
+  console.log(
+    `\nplayer(${playerDifficulty}) wins: ${playerWins}/${trials}  ` +
+      `enemy(${enemyDifficulty}) wins: ${enemyWins}/${trials}  ` +
+      `undecided: ${undecided}/${trials}  avg length: ${(totalTicks / trials / 60).toFixed(1)}s`
+  );
+
+  process.exit(0);
+}
+
+const args = process.argv.slice(2);
+
+if (args.includes('--batch')) {
+  runBatch(args).catch((err) => {
+    console.error('Headless batch runner crashed:', err);
+    process.exit(1);
+  });
+} else {
+  runInvariantCheck().catch((err) => {
+    console.error('Headless runner crashed:', err);
+    process.exit(1);
+  });
+}

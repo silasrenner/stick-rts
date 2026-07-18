@@ -6,11 +6,13 @@ import { setTeamCommand } from './sim/systems/commands.js';
 import { buyUnit, buyStructure, buyHero } from './sim/systems/economy.js';
 import { attemptHeroAttack, activateSpecial } from './sim/systems/heroes.js';
 import { render } from './render/renderer.js';
-import { getBuildMenuButtons, getRematchButtonRect } from './render/ui.js';
+import { getBuildMenuButtons, getRematchButtonRect, getDifficultyButtonRects } from './render/ui.js';
 import { createCamera, updateCamera } from './render/camera.js';
 import { bindDebugKeys } from './input/keyboard.js';
 import { bindClick, pointInRect, bindMouseMove } from './input/mouse.js';
 import { createKeyState } from './input/keyState.js';
+
+const DEFAULT_DIFFICULTY = 'medium';
 
 const canvas = document.getElementById('game');
 canvas.width = CONFIG.VIEWPORT_WIDTH;
@@ -18,6 +20,7 @@ canvas.height = CONFIG.CANVAS_HEIGHT;
 const ctx = canvas.getContext('2d');
 
 let world = createWorld();
+world.teams.ai.difficulty = DEFAULT_DIFFICULTY;
 let uiMessage = { text: '', timer: 0 };
 const camera = createCamera();
 const keyState = createKeyState();
@@ -53,8 +56,9 @@ function attemptBuyHero(team, kind) {
   return result;
 }
 
-function resetMatch() {
+function resetMatch(difficulty = world.teams.ai.difficulty ?? DEFAULT_DIFFICULTY) {
   world = createWorld();
+  world.teams.ai.difficulty = difficulty;
   uiMessage = { text: '', timer: 0 };
   camera.x = 0;
 }
@@ -75,23 +79,13 @@ function specialWithControlledHero() {
   if (hero) activateSpecial(world, hero);
 }
 
+// The 'ai' team now makes its own decisions (sim/ai/behavior.js) — no
+// more keyboard stand-in for it. Only the player's own commands and hero
+// controls remain bound.
 bindDebugKeys({
-  // AI-stand-in purchases go through the same buy*/economy functions the
-  // player's build menu uses — gold/cap-gated identically, just triggered
-  // by keyboard instead of a click since there's no AI to decide yet.
-  '4': () => attemptBuyHero('ai', 'forgemaster'),
-  '5': () => attemptBuyHero('ai', 'hawkeye'),
-  '6': () => attemptBuyHero('ai', 'vanguard'),
-  '7': () => attemptBuyUnit('ai', 'miner'),
-  '8': () => attemptBuyUnit('ai', 'warrior'),
-  '9': () => attemptBuyUnit('ai', 'archer'),
-  '0': () => attemptBuyStructure('ai'),
   q: () => setTeamCommand(world, 'player', 'attack'),
   w: () => setTeamCommand(world, 'player', 'defend'),
   e: () => setTeamCommand(world, 'player', 'retreat'),
-  i: () => setTeamCommand(world, 'ai', 'attack'),
-  o: () => setTeamCommand(world, 'ai', 'defend'),
-  p: () => setTeamCommand(world, 'ai', 'retreat'),
   h: () => toggleHeroControl(),
   j: () => attackWithControlledHero(),
   k: () => specialWithControlledHero(),
@@ -99,7 +93,16 @@ bindDebugKeys({
 
 bindClick(canvas, (x, y) => {
   if (world.matchState !== 'playing') {
-    if (pointInRect(x, y, getRematchButtonRect(canvas))) resetMatch();
+    if (pointInRect(x, y, getRematchButtonRect(canvas))) {
+      resetMatch();
+      return;
+    }
+    for (const { difficulty, rect } of getDifficultyButtonRects(canvas)) {
+      if (pointInRect(x, y, rect)) {
+        resetMatch(difficulty);
+        return;
+      }
+    }
     return;
   }
 

@@ -4,6 +4,7 @@ import { updateCombat, updateDeaths } from './systems/combat.js';
 import { updateProjectiles } from './systems/projectiles.js';
 import { updateStructureDeaths } from './systems/supply.js';
 import { updateHeroCooldowns, updateHeroControl } from './systems/heroes.js';
+import { updateAiDecisions } from './ai/behavior.js';
 
 const NO_INPUT = { player: { moveLeft: false, moveRight: false } };
 
@@ -14,6 +15,9 @@ const NO_INPUT = { player: { moveLeft: false, moveRight: false } };
 export function runTick(world, dt, input = NO_INPUT) {
   if (world.matchState !== 'playing') return;
 
+  world.matchElapsedTime += dt;
+
+  updateAiDecisions(world, dt); // no-ops for any team with no difficulty set
   updateHeroCooldowns(world, dt);
   updateHeroControl(world, input, dt);
   updateMining(world, dt);

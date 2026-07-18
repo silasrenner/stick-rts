@@ -3,10 +3,8 @@ import { drawStickFigure } from './stickFigure.js';
 import { drawStatue, drawStructure, drawMine, drawHealthBar } from './structures.js';
 import { drawHUD, drawBuildMenu, drawWinLoseOverlay } from './ui.js';
 
-const LEGEND_LINES = [
-  'Enemy (debug): 4 Forgemaster 5 Hawkeye 6 Vanguard  7 Miner  8 Warrior  9 Archer  0 Structure   |   Enemy command: I Attack  O Defend  P Retreat',
-  'Your command: Q Attack  W Defend  E Retreat   |   Hero: H Toggle control  ←/→ Move  J Attack  K Special',
-];
+const LEGEND_LINE =
+  'Your command: Q Attack  W Defend  E Retreat   |   Hero: H Toggle control  ←/→ Move  J Attack  K Special';
 
 // Reads world state only; never mutates it. World-space entities are
 // culled to the camera's visible window (+ margin) — this is the whole
@@ -45,7 +43,7 @@ export function render(ctx, world, camera, uiMessage) {
 
   ctx.restore();
 
-  drawLegend(ctx);
+  drawLegend(ctx, world);
   drawHUD(ctx, world, uiMessage);
   drawBuildMenu(ctx, world);
   drawWinLoseOverlay(ctx, world);
@@ -66,10 +64,14 @@ function drawProjectile(ctx, pos) {
   ctx.fill();
 }
 
-function drawLegend(ctx) {
+function drawLegend(ctx, world) {
+  const difficulty = world.teams.ai.difficulty;
+  const label = difficulty ? difficulty[0].toUpperCase() + difficulty.slice(1) : 'none';
+
   ctx.fillStyle = '#8a8a96';
   ctx.font = '11px monospace';
-  LEGEND_LINES.forEach((line, i) => ctx.fillText(line, 10, ctx.canvas.height - 58 + i * 14));
+  ctx.fillText(`AI difficulty: ${label}`, 10, ctx.canvas.height - 58);
+  ctx.fillText(LEGEND_LINE, 10, ctx.canvas.height - 44);
 }
 
 function lerp(a, b, t) {

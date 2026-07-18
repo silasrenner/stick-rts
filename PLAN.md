@@ -6,90 +6,103 @@ state, decisions, and the next session's entry point. See
 
 ## Status
 
-**S4 complete (heroes).** All three hero kits — Forgemaster (economy/
-support), Hawkeye (amped archer), Vanguard (amped warrior) — purchasable
-from the build menu (dynamic escalating cost, `heroAlive`/`heroCooldown`
-gating), a direct-control toggle (`H`) with continuous arrow/WASD
-movement, manual keypress attack (`J`) and special (`K`), death →
-30s cooldown → 1.5×-escalated re-purchase with switchable hero choice.
-This is also the session where `render/camera.js` became real: the
-battlefield is now `WORLD_WIDTH` 7000 vs. a `VIEWPORT_WIDTH` 1400 canvas
-(~20%, inside the brief's 10–30% range — final ratio still an S6 tuning
-job), with continuous hero-follow, edge-scroll, and viewport culling
-(off-screen entities exist in `world` but are never drawn — the concrete
-mechanism behind "no enemy info leaks off-screen," now actually
-testable). The already-pending battlefield-width tweak from earlier this
-session (`CANVAS_WIDTH` 960→1400, since folded into the `VIEWPORT_WIDTH`
-rename) is included in this checkpoint too.
+**S5 complete (AI).** One shared parameterized behavior tree
+(`sim/ai/behavior.js`) drives Easy/Medium/Hard purely through data
+(`sim/ai/difficulties.js`) — no per-difficulty code branches. The AI
+calls the exact same `buyUnit`/`buyStructure`/`buyHero`/`setTeamCommand`
+functions the player's build menu and hotkeys use (no parallel AI-only
+economy path), and it's scouting-gated exactly like the player
+(`sim/ai/vision.js`): it only "knows" enemy composition currently visible
+to one of its own units, and difficulty is partly expressed through how
+stale that intel is allowed to be before acting on it. The `4–0`/`i/o/p`
+debug hotkeys that stood in for the AI since S2 are retired — the AI now
+drives itself entirely; the underlying `window.__buyUnit` etc. debug
+hooks stay exposed for testing. The win/lose overlay gained Easy/Medium/
+Hard buttons next to Rematch, finally fulfilling the "offers rematch and
+difficulty change" acceptance criterion deferred since S3.
+`tools/headless.js` gained an additive `--batch` mode for AI-vs-AI trial
+evaluation (the S3-era `PLAN.md` §2.5 promise), alongside the unchanged
+default invariant-check mode.
 
-Verified exhaustively via direct sim-state inspection (tight single-script
-timing to avoid real-time drift between tool calls — see note below) plus
-real click/DOM interaction: Forgemaster mines at exactly 3× gold per trip,
-its aura reduces a nearby ally's reset cooldown to the exact expected
-value (0.425s = 0.5 × 0.85), and its reactive knockback pushes a melee
-attacker back by ~20px on hit; Hawkeye's piercing special hit 3 clustered
-enemies for exactly 30 damage each in one shot; Vanguard's charge special
-moved precisely to just outside melee range, and its normal attack
-(cleave) hit 6 clustered enemies for the same 16 damage each; a
-controlled hero deals damage only on keypress (2s of passive proximity
-produced zero auto-damage); an *uncontrolled* hero follows army commands
-exactly like a regular unit (attack/retreat moved it by exactly
-`speed × time`) with no special-casing, as designed; heroes are confirmed
-exempt from the population cap; camera clamps correctly at both world
-edges and centers exactly on a controlled hero (offset = viewport/2);
-death → cooldown-rejection → post-cooldown escalated-cost repurchase →
-hero-kind-switch all confirmed with exact numbers. Edge cases (special/
-attack/toggle with no hero at all, attack with no target in range,
-double-toggling control) all confirmed as silent no-ops with zero console
-errors. `node tools/headless.js` still passes all invariants unmodified.
+**One real, load-bearing bug found and fixed during verification, not
+just a tuning nit:** the first-draft difficulty parameters had Medium/
+Hard's build cycle spend early gold on a 250g archer before establishing
+enough mining income, which — combined with `minArmyToAttack` thresholds
+of 3–4 — left armies growing far too slowly to ever clear the attack
+threshold. Matches never engaged; all 5 initial AI-vs-AI batch trials hit
+the tick budget "undecided." Traced via direct position/gold tracing
+(not just outcome-watching) to confirm units genuinely weren't moving,
+not just resolving slowly. Fixed by front-loading two miners in every
+build cycle before any archer purchase, and lowering `minArmyToAttack` to
+2 for Medium/Hard. Re-verified: Hard now reliably beats Easy in exactly
+553.7s (fully deterministic — no RNG anywhere in the sim, confirmed by
+grep), Medium beats Easy in 851.9s, and the result is symmetric
+regardless of which team is "player" vs "enemy" in the pairing.
 
-**Verification note:** the tab was visible/foregrounded for most of this
-session (unlike S2/S3's backgrounded-tab issue), which meant the normal
-`requestAnimationFrame` loop kept advancing the sim in real time *between*
-tool calls — enough real seconds elapse per round trip that a controlled
-hero (no auto-defense) can be killed by an auto-attacking enemy entirely
-in the background. Cost two test resets in this session. Fix: for timing-
-sensitive checks, do setup + action + assertion inside one `javascript_exec`
-call rather than splitting across calls.
+**Known limitation, flagged not fixed:** Hard vs. Medium AI-vs-AI can
+reach a genuine mutual stalemate (didn't conclude even at a 2000s tick
+budget) — two comparably-cautious, comparably-growing AIs can deny each
+other the power advantage either one's `retreatThreshold` needs to commit
+to a breakthrough. Not fixed now because it isn't the brief's actual stop
+condition (player-vs-AI behavior, not symmetric AI-vs-AI), and a human
+"who ignores composition" plays more like Easy's over-commit pattern than
+like a mirror-matched cautious AI — but it's a real S6 balance-pass note
+if AI-vs-AI evaluation becomes a bigger part of the workflow.
 
-One brief-driven correctness fix caught during implementation (not a bug
-found by testing, but a rule that would have been silently wrong):
-`economy.js`'s `getUnitCount` originally counted heroes toward the
-population cap; the brief explicitly exempts heroes, so it now excludes
-them (`!u.isHero`).
+Verified precisely via direct sim-state inspection (single atomic
+`javascript_exec` scripts per assertion — S4's lesson about cross-call
+real-time drift applied from the start this session) plus one real click
+through the win/lose UI: vision/memory populates only when an enemy is
+actually within `AI_SIGHT_RANGE` of an AI unit and stays `null` otherwise
+(confirmed both states explicitly); composition counter-picks react
+correctly to scouted intel (warrior-heavy → archer counter-purchase) while
+Easy ignores the identical intel; retreat discipline flips Hard to
+`defend` against a scouted 5-warrior army while Easy keeps attacking
+regardless (`retreatThreshold: 0`); hero purchase timing gated exactly at
+each difficulty's threshold (Easy: no hero at 149s, buys at 151s; Hard:
+no hero at 15s, has one by 25s); hero counter-pick chose Vanguard vs.
+scouted archers and Hawkeye vs. scouted warriors; "defends mine
+harassment" flips Hard from `attack` to `defend` the instant a threat
+enters `defendMineThreshold` of home, confirmed against a clean before/
+after with an otherwise-attack-eligible army; a real click on the win/
+lose screen's "Hard" button changed `world.teams.ai.difficulty` and reset
+the match end-to-end. Zero console errors throughout. Both
+`tools/headless.js` modes re-confirmed passing after all fixes.
 
-Files added: `sim/systems/heroes.js`, `render/camera.js`,
-`input/keyState.js`. Modified: `config.js` (`CANVAS_WIDTH` renamed
-`VIEWPORT_WIDTH`, +`WORLD_WIDTH`, home/flee positions now relative to
-world, +hero cost/cooldown/kit constants, +edge-scroll/cull constants),
-`sim/world.js` (`createUnit` pulls from `HERO_STATS` for hero kinds,
-+`isHero`/`controlled`/`specialTimer`/`minesGold`, +`findAllEnemiesWithin`,
-team `heroDeathCount`/`heroCooldownTimer`), `sim/systems/economy.js`
-(+`buyHero`/`getHeroCost`/`hasLivingHero`, hero-cap-exemption fix),
-`sim/systems/combat.js` (extracted `resolveAttack` shared with
-`heroes.js`; vanguard cleave, forgemaster knockback, hero-death cooldown/
-escalation branch; skips controlled heroes), `sim/systems/movement.js` +
-`sim/systems/mining.js` (new `minesGold` flag decouples "works the mine"
-from "never fights, flees" — needed so Forgemaster can mine *and* still
-defend itself, unlike a plain miner), `sim/tick.js` (`runTick(world, dt,
-input)`, +hero cooldown/control updates), `render/stickFigure.js` (hero
-scale, star marker, controlled-highlight ring), `render/renderer.js`
-(camera translate + culling for all world-space draws), `render/ui.js`
-(3 hero build-menu buttons w/ live cost), `input/mouse.js`
-(+`bindMouseMove`), `main.js` (H/J/K handlers, ai `4/5/6` hero-buy
-hotkeys, keyState → `runTick` input, camera creation/update).
+**Verification note:** hit the same ES-module browser-caching issue as
+S3 (server correctly served fresh `renderer.js` per `curl`, but the
+browser kept rendering stale content even across a brand-new tab — Chrome's
+HTTP disk cache is shared browser-wide by URL, not per-tab, so a new tab
+doesn't help). Fixed by restarting the static server on a new port
+(8000→8010), which forces a fresh cache namespace. Worth remembering
+directly for S6 rather than re-discovering: if edited source doesn't
+appear to take effect despite a page reload, suspect disk cache before
+suspecting the edit.
+
+Files added: `sim/ai/vision.js`, `sim/ai/difficulties.js`,
+`sim/ai/behavior.js`. Modified: `config.js` (+`AI_SIGHT_RANGE`),
+`sim/world.js` (`createWorld` +`matchElapsedTime`/+`aiMemory`; each team
++`difficulty`/`decisionTimer`/`buildIndex`), `sim/tick.js`
+(+`matchElapsedTime` accrual, +`updateAiDecisions` call), `render/ui.js`
+(+difficulty buttons on win/lose overlay), `render/renderer.js` (legend
+drops dead debug-key text, shows active AI difficulty), `main.js` (drops
+ai-team keyboard hotkeys, `resetMatch(difficulty)`, defaults to
+`'medium'`, wires difficulty-button clicks), `tools/headless.js`
+(+`--batch` mode, default tick budget raised from 20000→60000 since
+matches can run several minutes).
 
 Repo checkpoint committed.
 
-**Next entry point: S5 — AI.** Shared parameterized behavior tree (build
-order, decision-tick frequency, retreat discipline, hero purchase timing,
-composition-counter weighting, scouting/vision per `ai/vision.js` — AI is
-scouting-gated like the player, confirmed decision from Session 0);
-Easy/Medium/Hard parameter sets; extend `tools/headless.js` to run AI-
-vs-AI batches. This is also where the AI-stand-in debug hotkeys
-(`4–0`, `i/o/p`) get replaced by actual AI decisions — worth checking
-whether any of S2–S4's debug-harness code should be retired at that
-point. Stop condition and full scope are in §5.
+**Next entry point: S6 — Balance + polish.** Playtest-driven tuning pass
+on `config.js` (informed by `tools/headless.js --batch` runs across
+difficulty pairings — including a look at the Hard-vs-Medium stalemate
+noted above), battlefield-length constant tuned within the 3–10
+screen-width range (currently `WORLD_WIDTH`/`VIEWPORT_WIDTH` = 5×, inside
+range but worth revisiting alongside match-pacing — full matches
+currently run ~9–14 simulated minutes, which may be too slow for a
+"playable" v1 feel), UI legibility pass, and a full bug scrub against the
+brief's acceptance criteria checklist. Stop condition and full scope are
+in §5.
 
 ---
 
