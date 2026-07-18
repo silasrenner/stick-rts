@@ -11,6 +11,10 @@ import { getEffectiveCooldown } from './heroes.js';
 // the attack pose decay correctly) but skip auto-acquire/auto-fire — their
 // attacks are triggered manually via heroes.js's attemptHeroAttack.
 export function updateCombat(world, dt) {
+  for (const team of Object.values(world.teams)) {
+    if (team.statueWarningTimer > 0) team.statueWarningTimer -= dt;
+  }
+
   for (const unit of world.units) {
     if (unit.state === 'dying' || unit.isMiner) continue;
 
@@ -72,6 +76,7 @@ export function resolveAttack(world, unit, target) {
 // team's respawn cooldown and escalates the next re-purchase cost.
 export function applyDamage(world, entity, amount) {
   if (!isAliveEntity(entity)) return;
+  if (entity.isStatue) world.teams[entity.team].statueWarningTimer = CONFIG.STATUE_WARNING_DURATION;
   entity.hp = Math.max(0, entity.hp - amount);
   if (entity.hp > 0) return;
 

@@ -13,6 +13,7 @@ export function createWorld() {
         command: 'defend',
         heroDeathCount: 0,
         heroCooldownTimer: 0,
+        statueWarningTimer: 0,
         difficulty: null, // null = human-controlled; the AI behavior tree skips any team with no difficulty set
         decisionTimer: 0,
         buildIndex: 0,
@@ -22,6 +23,7 @@ export function createWorld() {
         command: 'defend',
         heroDeathCount: 0,
         heroCooldownTimer: 0,
+        statueWarningTimer: 0,
         difficulty: null,
         decisionTimer: 0,
         buildIndex: 0,

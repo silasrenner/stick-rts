@@ -6,6 +6,151 @@ state, decisions, and the next session's entry point. See
 
 ## Status
 
+**S6 complete (Balance + polish).** All 10 of the brief's Acceptance
+Criteria checked off in `stick-rts-brief.md`, each with live evidence
+gathered this session (not just re-asserted from S1–S5 history) — see
+below. Per the user's explicit scoping at session start: `WORLD_WIDTH`/
+`VIEWPORT_WIDTH` (still 5×, unchanged) and general balance-constant tuning
+were held back until the user has playtested; the documented Hard-vs-
+Medium AI-vs-AI stalemate was left as a flagged note, not a fix target.
+Everything else in scope was built and verified.
+
+**Real gap fixed, not just polish:** the brief's one allowed off-screen
+signal — "your statue is under attack" — didn't exist anywhere in the
+code despite PLAN.md §2.4 committing to it since S0 (confirmed via grep
+across `src/` before starting). Added a per-team `statueWarningTimer`
+(`config.js` `STATUE_WARNING_DURATION`, 3s), set/retriggered in
+`combat.js`'s `applyDamage` whenever a statue takes damage, decremented
+alongside it in `updateCombat`. Rendered as a pulsing red banner in
+`ui.js`, gated to the player's own team. Verified the trigger sets the
+timer to exactly the configured duration and decays in exactly 3.00
+simulated seconds (isolated script test), and confirmed by code-path
+analysis (grep of every `applyDamage` call site) that statue damage is
+only ever reachable through `findAttackTarget`'s existing structure-
+gating logic — so the warning structurally cannot fire while gating
+structures still stand, without needing a separate emergent-behavior
+test. **Found and fixed a real bug in this same feature during
+verification**, not just at build time: the banner stayed stuck on
+screen through the win/lose overlay, because `runTick` stops advancing
+world state once `matchState !== 'playing'`, freezing the timer at
+whatever value it held at match end. Fixed by gating the banner's render
+on `matchState === 'playing'`, then re-verified live (forced a statue hit
+immediately followed by a win, confirmed banner suppressed on the
+Victory screen where it previously stuck).
+
+**Unmeasurable acceptance criterion made measurable:** "~40 units on
+screen, stable 60fps" had no FPS counter or stress-spawn tooling to check
+it at all. Added a smoothed FPS overlay (`F` to toggle) and a stress-spawn
+debug hotkey (`S`) to `main.js`, exposed as `window.__spawnStressTest`/
+`__toggleFpsOverlay`/`__fps` for scripted verification. First attempt at
+the stress scenario revealed two real interaction bugs, not just cosmetic
+ones: (1) placing both teams' 20-unit clusters within melee/acquire range
+caused mutual annihilation in under 2 simulated seconds (40 → 6 units),
+defeating the point of a sustained reading; (2) even after separating the
+clusters beyond the 300px max acquire range, the still-active AI behavior
+tree (default difficulty `medium`) saw the inflated "army," issued its
+own `attack` command, and marched the AI's stress units through the
+player's cluster via their un-overridden `enemyHomeX`. Fixed by pinning
+both `homeX` and `enemyHomeX` to each stress unit's spawn position, which
+neutralizes any command the AI or player later issues. Re-verified: 40
+units held stationary for 4+ real seconds at a sustained ~60–65fps, zero
+console errors, default headless invariant check still passing throughout.
+
+**Baseline `--batch` runs across all 6 unordered difficulty pairings**
+(5 trials each — the sim has zero RNG, confirmed by grep in S5, so
+additional trials per pairing add no information). E vs M (851.9s) and E
+vs H (553.7s) reproduced S5's exact figures; M vs H reproduced the
+documented stalemate. **New finding, flagged not fixed:** H vs H does
+*not* stalemate like the cautious mirror-matches (E/E, M/M) — the side
+occupying the `ai`/right-side slot wins 5/5 identical trials in exactly
+545.1s, every time. Since the sim is deterministic and both sides run
+identical Hard parameters, this points at a positional or iteration-order
+asymmetry somewhere in combat/targeting resolution rather than a
+parameter imbalance — worth a root-cause pass in a future session
+(would need combat-resolution debugging, out of scope for this session's
+data-gather task), but not fixed now.
+
+**UI legibility fixes**, informed by exploration of `config.js`/`ui.js`/
+`renderer.js` at session start: build-menu buttons only dimmed via alpha
+with no reason shown until a failed click; HUD text (gold/units/command)
+sat directly on the battlefield with no contrast backing. Fixed both —
+added a semi-transparent HUD backdrop panel, and a persistent per-button
+disabled-reason label that mirrors `economy.js`'s exact reason precedence
+(gold → cap/maxStructures, or heroAlive → heroCooldown → gold for
+heroes) so the label never disagrees with what a real failed click would
+report. `PURCHASE_REASON_TEXT` moved from `main.js` to `ui.js` as the
+single source of truth for that wording (was previously duplicated across
+the click-feedback path and would have needed a second copy for the new
+persistent labels). Verified live: all 5 disabled states (gold, cap,
+maxStructures, heroAlive, heroCooldown) screenshotted with correct,
+dynamically-updating text that fits within the button bounds.
+
+**Docs correction, no code change:** PLAN.md §2.5 previously claimed
+`tools/headless.js --batch` reports gold-spent curves and unit-
+composition-over-time; it never did — only win/loss/undecided counts and
+average match length. Reworded §2.5 to match reality; those stats already
+covered S5/S6's actual use case (catching win-rate skew across
+pairings), so nothing was built to fill the gap.
+
+**Full acceptance-criteria walkthrough — all 10 verified live this
+session**, not re-asserted from S1–S5 history alone:
+- Win/lose at each difficulty + rematch/difficulty-change: forced a win
+  and a loss via direct statue damage, and clicked the win screen's
+  "Hard" button via a real dispatched DOM click (not scripted state
+  mutation) — confirmed `world.teams.ai.difficulty` changed and the match
+  reset end-to-end.
+- All 3 units + all 3 heroes purchasable/distinct: purchased one of each
+  live, screenshotted.
+- Hero control: toggled direct control, moved via dispatched arrow-key
+  events (confirmed exact expected displacement — speed × dt), attacked
+  and used special with no target (safe no-ops, no throw), killed the
+  hero, confirmed cooldown timer and exactly the 1.5× escalated cost
+  (600 → 900g), confirmed re-purchase blocked mid-cooldown
+  (`heroCooldown` reason), then re-purchased a *different* hero
+  (Hawkeye → Vanguard) once the cooldown cleared — switchable choice
+  confirmed.
+- Camera edge-scroll: proved deterministic via dispatched `mousemove` +
+  `forceTicks` (avoiding reliance on the real rAF loop, which appears to
+  throttle in a backgrounded automation tab) — right-scroll moved exactly
+  `EDGE_SCROLL_SPEED × dt`, clamped correctly at `WORLD_WIDTH -
+  VIEWPORT_WIDTH` (5600), left-scroll clamped at 0, and camera held
+  perfectly still once the mouse left the canvas.
+- Soft-lock / no-console-errors: zeroed the player's gold and units
+  entirely, then fast-forwarded ~700 simulated seconds under an active
+  Hard AI — resolved cleanly to `lost`, gold never went negative, zero
+  console errors throughout.
+- Supply/cap/config-centralization: confirmed by code reading this
+  session (`supply.js`, `economy.js`) plus the live disabled-reason UI
+  check above.
+
+Zero console errors across every live check this session. Default
+headless invariant check re-run and passing after every code change.
+
+Files added this session: none. Modified: `config.js`
+(+`STATUE_WARNING_DURATION`), `sim/world.js` (`statueWarningTimer` on
+both teams), `sim/systems/combat.js` (trigger + decay), `render/ui.js`
+(statue-warning banner, `PURCHASE_REASON_TEXT` moved here from `main.js`,
+`getBuildButtonDisabledReason`, HUD contrast panel), `main.js` (FPS
+overlay, stress-spawn debug tool, imports `PURCHASE_REASON_TEXT` from
+`ui.js` instead of duplicating it), `render/renderer.js` (legend
+documents the new `F`/`S` debug keys), `PLAN.md` §2.5 (docs correction),
+`stick-rts-brief.md` (all 10 acceptance criteria checked off).
+
+Repo checkpoint not yet committed — pending user request per this
+session's git-safety rules.
+
+**Next entry point:** v1's planned session breakdown (S1–S6) is complete
+and all brief acceptance criteria pass. What's left is **user playtesting
+across all 3 difficulties**, which was deliberately deferred rather than
+guessed at: `WORLD_WIDTH`/pacing (currently 5×, match lengths run
+~9–14 simulated minutes per S5/S6 data), and general unit/hero/AI
+constant tuning in `config.js`. The Hard-vs-Hard positional-asymmetry
+finding above is worth a root-cause debugging pass whenever AI-vs-AI
+evaluation matters again. No further planned session exists until the
+user's playtest surfaces specific feedback to act on.
+
+---
+
 **S5 complete (AI).** One shared parameterized behavior tree
 (`sim/ai/behavior.js`) drives Easy/Medium/Hard purely through data
 (`sim/ai/difficulties.js`) — no per-difficulty code branches. The AI
@@ -232,12 +377,16 @@ is unneeded complexity. Instead:
     negative, and statue immunity while structures stand — fast regression
     checks without opening a browser.
   - **Gameplay/balance evaluation** (from S5 onward, once AI exists): run
-    AI-vs-AI matches — same difficulty or mixed — for many trials and
-    report outcome stats (winner, match length in ticks, gold-spent curve,
-    unit-composition-over-time). This is the tool used during S5/S6 to
-    answer "does Hard actually beat a no-composition player" and "is Easy
-    actually beatable" without manual replay each time, and can be
-    re-run any time gameplay needs evaluating.
+    AI-vs-AI matches — same difficulty or mixed — for many trials via
+    `--batch --player=<difficulty> --enemy=<difficulty> --trials=N
+    [--ticks=N]`, reporting per-trial winner and match length in seconds,
+    plus aggregate win/loss/undecided counts and average match length
+    across the batch. This is the tool used during S5/S6 to answer "does
+    Hard actually beat a no-composition player" and "is Easy actually
+    beatable," and to catch win-rate skew across difficulty pairings,
+    without manual replay each time. (Gold-spent curves and unit-
+    composition-over-time were considered but aren't implemented — the
+    win/loss/length stats above already cover S5/S6's actual use case.)
 - Output is plain console/JSON, no reporting framework — this is a CLI
   script, not a test suite with assertions-as-CI-gate (though nothing
   stops it being wired into one later if wanted).

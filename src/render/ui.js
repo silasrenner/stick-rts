@@ -13,9 +13,20 @@ const BUILD_MENU_ITEMS = [
 ];
 
 const BUTTON_WIDTH = 120;
-const BUTTON_HEIGHT = 26;
+const BUTTON_HEIGHT = 30;
 const BUTTON_GAP = 8;
 const BUTTON_MARGIN_BOTTOM = 6;
+
+// Single source of truth for why a purchase failed — used both for the
+// persistent disabled-reason label under each build-menu button and for
+// main.js's showMessage() feedback after an actual failed click.
+export const PURCHASE_REASON_TEXT = {
+  gold: 'Not enough gold',
+  cap: 'Population cap reached',
+  maxStructures: 'Max structures built',
+  heroAlive: 'Hero already deployed',
+  heroCooldown: 'Hero respawning...',
+};
 
 export function getBuildMenuButtons(canvas) {
   const totalWidth = BUILD_MENU_ITEMS.length * BUTTON_WIDTH + (BUILD_MENU_ITEMS.length - 1) * BUTTON_GAP;
@@ -28,32 +39,54 @@ export function getBuildMenuButtons(canvas) {
   }));
 }
 
-export function isBuildButtonEnabled(world, button) {
+// Mirrors the exact reason precedence economy.js's buyUnit/buyStructure/
+// buyHero check in, so this persistent label always agrees with what a
+// failed click would report via PURCHASE_REASON_TEXT. Returns null when
+// the purchase would succeed.
+export function getBuildButtonDisabledReason(world, button) {
   const cost = button.costFn(world);
-  if (!canAfford(world, 'player', cost)) return false;
-  if (button.action === 'unit') return getUnitCount(world, 'player') < getCap(world, 'player');
-  if (button.action === 'structure') return livingStructures(world, 'player').length < CONFIG.MAX_STRUCTURES;
+
+  if (button.action === 'unit') {
+    if (!canAfford(world, 'player', cost)) return 'gold';
+    if (getUnitCount(world, 'player') >= getCap(world, 'player')) return 'cap';
+    return null;
+  }
+  if (button.action === 'structure') {
+    if (livingStructures(world, 'player').length >= CONFIG.MAX_STRUCTURES) return 'maxStructures';
+    if (!canAfford(world, 'player', cost)) return 'gold';
+    return null;
+  }
   // hero
-  return !hasLivingHero(world, 'player') && world.teams.player.heroCooldownTimer <= 0;
+  if (hasLivingHero(world, 'player')) return 'heroAlive';
+  if (world.teams.player.heroCooldownTimer > 0) return 'heroCooldown';
+  if (!canAfford(world, 'player', cost)) return 'gold';
+  return null;
 }
 
 export function drawBuildMenu(ctx, world) {
   if (world.matchState !== 'playing') return; // clicks are inert once the match ends; don't imply otherwise
 
   for (const button of getBuildMenuButtons(ctx.canvas)) {
-    const enabled = isBuildButtonEnabled(world, button);
+    const reason = getBuildButtonDisabledReason(world, button);
     const cost = button.costFn(world);
     const { x, y, w, h } = button.rect;
 
-    ctx.globalAlpha = enabled ? 1 : 0.4;
+    ctx.globalAlpha = reason ? 0.55 : 1;
     ctx.fillStyle = button.action === 'hero' ? '#3a3320' : '#2c2c33';
     ctx.fillRect(x, y, w, h);
-    ctx.strokeStyle = '#55555f';
+    ctx.strokeStyle = reason ? '#7a3a3a' : '#55555f';
     ctx.lineWidth = 1;
     ctx.strokeRect(x, y, w, h);
     ctx.fillStyle = '#e8e8ee';
     ctx.font = '10px monospace';
-    ctx.fillText(`${button.label} (${cost}g)`, x + 5, y + 17);
+    ctx.fillText(`${button.label} (${cost}g)`, x + 5, y + 13);
+
+    if (reason) {
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#e0704a';
+      ctx.font = '7px monospace';
+      ctx.fillText(PURCHASE_REASON_TEXT[reason], x + 5, y + 24);
+    }
     ctx.globalAlpha = 1;
   }
 }
@@ -64,6 +97,11 @@ export function drawHUD(ctx, world, uiMessage) {
   const count = getUnitCount(world, 'player');
   const command = world.teams.player.command;
   const heroCooldown = world.teams.player.heroCooldownTimer;
+
+  // Contrast backdrop for the HUD text stack — previously plain text
+  // directly on the battlefield, which washed out against light terrain.
+  ctx.fillStyle = 'rgba(20, 20, 26, 0.6)';
+  ctx.fillRect(4, 4, 220, uiMessage && uiMessage.text ? 82 : 62);
 
   ctx.fillStyle = '#e8e8ee';
   ctx.font = '13px monospace';
@@ -79,6 +117,20 @@ export function drawHUD(ctx, world, uiMessage) {
   if (uiMessage && uiMessage.text) {
     ctx.fillStyle = '#e0a030';
     ctx.fillText(uiMessage.text, 10, 80);
+  }
+
+  // The brief's one allowed off-screen signal: retriggered on every hit to
+  // the player's statue (see combat.js applyDamage), independent of camera
+  // culling and of the uiMessage slot above (build-menu feedback).
+  if (world.matchState === 'playing' && world.teams.player.statueWarningTimer > 0) {
+    const pulse = 0.6 + 0.4 * Math.sin(world.matchElapsedTime * 10);
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.globalAlpha = pulse;
+    ctx.fillStyle = '#e03030';
+    ctx.font = 'bold 15px monospace';
+    ctx.fillText('Your statue is under attack!', ctx.canvas.width / 2, 24);
+    ctx.restore();
   }
 }
 

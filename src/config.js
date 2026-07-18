@@ -35,6 +35,7 @@ export const CONFIG = {
   STRUCTURE_SLOT_OFFSETS: [40, 80, 120, 160, 200], // px from homeX, toward the battlefield
 
   STATUE_HP: 2000,
+  STATUE_WARNING_DURATION: 3, // seconds the "statue under attack" signal stays lit after the last hit
   MINE_OFFSET: 240, // px from homeX, toward the battlefield, past the last structure slot
   MINE_SLOTS: 4,
   MINE_CYCLE_TIME: 3, // seconds to extract one load

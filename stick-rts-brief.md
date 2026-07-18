@@ -96,16 +96,18 @@ If parameter tuning alone can't make Hard feel threatening, flag it at a human g
 
 ## Acceptance Criteria (v1 done means)
 
-- [ ] Can win and lose a full match at each difficulty; win/lose screen offers rematch and difficulty change
-- [ ] All 3 basic units purchasable, animated, and functionally distinct
-- [ ] All 3 heroes purchasable, directly controllable, with working specials; re-purchase rules enforced
-- [ ] Toggling hero control in/out works cleanly; hero behaves sensibly when not controlled
-- [ ] Easy is beatable by a first-time player; Hard beats a player who ignores composition
-- [ ] Scrolling camera works smoothly; no enemy information leaks from off-screen (composition, positions, build activity)
-- [ ] Supply structures purchasable, raise the cap correctly, and gate the statue (statue immune while any structure stands); over-cap StarCraft behavior on destruction; build menu blocks unit purchases at cap with clear feedback
-- [ ] Stable 60fps on a typical laptop with ~40 units on screen
-- [ ] All balance constants (costs, HP, damage, speeds, AI parameters) live in one config module
-- [ ] No console errors during a full match; game state cannot soft-lock (e.g., zero gold + zero miners still allows loss to play out)
+- [x] Can win and lose a full match at each difficulty; win/lose screen offers rematch and difficulty change
+- [x] All 3 basic units purchasable, animated, and functionally distinct
+- [x] All 3 heroes purchasable, directly controllable, with working specials; re-purchase rules enforced
+- [x] Toggling hero control in/out works cleanly; hero behaves sensibly when not controlled
+- [x] Easy is beatable by a first-time player; Hard beats a player who ignores composition
+- [x] Scrolling camera works smoothly; no enemy information leaks from off-screen (composition, positions, build activity)
+- [x] Supply structures purchasable, raise the cap correctly, and gate the statue (statue immune while any structure stands); over-cap StarCraft behavior on destruction; build menu blocks unit purchases at cap with clear feedback
+- [x] Stable 60fps on a typical laptop with ~40 units on screen
+- [x] All balance constants (costs, HP, damage, speeds, AI parameters) live in one config module
+- [x] No console errors during a full match; game state cannot soft-lock (e.g., zero gold + zero miners still allows loss to play out)
+
+All 10 verified in S6 — see PLAN.md Status for the evidence behind each.
 
 ## Workflow Requirements
 

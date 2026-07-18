@@ -4,7 +4,7 @@ import { drawStatue, drawStructure, drawMine, drawHealthBar } from './structures
 import { drawHUD, drawBuildMenu, drawWinLoseOverlay } from './ui.js';
 
 const LEGEND_LINE =
-  'Your command: Q Attack  W Defend  E Retreat   |   Hero: H Toggle control  ←/→ Move  J Attack  K Special';
+  'Your command: Q Attack  W Defend  E Retreat   |   Hero: H Toggle control  ←/→ Move  J Attack  K Special   |   Debug: F FPS  S Stress-spawn';
 
 // Reads world state only; never mutates it. World-space entities are
 // culled to the camera's visible window (+ margin) — this is the whole
