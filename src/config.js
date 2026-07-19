@@ -17,6 +17,7 @@ export const CONFIG = {
   EDGE_SCROLL_MARGIN: 60, // px from viewport edge that triggers camera scroll
   EDGE_SCROLL_SPEED: 900, // px/s
   CAMERA_CULL_MARGIN: 100, // px beyond the viewport edge before an entity stops being drawn
+  CAMERA_ZOOM: 0.7, // S8: render-time scale only — sim stays in unscaled world px. <1 shows more battlefield at once.
 
   AI_SIGHT_RANGE: 260, // px; how close an AI unit must be to see an enemy for scouting purposes
 
@@ -25,10 +26,15 @@ export const CONFIG = {
   PROJECTILE_ARC_HEIGHT: 40, // px
 
   STARTING_GOLD: 300,
-  BASE_UNIT_CAP: 10,
+  BASE_UNIT_CAP: 15, // S8: cap rework — 15 + 5*13 = 80 max, under the 100-unit stress target
+  MINER_BUILD_TIME: 5, // seconds
+  WARRIOR_BUILD_TIME: 10,
+  ARCHER_BUILD_TIME: 12,
+  STRUCTURE_BUILD_TIME: 20,
+  HERO_BUILD_TIME: 30, // independent of HERO_RESPAWN_COOLDOWN below — see sim/systems/production.js
 
-  STRUCTURE_COST: 150,
-  STRUCTURE_CAP_BONUS: 6,
+  STRUCTURE_COST: 300, // S8: doubled from 150
+  STRUCTURE_CAP_BONUS: 13, // S8: raised from 6 — see BASE_UNIT_CAP
   MAX_STRUCTURES: 5,
   STRUCTURE_HP: 150,
   STRUCTURE_DESTROY_DURATION: 0.4, // seconds a destroyed structure fades before removal

@@ -1,5 +1,5 @@
 import { CONFIG } from '../../config.js';
-import { createUnit, createStructure, isAliveEntity } from '../world.js';
+import { isAliveEntity } from '../world.js';
 import { getCap, livingStructures } from './supply.js';
 
 export function canAfford(world, team, cost) {
@@ -19,48 +19,69 @@ export function getHeroCost(world, team) {
   return Math.round(CONFIG.BASE_HERO_COST * CONFIG.HERO_COST_MULTIPLIER ** world.teams[team].heroDeathCount);
 }
 
+// Purchases already in the queue but not yet materialized (sim/systems/
+// production.js) — counted alongside live entities wherever a cap/max
+// check needs "effective" count, since the queue can hold several of the
+// same kind before any of them actually exists yet.
+export function countQueued(world, team, action) {
+  return world.teams[team].productionQueue.filter((item) => item.action === action).length;
+}
+
+export function hasLivingOrQueuedHero(world, team) {
+  return hasLivingHero(world, team) || countQueued(world, team, 'hero') > 0;
+}
+
+function getBuildTime(action, kind) {
+  if (action === 'structure') return CONFIG.STRUCTURE_BUILD_TIME;
+  if (action === 'hero') return CONFIG.HERO_BUILD_TIME;
+  if (kind === 'miner') return CONFIG.MINER_BUILD_TIME;
+  if (kind === 'warrior') return CONFIG.WARRIOR_BUILD_TIME;
+  return CONFIG.ARCHER_BUILD_TIME;
+}
+
+function enqueue(world, team, action, kind) {
+  const buildTime = getBuildTime(action, kind);
+  world.teams[team].productionQueue.push({ action, kind, remaining: buildTime, total: buildTime });
+}
+
+// Validates, deducts gold, and enqueues — the entity itself materializes
+// later (sim/systems/production.js) once the queue timer elapses. Checked
+// once here, at enqueue time, against live + already-queued counts; not
+// re-checked at completion (see PLAN.md S8).
 // { ok: true } or { ok: false, reason: 'gold' | 'cap' }
 export function buyUnit(world, team, kind) {
   const cost = CONFIG.UNIT_STATS[kind].cost;
   if (!canAfford(world, team, cost)) return { ok: false, reason: 'gold' };
-  if (getUnitCount(world, team) >= getCap(world, team)) return { ok: false, reason: 'cap' };
+  if (getUnitCount(world, team) + countQueued(world, team, 'unit') >= getCap(world, team)) {
+    return { ok: false, reason: 'cap' };
+  }
 
   world.teams[team].gold -= cost;
-  const homeX = team === 'player' ? CONFIG.PLAYER_HOME_X : CONFIG.AI_HOME_X;
-  const y = CONFIG.GROUND_Y - (getUnitCount(world, team) % 4) * 30;
-  const unit = createUnit(kind, team, homeX, y);
-  unit.command = world.teams[team].command;
-  world.units.push(unit);
+  enqueue(world, team, 'unit', kind);
   return { ok: true };
 }
 
 // { ok: true } or { ok: false, reason: 'gold' | 'heroAlive' | 'heroCooldown' }
 export function buyHero(world, team, kind) {
-  if (hasLivingHero(world, team)) return { ok: false, reason: 'heroAlive' };
+  if (hasLivingOrQueuedHero(world, team)) return { ok: false, reason: 'heroAlive' };
   if (world.teams[team].heroCooldownTimer > 0) return { ok: false, reason: 'heroCooldown' };
 
   const cost = getHeroCost(world, team);
   if (!canAfford(world, team, cost)) return { ok: false, reason: 'gold' };
 
   world.teams[team].gold -= cost;
-  const homeX = team === 'player' ? CONFIG.PLAYER_HOME_X : CONFIG.AI_HOME_X;
-  const y = CONFIG.GROUND_Y - (getUnitCount(world, team) % 4) * 30;
-  const hero = createUnit(kind, team, homeX, y);
-  hero.command = world.teams[team].command;
-  world.units.push(hero);
+  enqueue(world, team, 'hero', kind);
   return { ok: true };
 }
 
 // { ok: true } or { ok: false, reason: 'gold' | 'maxStructures' }
 export function buyStructure(world, team) {
-  const slotIndex = livingStructures(world, team).length;
-  if (slotIndex >= CONFIG.MAX_STRUCTURES) return { ok: false, reason: 'maxStructures' };
+  if (livingStructures(world, team).length + countQueued(world, team, 'structure') >= CONFIG.MAX_STRUCTURES) {
+    return { ok: false, reason: 'maxStructures' };
+  }
   if (!canAfford(world, team, CONFIG.STRUCTURE_COST)) return { ok: false, reason: 'gold' };
 
   world.teams[team].gold -= CONFIG.STRUCTURE_COST;
-  const homeX = team === 'player' ? CONFIG.PLAYER_HOME_X : CONFIG.AI_HOME_X;
-  const sign = team === 'player' ? 1 : -1;
-  const x = homeX + sign * CONFIG.STRUCTURE_SLOT_OFFSETS[slotIndex];
-  world.structures.push(createStructure(team, x, CONFIG.GROUND_Y));
+  enqueue(world, team, 'structure', null);
   return { ok: true };
 }

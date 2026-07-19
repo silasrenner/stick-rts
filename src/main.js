@@ -81,34 +81,41 @@ function toggleFpsOverlay() {
   fpsVisible = !fpsVisible;
 }
 
-// Debug-only stress scenario for the "~40 units on screen, stable 60fps"
-// acceptance criterion — spawns units directly (bypassing gold/cap, same
-// as the rest of this file's window.__buy* debug hooks) clustered around
-// the current camera center so they're immediately visible without
-// needing to scroll to find them. Clusters are kept farther apart than
-// any unit's acquireRange (max 300) so the two sides don't immediately
-// fight and cull themselves before there's time to read the FPS overlay
-// — this measures steady-state render/tick cost, not combat throughput.
-// homeX AND enemyHomeX are pinned to the spawn position so idle units
-// hold still no matter what command they end up under — including one
-// the AI behavior tree issues on its own once it sees a 20-unit "army"
-// and decides to attack, which would otherwise march its stress units
-// straight through the player's cluster.
+// Debug-only stress scenario for the brief's "100 units @ 60fps" stress
+// target (S8 — replaces the v1 "~40 units" criterion; spawns 100
+// regardless of the final cap, so the engine has proven headroom above
+// it). Spawns units directly (bypassing gold/cap, same as the rest of
+// this file's window.__buy* debug hooks) clustered around the current
+// camera center so they're immediately visible without needing to scroll
+// to find them. Clusters are kept farther apart than any unit's
+// acquireRange (max 300) so the two sides don't immediately fight and
+// cull themselves before there's time to read the FPS overlay — this
+// measures steady-state render/tick cost, not combat throughput.
+// homeX/enemyHomeX are pinned to the spawn position AND formationExempt
+// is set so sim/systems/formation.js never assigns these units a slot —
+// without that flag, S7's formation system overrides positioning based
+// on the team's live command regardless of homeX/enemyHomeX, so pinning
+// alone (the v1/S7 approach) no longer holds units still once a real
+// command reaches them (including one the AI behavior tree issues on its
+// own once it sees a 100-unit "army" and decides to attack).
 const STRESS_KINDS = ['warrior', 'archer'];
+const STRESS_UNITS_PER_SIDE = 50;
 const STRESS_CLUSTER_GAP = 500;
 function spawnStressTest() {
   const midX = camera.x + CONFIG.VIEWPORT_WIDTH / 2;
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < STRESS_UNITS_PER_SIDE; i++) {
     const kind = STRESS_KINDS[i % STRESS_KINDS.length];
-    const px = midX - STRESS_CLUSTER_GAP / 2 - i * 8;
-    const ax = midX + STRESS_CLUSTER_GAP / 2 + i * 8;
+    const px = midX - STRESS_CLUSTER_GAP / 2 - i * 4;
+    const ax = midX + STRESS_CLUSTER_GAP / 2 + i * 4;
     const playerUnit = createUnit(kind, 'player', px, CONFIG.GROUND_Y);
     playerUnit.homeX = px;
     playerUnit.enemyHomeX = px;
+    playerUnit.formationExempt = true;
     world.units.push(playerUnit);
     const aiUnit = createUnit(kind, 'ai', ax, CONFIG.GROUND_Y);
     aiUnit.homeX = ax;
     aiUnit.enemyHomeX = ax;
+    aiUnit.formationExempt = true;
     world.units.push(aiUnit);
   }
 }

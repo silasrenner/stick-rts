@@ -12,6 +12,13 @@ const BACK_LINE_KINDS = new Set(['archer', 'hawkeye']);
 // range/acquisition checks stay 1D (x-only, see supply.js) by design;
 // these slots exist purely for pre-contact positioning (movement.js only
 // reads them when a unit has no live combat target to approach directly).
+// `unit.formationExempt` opts a unit out entirely (its slotX/slotY are
+// simply never assigned) — used by main.js's debug stress-spawn tool,
+// which pins units to their spawn point via homeX/enemyHomeX instead;
+// movement.js's `unit.slotX ?? unit.homeX` fallback then resolves to
+// that pin regardless of which command the team is currently under,
+// surviving a live setTeamCommand call (which stomps unit.command on
+// every unit of the team, but never touches homeX/enemyHomeX/slotX).
 export function updateFormationSlots(world) {
   for (const team of ['player', 'ai']) {
     assignTeamSlots(world, team);
@@ -25,7 +32,9 @@ function assignTeamSlots(world, team) {
   const command = world.teams[team].command;
 
   const eligible = world.units
-    .filter((u) => u.team === team && isAliveEntity(u) && !u.isMiner && !(u.isHero && u.controlled))
+    .filter(
+      (u) => u.team === team && isAliveEntity(u) && !u.isMiner && !(u.isHero && u.controlled) && !u.formationExempt
+    )
     .sort((a, b) => a.id - b.id);
 
   const frontLine = eligible.filter((u) => !BACK_LINE_KINDS.has(u.kind));

@@ -6,6 +6,141 @@ state, decisions, and the next session's entry point. See
 
 ## Status
 
+**S8 complete (Scale + economy).** Built per §5's S8 block: camera zoom
+(`CONFIG.CAMERA_ZOOM` 0.7, render-time scale only — `renderer.js`,
+`camera.js`'s clamp/hero-follow/cull-width all switched from raw
+`VIEWPORT_WIDTH` to `VIEWPORT_WIDTH/ZOOM` so the wider zoomed-out view
+doesn't clip or wrongly cull); cap/supply rework (`BASE_UNIT_CAP` 15,
+`STRUCTURE_CAP_BONUS` 13, cap now maxes at 80); structure cost 150→300;
+a real sequential production queue (new `sim/systems/production.js` +
+`world.teams[team].productionQueue`, `economy.js`'s `buyUnit`/`buyHero`/
+`buyStructure` split into validate+deduct+enqueue vs. materialize-later,
+unchanged return shape so the AI needed zero call-site changes); army
+readout HUD + build-progress/queue display (`ui.js`); stress-spawn raised
+to 100 units (50/side).
+
+**Real, load-bearing bug found and fixed, not just slower pacing:** the
+stress-spawn tool's `homeX`/`enemyHomeX` pinning trick (used to hold
+debug units stationary) silently stopped working once S7's formation
+system shipped — formation.js overrides positioning for any living combat
+unit based on the team's *current* command, ignoring those fields
+entirely. Caught before it reached "100 units magically march across the
+map" in testing; fixed with a new `unit.formationExempt` flag that
+formation.js's eligible-unit filter now skips, so movement.js's existing
+`slotX ?? homeX` fallback resolves to the pin regardless of any later
+`setTeamCommand` call (which stomps `unit.command` on every unit of a
+team but never touches the pin fields).
+
+**Second, more consequential bug found and fixed during AI re-tuning
+verification:** with the original (S5-era) build cycles unchanged, a
+scripted Easy-vs-Hard headless match showed Easy **beating** Hard
+outright (205.3s) — a real difficulty-hierarchy violation, not just a
+pacing nit. Traced via direct state tracing (not just outcome-watching):
+Easy's `minArmyToAttack: 1` lets it rush with a single early warrior;
+under the new production queue, Hard's own first combat unit was still
+serialized behind two front-loaded miners (unchanged from S5, when
+purchases were instant and this cost nothing) and arrived too late to
+defend its mine. Easy's rusher then killed Hard's miners faster than
+Hard could afford replacements, and because gold has zero passive income
+independent of living miners, Hard's economy hit **$0 with no living
+miners and no way back** — a permanent, unrecoverable death spiral, not
+a temporary setback. Fixed in three parts, each verified to actually move
+the needle before being kept: (1) trimmed every difficulty's build cycle
+from two front-loaded miners to one (`ai/difficulties.js`) so the first
+combat unit arrives ~5s sooner; (2) added an economic-survival floor to
+`ai/behavior.js`'s `pickPurchase` — with zero living miners, the AI's
+next purchase is unconditionally a miner, overriding build-cycle position
+and composition counter-picks; (3) gave Hard specifically a
+warrior-first build cycle, since `defendMineThreshold: 400` already
+marks proactive mine defense as core to its identity. Re-verified after
+each change individually (not just the final state) — the fix
+progression was traceable: Easy-beats-Hard (205.3s) → Easy still wins but
+much slower (350.8s, safeguard alone insufficient) → Hard no longer loses
+but doesn't clearly win within the default tick budget → (see next
+finding) Hard wins decisively once given enough time.
+
+**Also raised `tools/headless.js --batch`'s default `--ticks` from 60000
+to 180000:** the "Hard doesn't clearly win" result above turned out to be
+the *old* default tick budget (1000s) cutting off matches that go on to
+resolve cleanly — re-run at 3000s, every pairing that looked like a
+stalemate (including the two mirror matchups) resolved decisively with a
+real winner. The production queue roughly triples average match length
+across the board; the old default was misreporting slow-but-decided
+matches as "undecided."
+
+**Full `--batch` re-baseline across all 6 difficulty pairings** (2 trials
+each — still zero RNG, confirmed unchanged by repo-wide grep, so
+additional trials add no information), replacing every S5/S6/S7 figure
+now invalidated by the cap/cost/queue changes:
+- E vs E: 1362.3s (previously a stalemate at every prior baseline —
+  now resolves)
+- M vs M: 484.2s
+- H vs H: 1229.7s (previously the S6/S7-documented positional asymmetry;
+  now resolves the same way both trials, not investigated further this
+  session — S9's asymmetry root-cause work should start from this
+  figure, not the S6/S7 ones)
+- E vs M: Medium wins, 511.2s (hierarchy holds: Medium > Easy)
+- E vs H: Hard wins, 1376.9s (hierarchy holds: Hard > Easy — this is the
+  pairing that exposed the death-spiral bug above; now resolved)
+- M vs H: Hard wins, 895.6s (hierarchy holds: Hard > Medium — notably,
+  this pairing **no longer stalemates**, reversing the S5-documented
+  "known limitation" flagged every session since)
+
+All three difficulties now form a clean hierarchy (Hard > Medium > Easy)
+with zero stalemates or reversals across all 6 pairings, at the new
+180000-tick budget. Not claimed as "fully balanced" — only as evidence-
+based and honest about what was and wasn't tuned: `decisionInterval`,
+`heroPurchaseDelay`, and `retreatThreshold` were left untouched this
+session (no observed evidence they needed changing once the build-cycle
+and miner-floor fixes landed); a deeper balance pass remains open for
+future playtesting.
+
+**Verified live via `claude-in-chrome`** (fresh server port, per the
+established disk-cache lesson): purchase → queue → materialize confirmed
+both via `window.__buyUnit` and a real dispatched click on the build-menu
+button (gold deducts immediately, unit appears only after its build time
+elapses); sequential queue ordering confirmed (second item's timer frozen
+while the first is active); production-queue HUD text confirmed via a
+`ctx.fillText` interception (background real-time ticking between
+separate tool calls kept racing ahead of screenshot timing otherwise —
+worth remembering for future queue-timing tests: verify queue *state*
+directly via JS, or intercept the draw call, rather than trusting a
+screenshot's timing to land mid-queue); hero cooldown (30s) and hero
+build time (30s) confirmed fully independent, not stacked (a second hero
+purchased immediately once cooldown clears materializes ~30.02s later,
+not ~60s); cap/maxStructures enqueue-time accounting stress-tested with
+30 rapid-fire purchase attempts against a cap of 15 — exactly 15
+succeeded, cap never exceeded even transiently through full
+materialization; camera zoom confirmed both numerically (clamp max
+exactly matches `WORLD_WIDTH - VIEWPORT_WIDTH/ZOOM`) and visually (a unit
+at world x=1800 — beyond the old viewport width — rendered correctly
+rather than being culled); 100-unit stress spawn held at 76-87fps,
+zero unit loss, zero console errors; army readout HUD confirmed
+own-team-only by inspection of `getArmyComposition`'s team filter (no
+code path reads the enemy team). Zero console errors on every fresh page
+load throughout.
+
+Files added: `src/sim/systems/production.js`. Modified: `config.js`
+(zoom/cap/cost/build-time constants), `sim/world.js`
+(`productionQueue` per team), `sim/systems/economy.js` (validate+enqueue
+split, `countQueued`/`hasLivingOrQueuedHero`), `sim/systems/formation.js`
+(`formationExempt` bypass), `sim/tick.js` (+`updateProductionQueue`),
+`render/camera.js` + `render/renderer.js` (zoom transform and all the
+places that needed to stop assuming raw `VIEWPORT_WIDTH`), `render/ui.js`
+(army readout + queue display, queue-aware disabled-reason checks),
+`main.js` (`spawnStressTest` → 100 units + `formationExempt`),
+`sim/ai/difficulties.js` (build-cycle re-tune), `sim/ai/behavior.js`
+(miner-priority safeguard), `tools/headless.js` (default `--ticks`
+60000→180000).
+
+Repo checkpoint not yet committed — pending explicit user request.
+
+**Next entry point: S9 — Visuals + menus + Watch AI.** Full scope in §5.
+Start the H-vs-H asymmetry root-cause work from this session's 1229.7s
+figure, not S6/S7's.
+
+---
+
 **S7 complete (Formation system + combat).** Built per §5's S7 block:
 new `sim/systems/formation.js` assigns every living, non-miner,
 non-controlled unit a deterministic `(slotX, slotY)` each tick (front

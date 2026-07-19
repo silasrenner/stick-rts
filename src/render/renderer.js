@@ -16,9 +16,14 @@ export function render(ctx, world, camera, uiMessage) {
 
   ctx.save();
   ctx.translate(-camera.x, 0);
+  ctx.scale(CONFIG.CAMERA_ZOOM, CONFIG.CAMERA_ZOOM);
 
+  // Visible world span widens under zoom-out (ZOOM < 1) — cull against
+  // that, not the raw viewport width, or entities the zoom reveals get
+  // wrongly culled. CAMERA_CULL_MARGIN is expressed in world px here too.
+  const visibleWorldWidth = CONFIG.VIEWPORT_WIDTH / CONFIG.CAMERA_ZOOM;
   const visible = (x) =>
-    x >= camera.x - CONFIG.CAMERA_CULL_MARGIN && x <= camera.x + CONFIG.VIEWPORT_WIDTH + CONFIG.CAMERA_CULL_MARGIN;
+    x >= camera.x - CONFIG.CAMERA_CULL_MARGIN && x <= camera.x + visibleWorldWidth + CONFIG.CAMERA_CULL_MARGIN;
 
   if (visible(world.mines.player.x)) drawMine(ctx, world.mines.player);
   if (visible(world.mines.ai.x)) drawMine(ctx, world.mines.ai);

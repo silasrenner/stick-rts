@@ -35,7 +35,18 @@ function runDecision(world, team, difficulty) {
 // Counter-pick (if composition intel is fresh enough to trust) or the
 // next item in the difficulty's fixed build cycle — same cycling logic
 // for all three difficulties, only the array contents differ.
+//
+// S8 economic-survival safeguard: with zero living miners, always buy a
+// miner next regardless of buildCycle position or composition counter-
+// pick, overriding both. Verified live (see PLAN.md): under the S8
+// production queue, a single early attacker that kills off an AI's last
+// miner used to leave it permanently at 0 gold with no way to ever afford
+// a 100g replacement — a real, reproducible Easy-beats-Hard result, not
+// just slower pacing. This is the floor that stops that spiral; it does
+// not fully replace defending the mine in the first place.
 function pickPurchase(world, team, difficulty) {
+  if (getLivingMinerCount(world, team) === 0) return 'miner';
+
   if (difficulty.useComposition && isMemoryFresh(world, team, difficulty.memoryStaleness)) {
     const counter = counterPick(world, team);
     if (counter) return counter;
@@ -116,6 +127,10 @@ function isEnemyNearHome(world, team, threshold) {
 
 function countCombatUnits(world, team) {
   return world.units.filter((u) => u.team === team && !u.isMiner && isAliveEntity(u)).length;
+}
+
+function getLivingMinerCount(world, team) {
+  return world.units.filter((u) => u.team === team && u.isMiner && isAliveEntity(u)).length;
 }
 
 function armyPower(world, team) {

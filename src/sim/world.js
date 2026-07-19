@@ -17,6 +17,7 @@ export function createWorld() {
         difficulty: null, // null = human-controlled; the AI behavior tree skips any team with no difficulty set
         decisionTimer: 0,
         buildIndex: 0,
+        productionQueue: [], // S8: sequential FIFO — see sim/systems/production.js
       },
       ai: {
         gold: CONFIG.STARTING_GOLD,
@@ -27,6 +28,7 @@ export function createWorld() {
         difficulty: null,
         decisionTimer: 0,
         buildIndex: 0,
+        productionQueue: [],
       },
     },
     mines: {

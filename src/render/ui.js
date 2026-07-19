@@ -1,6 +1,7 @@
 import { CONFIG } from '../config.js';
-import { canAfford, getUnitCount, hasLivingHero, getHeroCost } from '../sim/systems/economy.js';
+import { canAfford, getUnitCount, hasLivingOrQueuedHero, getHeroCost, countQueued } from '../sim/systems/economy.js';
 import { getCap, livingStructures } from '../sim/systems/supply.js';
+import { isAliveEntity } from '../sim/world.js';
 
 const BUILD_MENU_ITEMS = [
   { kind: 'miner', action: 'unit', label: 'Miner', costFn: () => CONFIG.UNIT_STATS.miner.cost },
@@ -48,16 +49,18 @@ export function getBuildButtonDisabledReason(world, button) {
 
   if (button.action === 'unit') {
     if (!canAfford(world, 'player', cost)) return 'gold';
-    if (getUnitCount(world, 'player') >= getCap(world, 'player')) return 'cap';
+    if (getUnitCount(world, 'player') + countQueued(world, 'player', 'unit') >= getCap(world, 'player')) return 'cap';
     return null;
   }
   if (button.action === 'structure') {
-    if (livingStructures(world, 'player').length >= CONFIG.MAX_STRUCTURES) return 'maxStructures';
+    if (livingStructures(world, 'player').length + countQueued(world, 'player', 'structure') >= CONFIG.MAX_STRUCTURES) {
+      return 'maxStructures';
+    }
     if (!canAfford(world, 'player', cost)) return 'gold';
     return null;
   }
   // hero
-  if (hasLivingHero(world, 'player')) return 'heroAlive';
+  if (hasLivingOrQueuedHero(world, 'player')) return 'heroAlive';
   if (world.teams.player.heroCooldownTimer > 0) return 'heroCooldown';
   if (!canAfford(world, 'player', cost)) return 'gold';
   return null;
@@ -91,32 +94,79 @@ export function drawBuildMenu(ctx, world) {
   }
 }
 
+// Own-team-only living-unit counts by kind — never reads the enemy team.
+// Doubles as the production-queue panel's context (the queue's items are
+// what's about to add to these counts).
+function getArmyComposition(world, team) {
+  const counts = { miner: 0, warrior: 0, archer: 0 };
+  for (const unit of world.units) {
+    if (unit.team !== team || unit.isHero || !isAliveEntity(unit)) continue;
+    if (counts[unit.kind] !== undefined) counts[unit.kind] += 1;
+  }
+  return counts;
+}
+
+function getQueueItemLabel(item) {
+  if (item.action === 'structure') return 'Structure';
+  return BUILD_MENU_ITEMS.find((b) => b.kind === item.kind)?.label ?? item.kind;
+}
+
 export function drawHUD(ctx, world, uiMessage) {
   const gold = world.teams.player.gold;
   const cap = getCap(world, 'player');
   const count = getUnitCount(world, 'player');
   const command = world.teams.player.command;
   const heroCooldown = world.teams.player.heroCooldownTimer;
+  const composition = getArmyComposition(world, 'player');
+  const queue = world.teams.player.productionQueue;
+
+  const lineHeight = 16;
+  let panelLines = 4; // gold, units, command, army composition
+  if (queue.length > 0) panelLines += 1;
+  if (queue.length > 1) panelLines += 1;
+  if (heroCooldown > 0) panelLines += 1;
+  if (uiMessage && uiMessage.text) panelLines += 1;
 
   // Contrast backdrop for the HUD text stack — previously plain text
   // directly on the battlefield, which washed out against light terrain.
   ctx.fillStyle = 'rgba(20, 20, 26, 0.6)';
-  ctx.fillRect(4, 4, 220, uiMessage && uiMessage.text ? 82 : 62);
+  ctx.fillRect(4, 4, 260, 8 + panelLines * lineHeight);
 
+  let y = 16;
   ctx.fillStyle = '#e8e8ee';
   ctx.font = '13px monospace';
-  ctx.fillText(`Gold: ${gold}`, 10, 16);
-  ctx.fillText(`Units: ${count}/${cap}`, 10, 32);
-  ctx.fillText(`Command: ${command[0].toUpperCase()}${command.slice(1)}`, 10, 48);
+  ctx.fillText(`Gold: ${gold}`, 10, y);
+  y += lineHeight;
+  ctx.fillText(`Units: ${count}/${cap}`, 10, y);
+  y += lineHeight;
+  ctx.fillText(`Command: ${command[0].toUpperCase()}${command.slice(1)}`, 10, y);
+  y += lineHeight;
+  ctx.fillText(`Miners: ${composition.miner}  Warriors: ${composition.warrior}  Archers: ${composition.archer}`, 10, y);
+  y += lineHeight;
+
+  if (queue.length > 0) {
+    ctx.fillStyle = '#8fd1e0';
+    ctx.fillText(`Building: ${getQueueItemLabel(queue[0])} (${Math.max(0, queue[0].remaining).toFixed(1)}s)`, 10, y);
+    ctx.fillStyle = '#e8e8ee';
+    y += lineHeight;
+  }
+  if (queue.length > 1) {
+    ctx.fillStyle = '#8a8a96';
+    ctx.fillText(`Queued: ${queue.slice(1).map(getQueueItemLabel).join(', ')}`, 10, y);
+    ctx.fillStyle = '#e8e8ee';
+    y += lineHeight;
+  }
 
   if (heroCooldown > 0) {
     ctx.fillStyle = '#e0a030';
-    ctx.fillText(`Hero respawns in ${Math.ceil(heroCooldown)}s`, 10, 64);
+    ctx.fillText(`Hero respawns in ${Math.ceil(heroCooldown)}s`, 10, y);
+    y += lineHeight;
   }
 
   if (uiMessage && uiMessage.text) {
     ctx.fillStyle = '#e0a030';
-    ctx.fillText(uiMessage.text, 10, 80);
+    ctx.fillText(uiMessage.text, 10, y);
+    y += lineHeight;
   }
 
   // The brief's one allowed off-screen signal: retriggered on every hit to

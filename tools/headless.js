@@ -96,7 +96,11 @@ async function runBatch(args) {
   const playerDifficulty = getArg(args, 'player', 'medium');
   const enemyDifficulty = getArg(args, 'enemy', 'medium');
   const trials = parseInt(getArg(args, 'trials', '10'), 10);
-  const maxTicks = parseInt(getArg(args, 'ticks', '60000'), 10); // ~1000 simulated seconds — matches can take several minutes
+  // S8: raised from 60000 — the production queue roughly triples average
+  // match length (verified: several pairings that used to resolve by
+  // ~1000s now take up to ~1400s), so the old default was cutting off
+  // matches that go on to resolve cleanly, misreporting them "undecided."
+  const maxTicks = parseInt(getArg(args, 'ticks', '180000'), 10); // ~3000 simulated seconds
 
   const dt = 1 / 60;
   const results = [];

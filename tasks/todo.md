@@ -1,65 +1,103 @@
-# S7 — Formation System + Combat
+# S8 — Scale + Economy
 
-Full plan/context: see PLAN.md §5's S7 block. Scope: formation/slot system
-(source doc items 1–5 + vertical depth item 8), targeting priority near
-the enemy base with a retarget rule (item 6), archer speed tune.
+Full plan/context: see PLAN.md §5's S8 block. Scope: camera zoom, cap/
+supply rework + 100-unit stress test, structure cost doubling, production
+queue (build times for all purchases), army readout HUD, AI re-tuning for
+queue-based pacing, full 6-pairing re-baseline.
 
 ## 1. Config constants — DONE
-- [x] `config.js`: `DEFEND_SCREEN_OFFSET`, `FORMATION_SLOT_SPACING_X/Y`,
-      `FORMATION_SLOTS_PER_RANK`, `FORMATION_Y_BAND`,
-      `ARCHER_COHESION_DISTANCE`; `UNIT_STATS.archer.speed` 70→80
+- [x] `CAMERA_ZOOM: 0.7`, `BASE_UNIT_CAP: 15`, `STRUCTURE_CAP_BONUS: 13`
+      (cap maxes at 80), `STRUCTURE_COST: 300`, build-time constants
+      (`MINER_BUILD_TIME: 5`, `WARRIOR_BUILD_TIME: 10`,
+      `ARCHER_BUILD_TIME: 12`, `STRUCTURE_BUILD_TIME: 20`,
+      `HERO_BUILD_TIME: 30`)
 
-## 2. Formation slot assignment — DONE
-- [x] New `sim/systems/formation.js`: deterministic per-unit `(slotX,
-      slotY)`, ranked by kind (front/back line), filed by `unit.id`
-      ascending — no RNG, no spawn/iteration-order dependence
-- [x] Multi-column growth: front line overflow extends toward the enemy
-      under Defend, toward home (trailing) under Attack
-- [x] Found + fixed a real bug: first-draft back-line (archer) overflow
-      used the same growth direction/step as the front line, offset by a
-      constant — algebraically guaranteed to collide once either line
-      exceeds one rank. Fixed by anchoring the back line beyond the front
-      line's entire current span (recomputed live every tick) and always
-      growing further away — collision-free for any column count.
-      Reproduced the bug live before fixing, re-verified zero collisions
-      after, in both Defend and Attack modes.
-- [x] Wired into `tick.js` before `updateMovement`
+## 2. Production queue — DONE
+- [x] `world.teams[team].productionQueue` (FIFO array)
+- [x] New `sim/systems/production.js`: only the head item's timer ticks;
+      materializes the entity when it elapses
+- [x] `economy.js`'s `buyUnit`/`buyHero`/`buyStructure` split into
+      validate+deduct+enqueue vs. materialize-later; unchanged return
+      shape/signatures so the AI needed zero call-site changes
+- [x] Found + fixed a correctness gap, not just a design nuance: enqueue-
+      time cap/maxStructures/hero-uniqueness checks needed to count
+      already-queued-but-not-materialized items too, or rapid-fire
+      purchases could queue far past the real cap before any of them
+      completed. New `countQueued`/`hasLivingOrQueuedHero`. Stress-tested
+      with 30 rapid-fire attempts against cap 15 — exactly 15 succeeded,
+      verified never exceeded through full materialization.
+- [x] Hero respawn cooldown (30s) confirmed independent of hero build
+      time (30s) — a second hero purchased right when cooldown clears
+      materializes ~30.02s later, not ~60s stacked
+- [x] Wired into `tick.js`
 
-## 3. Movement — DONE
-- [x] `movement.js`: defend/attack `desiredX`/`desiredY` sourced from
-      formation slots instead of the shared `homeX`/`enemyHomeX` scalar;
-      retreat unchanged (no formation — just go home); 2D-normalized
-      movement toward formation targets (combat approach stays 1D)
-- [x] Archer cohesion: holds (re-checked every tick, not latched) when no
-      living warrior is within `ARCHER_COHESION_DISTANCE`, including
-      zero-warrior; resumes the instant a warrior exists
+## 3. Camera zoom — DONE
+- [x] `CONFIG.CAMERA_ZOOM` render-time scale in `renderer.js`; sim stays
+      in unscaled world px
+- [x] `camera.js`'s clamp bound and hero-follow centering switched from
+      raw `VIEWPORT_WIDTH` to `VIEWPORT_WIDTH/ZOOM`; `renderer.js`'s
+      cull-visibility check likewise — both verified numerically and
+      visually (a unit beyond the old viewport width rendered correctly
+      instead of being wrongly culled)
 
-## 4. Targeting priority + retarget — DONE
-- [x] `supply.js`: `findAttackTarget` now prefers living combat units
-      over miners over structures over statue (statue-gating unchanged);
-      new `targetPriorityTier`, `findPriorityUnitWithin`
-- [x] `combat.js`: retarget-on-threat check, every tick, skipped once
-      already on a top-priority target (perf)
+## 4. Army readout HUD + queue UI — DONE
+- [x] `ui.js`: own-team-only per-kind living-unit counts; active-build
+      progress + queued-items display in the same HUD panel
+- [x] `getBuildButtonDisabledReason` updated to the same queue-aware
+      cap/maxStructures/heroAlive precedence as `economy.js`, so the
+      persistent label never disagrees with a real click
 
-## 5. Verification — DONE
-- [x] `node tools/headless.js` (default invariant mode): byte-identical
-      to pre-S7 baseline via `git stash` comparison, still passes
-- [x] `node tools/headless.js --batch` across H-vs-H, M-vs-H, E-vs-E,
-      E-vs-M, E-vs-H: logged as findings for S8/S9, not tuned this
-      session (H-vs-H asymmetry changed but didn't resolve; M-vs-H
-      stalemate no longer stalemates; E-vs-E/M-vs-M mirror stalemates
-      resolved; E-vs-M winner flipped; E-vs-H nearly unchanged)
-- [x] Live via `claude-in-chrome` (fresh server port, per S3/S5's
-      disk-cache lesson): 16-unit Defend army screenshotted into 4
-      distinct non-overlapping columns; multi-column direction confirmed
-      both lines; archer cohesion hold/resume confirmed; retarget rule
-      confirmed (structure damage paused mid-switch); priority
-      sub-ordering confirmed (farther combat unit over nearer miner);
-      statue-gating re-confirmed unaffected; zero console errors on a
-      fresh load
-- [x] Confirmed zero `Math.random` anywhere in `src/`/`tools/` (repo-wide
-      grep) — determinism preserved
+## 5. Stress-spawn to 100 units — DONE
+- [x] `main.js`'s `spawnStressTest`: 50-per-side/100 total
+- [x] Found + fixed a real interaction bug with S7: the old `homeX`/
+      `enemyHomeX` pinning trick silently stopped holding units still,
+      because S7's formation system overrides positioning regardless of
+      those fields. New `unit.formationExempt` flag (checked in
+      `formation.js`'s eligible filter) restores the pin, robust against
+      a later `setTeamCommand` call
+
+## 6. AI re-tuning for queue pacing — DONE
+- [x] Trimmed every difficulty's build cycle from two front-loaded
+      miners to one — first combat unit arrives ~5s sooner
+- [x] Found + fixed a real difficulty-hierarchy violation, not just slow
+      pacing: unchanged S5-era parameters let Easy's single-warrior rush
+      (`minArmyToAttack: 1`) permanently zero out Hard's economy (killed
+      miners faster than gold could replace them, and gold has no
+      passive income independent of living miners) — Easy was beating
+      Hard outright in headless testing. Fixed with an economic-survival
+      floor (`pickPurchase`: zero living miners → next purchase is
+      always a miner) plus a Hard-specific warrior-first build cycle
+      (Hard's `defendMineThreshold: 400` already marks proactive mine
+      defense as its identity). Verified the fix progression step by
+      step, not just the final state.
+- [x] Raised `tools/headless.js --batch`'s default `--ticks` 60000→180000
+      — the production queue roughly triples match length; the old
+      default was cutting off matches that resolve cleanly and
+      misreporting them "undecided"
+
+## 7. Full re-baseline — DONE
+- [x] All 6 pairings, 2 trials each (deterministic — extra trials add no
+      information), at the new 180000-tick default: clean Hard > Medium
+      > Easy hierarchy, zero stalemates or reversals, including the
+      S5-documented Medium-vs-Hard stalemate no longer occurring.
+      Recorded in PLAN.md Status — not claimed as fully balanced, only
+      as evidence-based; `decisionInterval`/`heroPurchaseDelay`/
+      `retreatThreshold` untouched this session
+
+## 8. Live verification — DONE
+- [x] Purchase → queue → materialize via both `window.__buyUnit` and a
+      real dispatched click on the build-menu button
+- [x] Sequential queue ordering (second item frozen while first active)
+- [x] Production-queue HUD text confirmed via `ctx.fillText`
+      interception — screenshot timing kept losing the race against
+      real background ticking between tool calls; worth remembering for
+      future queue-timing tests
+- [x] 100-unit stress spawn: 76-87fps, zero unit loss, zero console
+      errors
+- [x] Army readout HUD confirmed own-team-only by code inspection (no
+      path reads the enemy team)
+- [x] Zero console errors on every fresh page load
 
 ## Final
-- [x] `node tools/headless.js` (default mode) passes after all changes
+- [x] `node tools/headless.js` (default invariant mode) passes
 - [ ] Commit — pending explicit user request
