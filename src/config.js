@@ -42,6 +42,15 @@ export const CONFIG = {
   GOLD_PER_TRIP: 25,
   MINER_ARRIVE_THRESHOLD: 4, // px
 
+  // S7 formation system (sim/systems/formation.js): deterministic per-unit
+  // slot assignment so groups read as ranks/files, not stacked blobs.
+  DEFEND_SCREEN_OFFSET: 300, // px from homeX, toward the battlefield — past MINE_OFFSET so miners stay behind the line
+  FORMATION_SLOT_SPACING_X: 50, // px between successive columns, and between the warrior/archer lines
+  FORMATION_SLOT_SPACING_Y: 40, // px between file positions within one rank
+  FORMATION_SLOTS_PER_RANK: 6, // unit count before a rank overflows into a new column
+  FORMATION_Y_BAND: 200, // px of vertical spread a full rank occupies — (SLOTS_PER_RANK - 1) * SPACING_Y, fits within GROUND_Y's ~240px of headroom above the HUD
+  ARCHER_COHESION_DISTANCE: 150, // px — archers under Defend hold rather than advance ahead of/without a warrior escort this close
+
   BASE_HERO_COST: 600,
   HERO_COST_MULTIPLIER: 1.5, // per death
   HERO_RESPAWN_COOLDOWN: 30, // seconds
@@ -86,7 +95,7 @@ export const CONFIG = {
       damage: 14,
       range: 220,
       attackCooldown: 1.0,
-      speed: 70,
+      speed: 80, // S7: bumped from 70 — still slower than warrior's 90, closes the gap a bit
       acquireRange: 300,
       threatRange: 0,
       projectileSpeed: 300,

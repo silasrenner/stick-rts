@@ -6,6 +6,103 @@ state, decisions, and the next session's entry point. See
 
 ## Status
 
+**S7 complete (Formation system + combat).** Built per §5's S7 block:
+new `sim/systems/formation.js` assigns every living, non-miner,
+non-controlled unit a deterministic `(slotX, slotY)` each tick (front
+line = warriors/forgemaster/vanguard, back line = archers/hawkeye, filed
+by `unit.id` ascending — never spawn/iteration order, never RNG);
+`movement.js`'s defend/attack branches now source `desiredX`/`desiredY`
+from those slots instead of the old single `homeX`/`enemyHomeX` scalar
+per team (the direct cause of the pre-S7 stacking); Defend's screening
+line sits at `homeX + sign*DEFEND_SCREEN_OFFSET` (300px, past the mine
+and structure zones); archer cohesion holds an archer in place (re-checked
+every tick, not latched) when no living warrior is within
+`ARCHER_COHESION_DISTANCE` (150px), including the zero-warrior case, and
+resumes the instant a warrior exists; archer speed 70→80. Targeting
+priority (`supply.js`'s `findAttackTarget`) now prefers living combat
+units over miners over structures over the statue (statue-gating itself
+unchanged), and `combat.js` gained a retarget-on-threat check so a unit
+parked on a lower-priority target switches the instant something
+higher-priority enters range — checked every tick, but skipped once
+already on a top-priority target to keep it cheap.
+
+**Real bug found and fixed during live verification, not just at build
+time:** the first-draft formation math gave the archer (back) line's
+overflow columns the *same* growth direction and step size as the
+warrior (front) line's overflow columns, offset by a single constant —
+which is mathematically guaranteed to collide once either line grows
+past one rank (proved algebraically after reproducing it live: an
+8-warrior/8-archer Defend test put the 7th archer at the exact same
+slotX as the front line's first column). Fixed by anchoring the back
+line one spacing step beyond the front line's *entire currently-occupied
+span* (recomputed fresh every tick from the front line's actual min-
+exposure position, not a fixed offset) and always growing it further
+away from the fight — collision-free by construction for any column
+count, verified in both Defend and Attack modes with zero collisions
+after the fix (re-verified live via `claude-in-chrome`, see below).
+
+**Verified live via `claude-in-chrome`** (server restarted on a fresh
+port per S3/S5's documented disk-cache lesson): a 16-unit mixed Defend
+army screenshotted into 4 visually distinct columns — warriors' overflow
+column sits further toward the enemy than its base column (confirmed
+multi-column direction), archers sit behind the warriors and their own
+overflow sits further back still, zero overlap. Archer cohesion:
+isolated a lone archer with zero warriors — held at its spawn point
+despite having a computed slot 250px away; added a warrior and confirmed
+it resumed advancing toward the slot within the next few ticks.
+Retarget rule: isolated a warrior mid-attack on an enemy structure
+(150→120hp over 3 real hits), spawned a defender into range, confirmed
+the target switched within 0.1s and structure damage paused entirely
+while the defender fight was ongoing. Priority sub-ordering: an attacker
+with both a nearer miner (34px) and a farther combat unit (100px) in
+range chose the combat unit, confirmed via a single-tick isolated check.
+Statue-gating: re-confirmed unaffected (statue untouched while a
+structure still stood, even at 10/150 hp). Zero console errors across a
+fresh page load and all of the above. One methodology note for future
+sessions: `window.__world` is a live reference to the actual running
+match, and the real `requestAnimationFrame` loop keeps advancing it in
+the background between tool calls regardless of `__forceTicks` — a
+multi-step test sequence with real round-trip latency between calls
+picks up "extra" real-time ticks it didn't explicitly request (confirmed
+via `__tickCount`: 1772 ticks had elapsed against 5 explicitly forced).
+Not a bug; just don't infer exact speed/timing from position deltas
+across separate tool calls — use single atomic scripts (as done above)
+when a test needs to reason about precise tick counts.
+
+**Headless re-baseline** (interim, per S7's stop condition — not the full
+6-pairing S8 re-baseline, which happens after cap/cost/queue land too).
+Default invariant check: byte-identical to the pre-S7 baseline (verified
+via `git stash`), still passes. Hard-vs-Hard: **the documented S6
+asymmetry changed, not resolved** — still 5/5 identical/deterministic,
+but now `player`(left-side) wins at 426.0s (was `ai`/right-side at
+545.1s). Other pairings shifted too, expected since targeting priority
+is explicitly combat-resolution-altering: Medium-vs-Hard's long-standing
+mutual stalemate (flagged since S5) **no longer stalemates** — Hard now
+wins decisively in 325.8s; Easy-vs-Easy and Medium-vs-Medium mirror
+matches, which previously stalemated to the tick budget, now resolve
+decisively (446.4s and 614.9s); Easy-vs-Medium flipped winner (Easy now
+beats Medium in 460.7s, was Medium beating Easy in 851.9s); Easy-vs-Hard
+is nearly unchanged (551.0s vs. 553.7s, same winner). **None of this was
+tuned or fixed this session** — per S7's stop condition these are logged
+findings for S8's AI re-tuning pass and S9's asymmetry root-cause work
+(which should start from these numbers, not the stale S6 ones).
+
+Files added: `src/sim/systems/formation.js`. Modified: `config.js`
+(+formation/screening/cohesion constants, archer speed), `sim/tick.js`
+(+`updateFormationSlots` call), `sim/systems/movement.js` (slot-based
+positioning, archer cohesion, 2D-capable movement toward formation
+targets — combat approach itself stays 1D), `sim/systems/supply.js`
+(+`targetPriorityTier`, `findPriorityUnitWithin`, priority-ordered
+`findAttackTarget`), `sim/systems/combat.js` (retarget-on-threat check).
+
+Repo checkpoint not yet committed — pending explicit user request.
+
+**Next entry point: S8 — Scale + economy.** Full scope in §5. Start the
+AI re-tuning pass from this session's re-baseline numbers above, not the
+stale S6/pre-S7 ones.
+
+---
+
 **Planning session (2026-07-19): v2 scoped into S7–S9.** No code changed
 this session — refined `stick-rts-v2-updates.md`'s feature list into the
 session breakdown in §5 below, grounded in a fresh read of the actual S6

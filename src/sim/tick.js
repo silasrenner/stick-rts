@@ -1,4 +1,5 @@
 import { updateMining } from './systems/mining.js';
+import { updateFormationSlots } from './systems/formation.js';
 import { updateMovement } from './systems/movement.js';
 import { updateCombat, updateDeaths } from './systems/combat.js';
 import { updateProjectiles } from './systems/projectiles.js';
@@ -21,6 +22,7 @@ export function runTick(world, dt, input = NO_INPUT) {
   updateHeroCooldowns(world, dt);
   updateHeroControl(world, input, dt);
   updateMining(world, dt);
+  updateFormationSlots(world); // must run before movement — assigns this tick's slotX/slotY
   updateMovement(world, dt);
   updateCombat(world, dt);
   updateProjectiles(world, dt);

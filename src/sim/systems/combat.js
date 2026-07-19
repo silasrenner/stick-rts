@@ -1,6 +1,6 @@
 import { CONFIG } from '../../config.js';
 import { createProjectile, findEntityById, findAllEnemiesWithin, isAliveEntity } from '../world.js';
-import { findAttackTarget } from './supply.js';
+import { findAttackTarget, targetPriorityTier } from './supply.js';
 import { getEffectiveCooldown } from './heroes.js';
 
 // Runs after movement, using this tick's positions: acquires/refreshes
@@ -30,7 +30,21 @@ export function updateCombat(world, dt) {
 
     // targetId may point at a unit, structure, or statue (see supply.js's findAttackTarget)
     let target = unit.targetId ? findEntityById(world, unit.targetId) : null;
-    if (!target || !isAliveEntity(target)) {
+    if (target && isAliveEntity(target)) {
+      // Retarget-on-threat: a unit parked on a lower-priority target (a
+      // structure/statue, or a miner) switches immediately if something
+      // higher-priority enters range — checked every tick, not just at
+      // acquisition. Skipped once already on a top-priority (tier 0)
+      // target, since nothing can outrank it — keeps this cheap for the
+      // common case of an active engagement.
+      if (targetPriorityTier(target) > 0) {
+        const better = findAttackTarget(world, unit);
+        if (better && targetPriorityTier(better) < targetPriorityTier(target)) {
+          target = better;
+          unit.targetId = target.id;
+        }
+      }
+    } else {
       target = findAttackTarget(world, unit);
       unit.targetId = target ? target.id : null;
     }
