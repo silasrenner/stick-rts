@@ -74,4 +74,4 @@ only).
 
 ## Final
 - [x] `node tools/headless.js` (default mode) passes after all changes
-- [ ] Commit — only on explicit user request
+- [x] Commit — landed as `6f3cec4`

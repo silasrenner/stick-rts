@@ -6,6 +6,49 @@ state, decisions, and the next session's entry point. See
 
 ## Status
 
+**Planning session (2026-07-19): v2 scoped into S7–S9.** No code changed
+this session — refined `stick-rts-v2-updates.md`'s feature list into the
+session breakdown in §5 below, grounded in a fresh read of the actual S6
+code (not the brief's assumptions about it). Three places where the source
+doc undersells the real scope, flagged explicitly in each session rather
+than silently assumed:
+- The sim is **fully 1D today** — every combat/acquisition-range check
+  (`combat.js`, `supply.js`, `world.js`) is `Math.abs(x1 - x2)`; `y` is
+  only a cosmetic spawn-time offset (`economy.js`) that `movement.js`
+  never touches again. "Vertical depth"/"ranks and files" (S7) means
+  making `y` real, persistent sim state for the first time.
+- **No production queue, no zoom, and no pre-match menu exist at all** —
+  `buyUnit`/`buyStructure`/`buyHero` (`economy.js`) are fully synchronous
+  today (gold deducted and entity created in the same call); `camera.js`
+  has no scale/zoom field, only a scroll offset; `main.js` calls
+  `createWorld()` and boots straight into a live match, and `matchState`
+  only ever takes `'playing'/'won'/'lost'` — there's no menu state to
+  extend. S8 and S9 build these from scratch, not by extending existing
+  partial versions.
+- Zero `Math.random` anywhere in `src/` (confirmed by repo-wide grep) —
+  S9's seeded PRNG is new plumbing, not wiring up existing randomness.
+
+**Correction:** the S6 checkpoint noted above as uncommitted was actually
+committed as `6f3cec4` ("feat: balance + polish...") prior to this
+session — confirmed via `git log`. The v2 diff base is already clean; no
+pre-work commit was needed after all.
+
+**v2 gate answered (2026-07-19):** the source doc's Answers section
+resolved all six of §4's open v2 questions (#2–#7) and added two items
+that weren't in scope when this plan was first drafted — **#6 targeting
+priority near the enemy base** (retarget living defenders before
+structures/statue) folded into S7, and **#12 army readout HUD** folded
+into S8. §4 and the S7/S8/S9 blocks below are updated accordingly. §4's
+#7 default (PRNG plumbing only, no gameplay randomization) was overridden
+by the owner: S9 now wires exactly one variation point — seed-derived
+jitter on AI decision intervals — since zero variation points would make
+Watch AI mode show an identical match every time regardless of seed.
+
+**Next entry point: S7 — Formation system + combat.** Full session
+breakdown with stop conditions in §5.
+
+---
+
 **S6 complete (Balance + polish).** All 10 of the brief's Acceptance
 Criteria checked off in `stick-rts-brief.md`, each with live evidence
 gathered this session (not just re-asserted from S1–S5 history) — see
@@ -398,6 +441,46 @@ is unneeded complexity. Instead:
   starting value, AI difficulty parameter sets, battlefield length — live
   in one file, `config.js`. No magic numbers scattered in system code.
 
+### 2.7 v2 additions (planned, S7–S9)
+
+New architectural surfaces the v1 design above didn't need — noted here so
+this stays the single source of truth for "what exists and why," not just
+a session log:
+
+- **Formation/slot system (S7):** a new sim module (`sim/systems/
+  formation.js`) assigns each unit a deterministic `(slotX, slotY)` by
+  kind + stable index (unit `id` order — never RNG), which `movement.js`
+  paths toward instead of the current single shared `homeX`/`enemyHomeX`
+  scalar per team. `y` becomes real, actively-maintained sim state for
+  the first time. Combat range/acquisition checks stay 1D (`Math.abs`
+  on `x` only) by default — formations are a positioning layer on top of
+  unchanged combat math, not a switch to 2D combat (see S7 for the
+  explicit decision this rests on). Targeting priority (living defenders
+  over miners over structures, with a retarget-on-threat rule) is a
+  reordering within `supply.js`'s existing `findAttackTarget` tiers, not
+  a new module — but is explicitly flagged as combat-resolution-changing
+  and gets its own re-baseline check at S7's end.
+- **Production queue (S8):** a new sim module (`sim/systems/
+  production.js`) and new per-team state (`world.teams[team].
+  productionQueue`) sit between `buyUnit`/`buyStructure`/`buyHero`
+  (validate + deduct gold + enqueue) and entity creation (now delayed
+  until the queued item's timer elapses). Replaces today's fully
+  synchronous purchase-to-entity path.
+- **Camera zoom (S8):** new `camera.zoom` state plus a render-time scale
+  factor applied across `renderer.js`/`stickFigure.js`/`ui.js` draw
+  calls. Sim stays in unscaled world px throughout — zoom is strictly a
+  render/camera concern, per the brief's own constraint.
+- **Pre-match menu state (S9):** `matchState` gains a `'menu'` value as
+  the actual initial state (today `createWorld()` starts at `'playing'`
+  and `main.js` boots straight into a live match). `tick.js`'s existing
+  `if (world.matchState !== 'playing') return;` guard already no-ops a
+  `'menu'` state for free.
+- **Seeded PRNG (S9):** a new `sim/rng.js` (seedable, reproducible —
+  e.g. mulberry32, no crypto needed) threaded through `createWorld(seed)`
+  and `tools/headless.js --seed=N`. The only sanctioned source of
+  randomness anywhere in the sim going forward, per the carried-over
+  determinism constraint.
+
 ---
 
 ## 3. File Layout
@@ -423,23 +506,34 @@ stick-rts/
         supply.js             # cap math + structure-gates-statue enforcement
         heroes.js             # direct-control input -> hero state, specials
         commands.js           # global Attack/Defend/Retreat orders
+        production.js         # [S8] purchase queue: validate/deduct at enqueue,
+                               # materialize entity when the build timer elapses
+        formation.js           # [S7] deterministic per-unit slot assignment
+                               # (kind-ranked, id-ordered — no RNG)
       ai/
         behavior.js           # single shared parameterized behavior tree
         difficulties.js       # Easy/Medium/Hard parameter sets
         vision.js             # AI scouting/vision simulation (see 2.3)
+      rng.js                   # [S9] seeded PRNG — the only sanctioned
+                               # randomness source in the sim
     render/
       renderer.js             # draws current world state -> canvas each frame
-      camera.js                # scroll/drag/edge-scroll, hero-follow snap, viewport culling
+      camera.js                # scroll/drag/edge-scroll, hero-follow snap, viewport
+                               # culling, zoom [S8]
       stickFigure.js           # procedural skeleton + animation state machine
-      ui.js                     # build menu, HP bars, gold counter, command indicator,
-                                 # "statue under attack" signal, win/lose screen
+      parallax.js               # [S9] procedural line-drawn background layers,
+                                 # render-only, no sim impact
+      ui.js                     # build menu (+ queue/progress [S8]), HP bars, gold
+                                 # counter, command indicator, "statue under attack"
+                                 # signal, win/lose screen, landing/settings/Watch AI
+                                 # screens [S9]
     input/
       keyboard.js
       mouse.js
   tools/
     headless.js               # Node CLI: runs sim with no canvas/DOM (see 2.5) —
-                               # invariant checks (S3+) and AI-vs-AI balance
-                               # evaluation runs (S5+)
+                               # invariant checks (S3+), AI-vs-AI balance evaluation
+                               # runs (S5+), --seed=N for reproducible runs (S9+)
 ```
 
 No `/assets` directory — no sprite sheets by design (procedural stick
@@ -464,6 +558,53 @@ the browser build uses — no duplicate sim logic to maintain.
 1. **Local dev server:** defaulting to `python3 -m http.server` as the
    "trivially-launched" method, since it needs no install on most laptops.
    Flag if you'd prefer an `npx serve`/Node-based default instead.
+
+**Resolved for v2 (owner answers, 2026-07-19 — see
+`stick-rts-v2-updates.md`'s Answers section):**
+
+2. **1D vs 2D combat (S7):** confirmed — combat range/acquisition checks
+   stay 1D (`x`-only); `y` is formation state only. The resulting
+   cosmetic side effect (a unit's attack/projectile can visually travel
+   diagonally toward a target at a different `y` while range is judged on
+   `x` alone) is accepted, not treated as a bug.
+3. **Multi-column growth direction (S7):** confirmed — new columns form
+   *toward the enemy*; the line thickens outward as the army grows.
+4. **Cap/supply split (S8):** confirmed — `BASE_UNIT_CAP` 15,
+   `STRUCTURE_CAP_BONUS` 13, `MAX_STRUCTURES` 5 → cap 80, under the
+   100-unit stress target.
+5. **Zoom representation (S8):** confirmed — single `CONFIG.CAMERA_ZOOM`
+   render-time scale multiplier; sim stays in unscaled world px.
+6. **Settings scope (S9):** confirmed — FPS-overlay toggle +
+   default-difficulty only. Game speed stays deferred; flagged as the
+   designated v3 settings candidate — most wanted as a fast-forward in
+   Watch AI mode, where matches run many minutes.
+7. **Seeded-PRNG application scope (S9):** default overridden — plumbing
+   alone would make every seed produce an identical Watch AI match (zero
+   variation points = inert feature). S9 wires **exactly one** minimal
+   variation point: seed-derived jitter (±10–15%) on AI decision
+   intervals, small enough to need no dedicated balance pass. No other
+   gameplay randomization in v2. Same-seed reproducibility must still
+   hold byte-for-byte; different seeds must actually diverge.
+
+**New items pulled into scope by the same answers round (not originally
+in this plan's first draft):**
+
+8. **Targeting priority near enemy base (S7, source doc item 6):**
+   attackers in acquire range of the enemy base prioritize living
+   defenders (enemy warriors/archers/hero) over miners over supply
+   structures over the statue — statue-gating itself is unchanged, this
+   only reorders what dies first among reachable targets. Includes a
+   retarget rule: a unit currently attacking a structure switches to a
+   combat unit that enters its acquire range. Explicitly flagged by the
+   source doc as combat-resolution-changing — re-check the Hard-vs-Hard
+   positional asymmetry (S6 finding, see below) after this lands, since
+   it may alter or incidentally fix it.
+9. **Army readout HUD (S8, source doc item 12):** persistent own-team-only
+   unit count by kind (e.g. "24 miners · 12 warriors · 5 archers"),
+   doubling as the production-queue display (active build + progress +
+   queued items) that S8's production queue needs anyway. Own team only —
+   showing enemy composition would leak exactly the off-screen intel the
+   camera-culling rule (§2.4) is designed to withhold.
 
 ---
 
@@ -551,6 +692,259 @@ across one full match at each difficulty.
 parameter tuning alone can't make Hard feel threatening, stop and raise it
 as a design decision (possible income multiplier) rather than silently
 adding one.
+
+---
+
+## v2 Sessions (S7–S9)
+
+Extends the completed v1 (`stick-rts-brief.md` + S1–S6 above), scoped from
+`stick-rts-v2-updates.md`. Same session discipline as v1: each session
+ends with a commit at a stable checkpoint and a Status update naming the
+next entry point; no session proceeds past its stop condition without a
+human gate. Item numbers below follow the source doc's final numbering
+(post-answers-round, item 6 = targeting priority, item 12 = army readout
+HUD — both added after this plan's first draft).
+
+**Carried-over engineering constraints (non-negotiable for all of S7–S9):**
+- Determinism preserved — any randomness flows only through S9's seeded
+  PRNG (`sim/rng.js`); nothing before S9 introduces `Math.random` or
+  equivalent anywhere in `src/`.
+- Every new tunable (formation spacing/depths, cohesion distance, zoom,
+  vertical band, cap/supply math, build times, parallax depths) lives in
+  `config.js` — no magic numbers in system code.
+- Sim/render separation intact: formations and cohesion are sim
+  (`sim/systems/formation.js`); parallax and zoom are render/camera
+  (`render/parallax.js`, `camera.js`); menus are UI state (`matchState`
+  + `ui.js`).
+- Every S1–S6 balance baseline in this file is invalidated by S7/S8
+  tuning changes — the full `--batch` re-baseline across all 6 difficulty
+  pairings happens once, at the end of S8, after cap/cost/queue have all
+  landed (not incrementally per-session).
+
+### S7 — Formation system + combat
+**Build:** items 1–6 of the source doc (formation/cohesion items 1–5 plus
+the new targeting-priority item 6, which lands here because it touches the
+same combat/targeting code the formation work touches), plus vertical
+depth (item 8), since ranks/files need the wider y-band to have room to
+form in.
+- New `sim/systems/formation.js`: assigns each living combat unit a
+  deterministic `(slotX, slotY)` — ranked by kind (warriors outer/front,
+  archers inner/back), filed by a stable sort key (`unit.id` order, never
+  spawn/iteration order, never RNG) so replays and headless runs stay
+  reproducible. Config: `FORMATION_SLOT_SPACING_X`,
+  `FORMATION_SLOT_SPACING_Y`, `FORMATION_SLOTS_PER_RANK`,
+  `FORMATION_Y_BAND` (must fit within `GROUND_Y` and `CANVAS_HEIGHT`
+  minus HUD/build-menu space — currently `GROUND_Y=440`,
+  `CANVAS_HEIGHT=540`, so the band has roughly 200–440px of headroom to
+  work with; confirm against the actual HUD footprint before picking a
+  final number).
+- `movement.js`'s `desiredX` under `defend`/`retreat` (today a single
+  `unit.homeX` scalar shared by every unit on the team — the direct cause
+  of the current stacking) becomes per-unit, sourced from
+  `formation.js`'s slot assignment; same for `attack`'s `enemyHomeX`
+  target once units are close enough to engage rather than just marching
+  to a shared point.
+- **Mine screening (Defend):** the screening line sits past the mine zone
+  (`MINE_OFFSET=240`, `MINE_SLOTS=4`) toward the enemy side — not at
+  `homeX` — so miners stay behind the line. New config:
+  `DEFEND_SCREEN_OFFSET`, plus a per-kind depth constant (warriors at the
+  screen line itself, archers a configurable distance behind it).
+- **Multi-column growth:** when a rank's slots (`FORMATION_SLOTS_PER_RANK`)
+  are full, the next unit's column forms one `FORMATION_SLOT_SPACING_X`
+  step toward the enemy from the existing line (see open question #3
+  above — flag if "in front of" was meant the other direction).
+- **Archer cohesion:** archers hold if the nearest living friendly warrior
+  is farther than `ARCHER_COHESION_DISTANCE`; re-checked every tick (not
+  a latched/one-time flag) so cohesion resumes correctly if warriors are
+  purchased after a zero-warrior hold. Zero-warrior edge case: hold in
+  place, don't advance alone, don't freeze permanently once a warrior
+  exists again.
+- **Archer speed:** `UNIT_STATS.archer.speed` 70 → tune upward (proposed
+  starting point 80, still below warrior's 90) — reconfirm during this
+  session's stop-condition playtest, not a blind config edit.
+- **Targeting priority near enemy base:** `findAttackTarget` (`supply.js`)
+  currently returns the nearest enemy unit in range, else nearest
+  structure, else the statue — no preference among living defenders vs.
+  miners. Reorder within the "unit" tier: living combat units (enemy
+  warriors/archers/hero) first, then miners, *then* fall through to the
+  existing structure/statue tiers unchanged (statue-gating itself is not
+  touched). Add a retarget rule in `combat.js`/`movement.js`: a unit
+  currently attacking a structure or statue re-targets immediately if a
+  living enemy combat unit enters its `acquireRange` — check this every
+  tick a target is held, not just at initial acquisition. **This changes
+  deterministic combat resolution** — per the source doc, re-run the
+  Hard-vs-Hard `--batch` pairing at this session's end and record whether
+  the S6-documented positional asymmetry (right/`ai`-slot wins 5/5 at
+  545.1s) changed, resolved, or persists. Don't assume either outcome
+  going in.
+- **Explicit decision this session rests on (see open question #2):**
+  combat range/acquisition checks (`combat.js`, `supply.js`, `world.js` —
+  all currently `Math.abs(x1-x2)`) stay 1D. `y` becomes real,
+  actively-maintained sim state for positioning/formations only — not a
+  switch to 2D Euclidean targeting. Flag before starting if that's wrong.
+**Stop condition:** Spawn medium/large mixed armies under each command;
+screenshot confirms units occupy visually distinct slots (no stacked
+blobs) with warriors forming the outer/front line and archers behind
+under Defend. Force a rank past capacity and confirm a second column
+forms in front, not overlapping the first. Zero living warriors → archers
+hold, don't advance, don't freeze permanently (purchase a warrior mid-hold
+and confirm archers resume escorted advance). Archer speed increase
+confirmed against the tuned constant. Confirm targeting priority live: an
+attacker parked on an enemy structure switches to a living defender that
+walks into range; confirm statue-gating still holds (structures still
+must die first when no defenders/miners are reachable). `node
+tools/headless.js` (both default invariant mode and one `--batch`
+pairing) still passes — confirms the formation and targeting changes
+introduced no RNG and no invariant regressions. Interim baseline: re-run
+`--batch` across all 6 pairings, record whether the Hard-vs-Hard
+positional asymmetry changed/resolved/persists, and note (not necessarily
+fix) any other win-rate/timing shift from formation-driven pathing
+changing time-to-engage.
+
+### S8 — Scale + economy
+**Build:** zoom (item 7), cap/supply rework + 100-unit stress test
+(item 9), structure cost doubling (item 10), build times + production
+queue (item 11), army readout HUD (item 12, since it displays the queue
+this session builds) — the heavy balance session, since build times
+"change opening pacing more than any other item" per the source doc.
+- **Zoom:** new `camera.zoom` state (default per open question #5:
+  `CONFIG.CAMERA_ZOOM` render-time scale multiplier, sim stays in
+  unscaled world px). Touches every draw call in `renderer.js`,
+  `stickFigure.js`, and `ui.js` that currently computes screen position
+  as raw `x - camera.x` with no scale factor — audit all of them, not
+  just the obvious ones.
+- **Cap/supply rework:** implement the split from open question #4 (or
+  the user's adjustment) in `config.js`; `getCap` (`supply.js`) math
+  itself doesn't need to change, only the constants. Stress-spawn tool
+  (`main.js`'s `spawnStressTest`, currently hardcoded to 20-per-side/40
+  total) updated to spawn 50-per-side/100 total regardless of the final
+  cap, keeping its existing `homeX`/`enemyHomeX` pinning workaround.
+  **Dependency on S7:** re-verify S7's formation/multi-column system at
+  100-unit scale, not just re-confirm the old 40-unit stress case —
+  slot-capacity constants chosen in S7 need headroom for this.
+- **Structure cost:** `STRUCTURE_COST` 150 → 300 in `config.js`. Note for
+  the AI re-tuning pass below: `behavior.js`'s reactive
+  cap-block-triggers-`buyStructure` path gets meaningfully slower to
+  afford after this change — watch for it, don't assume it's fine.
+- **Production queue:** new `sim/systems/production.js` +
+  `world.teams[team].productionQueue` (per §2.7). `buyUnit`/`buyHero`/
+  `buyStructure` (`economy.js`) split into "validate + deduct gold +
+  enqueue" (unchanged signatures/return shape, so the AI's
+  `attemptPurchase`/`maybeManageHero` in `behavior.js` keep working with
+  zero AI-side code changes — no AI-only economy path) vs. "materialize
+  entity," the latter now gated on the queue timer elapsing. Validation
+  (gold/cap) happens once at enqueue time only — no re-check at
+  completion (the brief doesn't specify a re-check fallback, so don't
+  invent one). New config: `MINER_BUILD_TIME: 5`, `WARRIOR_BUILD_TIME:
+  10`, `ARCHER_BUILD_TIME: 12`, `STRUCTURE_BUILD_TIME: 20`,
+  `HERO_BUILD_TIME: 30`. Hero respawn cooldown
+  (`heroCooldownTimer`, decremented independently in
+  `heroes.js`'s `updateHeroCooldowns`) runs in parallel with, not stacked
+  on top of, the queue's 30s hero build time — verify this explicitly,
+  it's the easiest part of this session to get quietly wrong.
+  `ui.js`'s build menu gains an active-build-progress + queued-items
+  display, extending the existing disabled-reason label pattern from S6
+  (`getBuildButtonDisabledReason`/`PURCHASE_REASON_TEXT`) with a new
+  "queued" state distinct from "can't afford."
+- **Army readout HUD:** persistent, own-team-only unit count by kind
+  (e.g. "24 miners · 12 warriors · 5 archers") in `ui.js`'s HUD, reusing
+  the same per-team unit array the build menu already reads. Doubles as
+  the production-queue display above — same panel, not a separate
+  widget. Own team only, never the enemy's — showing enemy composition
+  would leak exactly the off-screen intel the camera-culling rule (§2.4)
+  is designed to withhold; this needs an explicit check that no enemy-team
+  data path feeds this panel.
+- **AI re-tuning:** `ai/difficulties.js`'s `decisionInterval`,
+  `heroPurchaseDelay`, `minArmyToAttack`, and build-cycle ordering all
+  need re-tuning now that purchases no longer materialize instantly — the
+  AI's `armyPower`/`countCombatUnits` reasoning in `behavior.js` will see
+  a smaller army than its recent spending implies for a 5–30s window per
+  purchase. This is this session's real balance work, not a footnote.
+**Stop condition:** Purchase a unit — gold deducts immediately, unit
+doesn't appear until its build time elapses; queue a second item and
+confirm it starts only once the first completes. Kill a hero, confirm the
+30s respawn cooldown; separately confirm a fresh hero purchase after
+cooldown clears takes exactly 30s to materialize (not 60s stacked).
+Stress-spawn 100 units, hold ~60fps on a typical laptop (replaces the v1
+"~40 units" criterion — this is the brief's explicit new stress target).
+Default zoom visibly shows more battlefield than S6's view. New cap
+verified live via `getCap`. Structure costs confirmed at 300g. Army
+readout HUD shows the correct live per-kind own-team count plus active
+build progress and queue contents; confirm no enemy-team data is ever
+read by the panel (code-path check, not just visual). Both
+`tools/headless.js` modes pass with queue-aware invariants (gold deducted
+once, at enqueue — never double-charged, never charged with no
+corresponding queue entry). **Full `--batch` re-baseline across all 6
+difficulty pairings, recorded in this file's Status section**, replacing
+every S5/S6 figure now invalidated by cap/cost/queue changes — including
+whether the documented Hard-vs-Medium stalemate and the Hard-vs-Hard
+positional asymmetry both survive.
+
+### S9 — Visuals + menus + Watch AI
+**Build:** parallax (item 13), landing page + settings (item 14), Watch AI
+including the Hard-vs-Hard asymmetry root-cause and seeded PRNG
+(item 15) — last, because Watch AI has the session's only genuine
+unknowns and benefits from S8's balance work being finished first.
+- **Parallax:** new `render/parallax.js`, 2–3 depth layers scrolling at
+  fractions of `camera.x` (e.g. 0.2×/0.5×/0.8×), procedural line-drawn
+  horizon/mountains/trees/bushes. Render-only, zero sim impact — lowest-
+  risk item in all of S7–S9.
+- **Landing page:** `matchState` gains a `'menu'` value as the actual
+  initial state (`world.js`'s `createWorld`, currently `'playing'`);
+  `main.js`'s boot sequence (currently `createWorld()` + immediate live
+  match at module load) changes to start in `'menu'` instead.
+  `tick.js`'s existing `if (world.matchState !== 'playing') return;`
+  guard already no-ops ticking for `'menu'` for free — confirm this holds
+  rather than assuming it. New `ui.js` screens: Play (→ difficulty select
+  → `resetMatch(difficulty)`, reusing the existing function), Watch AI,
+  Settings. Settings scope per open question #6: FPS-overlay toggle +
+  default-difficulty only; game speed deferred.
+- **Watch AI:** both AI teams get a `difficulty` set (reusing
+  `world.teams[team].difficulty`, same mechanism `--batch` already uses),
+  player input and the build-menu click handler suppressed, camera
+  becomes freely pannable (no hero-follow, no edge-scroll-only
+  restriction).
+- **Hard-vs-Hard asymmetry root-cause:** start from S8's re-baseline
+  result, not the original S6 figures — S7's targeting-priority change
+  (item 6) explicitly may have altered or incidentally fixed this, so
+  confirm current status first rather than assuming the 545.1s/5-of-5
+  pattern still holds. If it persists, genuine debugging work — don't
+  assume the cause going in. Worth checking first, not yet confirmed:
+  tie-breaking behavior in `findNearestEnemyWithin`/`findAttackTarget`
+  (`world.js`/`supply.js`), and the fixed `['player', 'ai']` iteration
+  order in `updateAiDecisions` (`behavior.js`) giving `player` a
+  one-decision-tick head start every cycle, compounding over a
+  multi-minute match. Budget real investigation time; it's acceptable to
+  end this session with a documented "couldn't fully isolate it" if
+  that's the honest outcome.
+- **Seeded PRNG:** new `sim/rng.js` (seedable/reproducible, e.g.
+  mulberry32 — no crypto dependency needed), `seed` threaded through
+  `createWorld(seed)`, seed shown/selectable in the Watch AI screen,
+  `tools/headless.js` gains `--seed=N`. Scope of actual randomization per
+  the overridden answer to open question #7: wire **exactly one**
+  variation point — a seed-derived jitter of ±10–15% applied to each
+  team's `decisionTimer` reset in `updateAiDecisions` (`behavior.js`,
+  currently a flat `difficulty.decisionInterval` with zero variance) —
+  small enough to need no dedicated balance pass. No other gameplay
+  randomization in v2. Verify both directions explicitly: same seed
+  across two headless runs produces a byte-for-byte identical match
+  trace; two different seeds produce genuinely different match lengths.
+**Stop condition:** Parallax renders at 2–3 visible depths, scrolling
+correctly with camera pan. Fresh page load shows the landing page, not a
+live match. Play → difficulty select → match works end-to-end. Watch AI
+runs two Hard AIs with player input/build UI confirmed suppressed and
+free camera confirmed pannable across the full world width. Settings
+toggles (FPS overlay, default difficulty) take effect live. H-vs-H
+asymmetry has either a documented root cause, a documented "S7 already
+fixed it," or a documented, honest account of why it couldn't be fully
+isolated. Seeded PRNG: same seed via `--seed=N` produces a byte-for-byte
+identical match trace across repeated headless runs; two different seeds
+produce measurably different match lengths via the decision-interval
+jitter. Zero console errors. Re-confirm (not
+re-derive from scratch) that win/lose, rematch, and difficulty-change
+still work correctly now that a menu sits in front of the match — this
+was an S6 acceptance criterion and the menu must not have silently broken
+it.
 
 ---
 
