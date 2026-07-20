@@ -8,10 +8,11 @@
 //     Scripted invariant check (default): gold never negative, cap never
 //     exceeded, statue immune while structures stand.
 //
-//   node tools/headless.js --batch --player=<easy|medium|hard> --enemy=<easy|medium|hard> --trials=N [--ticks=N]
+//   node tools/headless.js --batch --player=<easy|medium|hard> --enemy=<easy|medium|hard> --trials=N [--ticks=N] [--seed=N]
 //     Runs N AI-vs-AI trials at the given difficulty pairing and reports
 //     win rate / match length — the AI-vs-AI evaluation tool PLAN.md §2.5
-//     designed this file toward from the start.
+//     designed this file toward from the start. With --seed, trial i uses
+//     seed+i (reproducible whole-batch); omitted, trial i uses Date.now()+i.
 
 function getArg(args, name, fallback) {
   const prefix = `--${name}=`;
@@ -27,6 +28,7 @@ async function runInvariantCheck() {
   const { setTeamCommand } = await import('../src/sim/systems/commands.js');
 
   const world = createWorld();
+  world.matchState = 'playing'; // createWorld() now starts in 'menu' (S9) — this runner drives a match directly
 
   for (const team of ['player', 'ai']) {
     buyUnit(world, team, 'miner');
@@ -101,12 +103,17 @@ async function runBatch(args) {
   // ~1000s now take up to ~1400s), so the old default was cutting off
   // matches that go on to resolve cleanly, misreporting them "undecided."
   const maxTicks = parseInt(getArg(args, 'ticks', '180000'), 10); // ~3000 simulated seconds
+  const baseSeed = getArg(args, 'seed', undefined);
 
   const dt = 1 / 60;
   const results = [];
 
   for (let trial = 0; trial < trials; trial++) {
-    const world = createWorld();
+    // Date.now() + trial (not bare Date.now()) avoids two trials in the
+    // same millisecond silently sharing a seed for short matches.
+    const trialSeed = baseSeed !== undefined ? Number(baseSeed) + trial : Date.now() + trial;
+    const world = createWorld(trialSeed);
+    world.matchState = 'playing'; // createWorld() now starts in 'menu' (S9) — this runner drives a match directly
     world.teams.player.difficulty = playerDifficulty;
     world.teams.ai.difficulty = enemyDifficulty;
 

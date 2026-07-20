@@ -1,8 +1,17 @@
 import { CONFIG } from '../config.js';
+import { createRng } from './rng.js';
 
 let nextId = 1;
 
-export function createWorld() {
+// Each team gets its own RNG stream, derived from one master seed but never
+// sharing a draw counter — same seed reproduces an identical trace for both
+// teams regardless of which team's decision timer happens to elapse first
+// on a given tick (see sim/ai/behavior.js's jitter consumer).
+export function createWorld(seed = Date.now()) {
+  const masterRng = createRng(seed);
+  const playerRng = createRng(masterRng.next() * 2 ** 32);
+  const aiRng = createRng(masterRng.next() * 2 ** 32);
+
   return {
     units: [],
     projectiles: [],
@@ -18,6 +27,7 @@ export function createWorld() {
         decisionTimer: 0,
         buildIndex: 0,
         productionQueue: [], // S8: sequential FIFO — see sim/systems/production.js
+        rng: playerRng,
       },
       ai: {
         gold: CONFIG.STARTING_GOLD,
@@ -29,6 +39,7 @@ export function createWorld() {
         decisionTimer: 0,
         buildIndex: 0,
         productionQueue: [],
+        rng: aiRng,
       },
     },
     mines: {
@@ -39,10 +50,17 @@ export function createWorld() {
       player: createStatue('player', CONFIG.PLAYER_HOME_X, CONFIG.GROUND_Y),
       ai: createStatue('ai', CONFIG.AI_HOME_X, CONFIG.GROUND_Y),
     },
-    matchState: 'playing',
+    matchState: 'menu',
     matchElapsedTime: 0,
     aiMemory: {},
   };
+}
+
+// Watch AI mode: both teams are AI-controlled (a normal PvE match only ever
+// sets the 'ai' team's difficulty, never 'player's). Single source of truth
+// reused by camera/main/ui to gate input suppression and free-pan.
+export function isWatchAiMatch(world) {
+  return world.teams.player.difficulty !== null && world.teams.ai.difficulty !== null;
 }
 
 export function createUnit(kind, team, x, y) {

@@ -1,5 +1,5 @@
 import { CONFIG } from './config.js';
-import { createWorld, createUnit } from './sim/world.js';
+import { createWorld, createUnit, isWatchAiMatch } from './sim/world.js';
 import { createAccumulator } from './sim/loop.js';
 import { runTick } from './sim/tick.js';
 import { setTeamCommand } from './sim/systems/commands.js';
@@ -10,11 +10,16 @@ import {
   getBuildMenuButtons,
   getRematchButtonRect,
   getDifficultyButtonRects,
+  getBackToMenuButtonRect,
+  getMainMenuButtonRects,
+  getPlayDifficultyRects,
+  getWatchSetupRects,
+  getSettingsRects,
   PURCHASE_REASON_TEXT,
 } from './render/ui.js';
 import { createCamera, updateCamera } from './render/camera.js';
 import { bindDebugKeys } from './input/keyboard.js';
-import { bindClick, pointInRect, bindMouseMove } from './input/mouse.js';
+import { bindClick, pointInRect, bindMouseMove, bindDrag } from './input/mouse.js';
 import { createKeyState } from './input/keyState.js';
 
 const DEFAULT_DIFFICULTY = 'medium';
@@ -24,12 +29,21 @@ canvas.width = CONFIG.VIEWPORT_WIDTH;
 canvas.height = CONFIG.CANVAS_HEIGHT;
 const ctx = canvas.getContext('2d');
 
-let world = createWorld();
-world.teams.ai.difficulty = DEFAULT_DIFFICULTY;
+// Persistent UI state — deliberately not part of `world`, which is fully
+// replaced on every resetMatch()/Watch-AI-start, so settings and menu
+// navigation survive across matches.
+const uiState = {
+  menuScreen: 'main', // 'main' | 'playDifficulty' | 'watchSetup' | 'settings'
+  settings: { fpsVisible: false, defaultDifficulty: DEFAULT_DIFFICULTY },
+  watchSetup: { playerDifficulty: 'hard', aiDifficulty: 'hard', seed: null },
+};
+
+let world = createWorld(); // starts in matchState 'menu'
 let uiMessage = { text: '', timer: 0 };
 const camera = createCamera();
 const keyState = createKeyState();
 let mouseX = null;
+let dragDeltaX = 0;
 
 function showMessage(text) {
   uiMessage = { text, timer: 2 };
@@ -53,32 +67,57 @@ function attemptBuyHero(team, kind) {
   return result;
 }
 
-function resetMatch(difficulty = world.teams.ai.difficulty ?? DEFAULT_DIFFICULTY) {
+// Default keeps Rematch on the just-ended match's own difficulty (unchanged
+// v1 behavior); only falls back to the Settings default if that's somehow
+// unset. Play's difficulty-select screen always passes an explicit arg.
+function resetMatch(difficulty = world.teams.ai.difficulty ?? uiState.settings.defaultDifficulty) {
   world = createWorld();
+  world.matchState = 'playing';
   world.teams.ai.difficulty = difficulty;
   uiMessage = { text: '', timer: 0 };
   camera.x = 0;
 }
 
+function startWatchAiMatch(playerDifficulty, aiDifficulty, seed) {
+  const resolvedSeed = seed ?? Date.now();
+  world = createWorld(resolvedSeed);
+  world.matchState = 'playing';
+  world.teams.player.difficulty = playerDifficulty;
+  world.teams.ai.difficulty = aiDifficulty;
+  uiMessage = { text: '', timer: 0 };
+  camera.x = 0;
+  // Captured even if "Random" was picked, so a spectator can note/reuse a
+  // good match's seed afterward.
+  uiState.watchSetup.seed = resolvedSeed;
+}
+
+function backToMenu() {
+  world = createWorld();
+  uiState.menuScreen = 'main';
+  camera.x = 0;
+}
+
 function toggleHeroControl() {
+  if (isWatchAiMatch(world)) return;
   const hero = world.units.find((u) => u.team === 'player' && u.isHero && u.state !== 'dying');
   if (!hero) return;
   hero.controlled = !hero.controlled;
 }
 
 function attackWithControlledHero() {
+  if (isWatchAiMatch(world)) return;
   const hero = world.units.find((u) => u.team === 'player' && u.isHero && u.controlled);
   if (hero) attemptHeroAttack(world, hero);
 }
 
 function specialWithControlledHero() {
+  if (isWatchAiMatch(world)) return;
   const hero = world.units.find((u) => u.team === 'player' && u.isHero && u.controlled);
   if (hero) activateSpecial(world, hero);
 }
 
-let fpsVisible = false;
 function toggleFpsOverlay() {
-  fpsVisible = !fpsVisible;
+  uiState.settings.fpsVisible = !uiState.settings.fpsVisible;
 }
 
 // Debug-only stress scenario for the brief's "100 units @ 60fps" stress
@@ -120,13 +159,21 @@ function spawnStressTest() {
   }
 }
 
+// Watch AI has no player-controlled side — gate the player's own command
+// keys the same way the hero-control functions above already are.
+function setPlayerCommand(command) {
+  if (isWatchAiMatch(world)) return;
+  setTeamCommand(world, 'player', command);
+}
+
 // The 'ai' team now makes its own decisions (sim/ai/behavior.js) — no
 // more keyboard stand-in for it. Only the player's own commands and hero
-// controls remain bound.
+// controls remain bound. f/s stay active during Watch AI — dev tools, not
+// gameplay input.
 bindDebugKeys({
-  q: () => setTeamCommand(world, 'player', 'attack'),
-  w: () => setTeamCommand(world, 'player', 'defend'),
-  e: () => setTeamCommand(world, 'player', 'retreat'),
+  q: () => setPlayerCommand('attack'),
+  w: () => setPlayerCommand('defend'),
+  e: () => setPlayerCommand('retreat'),
   h: () => toggleHeroControl(),
   j: () => attackWithControlledHero(),
   k: () => specialWithControlledHero(),
@@ -134,7 +181,101 @@ bindDebugKeys({
   s: () => spawnStressTest(),
 });
 
+function handleMenuClick(x, y) {
+  switch (uiState.menuScreen) {
+    case 'playDifficulty': {
+      const rects = getPlayDifficultyRects(canvas);
+      if (pointInRect(x, y, rects.back)) {
+        uiState.menuScreen = 'main';
+        return;
+      }
+      for (const { difficulty, rect } of rects.difficulty) {
+        if (pointInRect(x, y, rect)) {
+          resetMatch(difficulty);
+          uiState.menuScreen = 'main';
+          return;
+        }
+      }
+      return;
+    }
+    case 'watchSetup': {
+      const rects = getWatchSetupRects(canvas);
+      if (pointInRect(x, y, rects.back)) {
+        uiState.menuScreen = 'main';
+        return;
+      }
+      if (pointInRect(x, y, rects.reroll)) {
+        uiState.watchSetup.seed = Date.now();
+        return;
+      }
+      if (pointInRect(x, y, rects.start)) {
+        startWatchAiMatch(uiState.watchSetup.playerDifficulty, uiState.watchSetup.aiDifficulty, uiState.watchSetup.seed);
+        uiState.menuScreen = 'main';
+        return;
+      }
+      for (const { difficulty, rect } of rects.playerDifficulty) {
+        if (pointInRect(x, y, rect)) {
+          uiState.watchSetup.playerDifficulty = difficulty;
+          return;
+        }
+      }
+      for (const { difficulty, rect } of rects.aiDifficulty) {
+        if (pointInRect(x, y, rect)) {
+          uiState.watchSetup.aiDifficulty = difficulty;
+          return;
+        }
+      }
+      return;
+    }
+    case 'settings': {
+      const rects = getSettingsRects(canvas);
+      if (pointInRect(x, y, rects.back)) {
+        uiState.menuScreen = 'main';
+        return;
+      }
+      if (pointInRect(x, y, rects.fpsToggle)) {
+        toggleFpsOverlay();
+        return;
+      }
+      for (const { difficulty, rect } of rects.defaultDifficulty) {
+        if (pointInRect(x, y, rect)) {
+          uiState.settings.defaultDifficulty = difficulty;
+          return;
+        }
+      }
+      return;
+    }
+    default: {
+      for (const { id, rect } of getMainMenuButtonRects(canvas)) {
+        if (!pointInRect(x, y, rect)) continue;
+        if (id === 'play') uiState.menuScreen = 'playDifficulty';
+        else if (id === 'watchAi') uiState.menuScreen = 'watchSetup';
+        else if (id === 'settings') uiState.menuScreen = 'settings';
+        return;
+      }
+    }
+  }
+}
+
+// Only "Back to Menu" is clickable during Watch AI (shown on the win/lose
+// overlay) — the build menu is hidden and player commands are suppressed,
+// so there's nothing else on screen a click could meaningfully hit.
+function handleWatchAiClick(x, y) {
+  if (world.matchState !== 'won' && world.matchState !== 'lost') return;
+  if (pointInRect(x, y, getBackToMenuButtonRect(canvas))) backToMenu();
+}
+
 bindClick(canvas, (x, y) => {
+  if (world.matchState === 'menu') {
+    handleMenuClick(x, y);
+    return;
+  }
+
+  if (isWatchAiMatch(world)) {
+    handleWatchAiClick(x, y);
+    return;
+  }
+
   if (world.matchState !== 'playing') {
     if (pointInRect(x, y, getRematchButtonRect(canvas))) {
       resetMatch();
@@ -160,6 +301,10 @@ bindClick(canvas, (x, y) => {
 
 bindMouseMove(canvas, (x) => {
   mouseX = x;
+});
+
+bindDrag(canvas, (dx) => {
+  dragDeltaX += dx;
 });
 
 const accumulator = createAccumulator(1000 / CONFIG.TICK_HZ);
@@ -188,10 +333,11 @@ function frame(time) {
   const deltaMs = time - lastTime;
   lastTime = time;
   accumulator.advance(deltaMs, tick);
-  updateCamera(camera, world, mouseX, deltaMs / 1000);
-  render(ctx, world, camera, uiMessage);
+  updateCamera(camera, world, mouseX, deltaMs / 1000, dragDeltaX);
+  dragDeltaX = 0; // consumed for this frame — only read inside updateCamera's Watch-AI branch, harmless otherwise
+  render(ctx, world, camera, uiMessage, uiState);
   if (deltaMs > 0) fps = fps * 0.9 + (1000 / deltaMs) * 0.1; // smoothed, avoids a jittery per-frame readout
-  if (fpsVisible) drawFpsOverlay(ctx, fps, world.units.length);
+  if (uiState.settings.fpsVisible) drawFpsOverlay(ctx, fps, world.units.length);
   requestAnimationFrame(frame);
 }
 
@@ -221,8 +367,12 @@ window.__heroSpecial = specialWithControlledHero;
 window.__spawnStressTest = spawnStressTest;
 window.__toggleFpsOverlay = toggleFpsOverlay;
 window.__fps = () => fps;
+window.__uiState = uiState;
+window.__startWatchAiMatch = startWatchAiMatch;
+window.__backToMenu = backToMenu;
 window.__forceTicks = (n = CONFIG.TICK_HZ) => {
   for (let i = 0; i < n; i++) tick(1 / CONFIG.TICK_HZ);
-  updateCamera(camera, world, mouseX, n / CONFIG.TICK_HZ);
-  render(ctx, world, camera, uiMessage);
+  updateCamera(camera, world, mouseX, n / CONFIG.TICK_HZ, dragDeltaX);
+  dragDeltaX = 0;
+  render(ctx, world, camera, uiMessage, uiState);
 };

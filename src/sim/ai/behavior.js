@@ -19,7 +19,12 @@ export function updateAiDecisions(world, dt) {
     if (teamState.decisionTimer > 0) continue;
 
     const difficulty = DIFFICULTIES[difficultyName];
-    teamState.decisionTimer = difficulty.decisionInterval;
+    // Seed-derived jitter (S9): the only variation point in the sim's
+    // otherwise fully deterministic decision loop — small enough to need
+    // no dedicated balance pass, but enough that Watch AI shows a
+    // genuinely different match per seed instead of an identical replay.
+    const jitter = teamState.rng.nextRange(-CONFIG.AI_DECISION_JITTER, CONFIG.AI_DECISION_JITTER);
+    teamState.decisionTimer = difficulty.decisionInterval * (1 + jitter);
     runDecision(world, team, difficulty);
   }
 }

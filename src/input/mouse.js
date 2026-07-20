@@ -26,3 +26,26 @@ export function bindMouseMove(canvas, handler) {
   });
   canvas.addEventListener('mouseleave', () => handler(null));
 }
+
+// Click-and-drag panning (Watch AI's free camera). mousedown arms it on the
+// canvas; mousemove/mouseup listen on window so a drag that leaves the
+// canvas mid-gesture still resolves correctly instead of getting stuck.
+export function bindDrag(canvas, handler) {
+  let dragging = false;
+  let lastX = 0;
+
+  canvas.addEventListener('mousedown', (event) => {
+    dragging = true;
+    lastX = event.clientX;
+  });
+  window.addEventListener('mousemove', (event) => {
+    if (!dragging) return;
+    const scaleX = canvas.width / canvas.getBoundingClientRect().width;
+    const deltaX = (event.clientX - lastX) * scaleX;
+    lastX = event.clientX;
+    handler(deltaX);
+  });
+  window.addEventListener('mouseup', () => {
+    dragging = false;
+  });
+}

@@ -1,5 +1,5 @@
 import { CONFIG } from '../config.js';
-import { isAliveEntity } from '../sim/world.js';
+import { isAliveEntity, isWatchAiMatch } from '../sim/world.js';
 
 // Camera state is deliberately not part of `world` — it's a rendering/
 // viewport concern, not simulation state.
@@ -15,7 +15,17 @@ export function createCamera() {
 // against the raw canvas width since mouseX is a real screen coordinate.
 const VISIBLE_WORLD_WIDTH = CONFIG.VIEWPORT_WIDTH / CONFIG.CAMERA_ZOOM;
 
-export function updateCamera(camera, world, mouseX, dt) {
+export function updateCamera(camera, world, mouseX, dt, dragDeltaX = 0) {
+  // Watch AI: neither side is player-controlled, so hero-follow/edge-scroll
+  // don't apply — free click-and-drag panning instead. 1:1 with mouse
+  // movement (corrected for render-time zoom), so no sensitivity constant
+  // is needed beyond the existing world-bounds clamp below.
+  if (isWatchAiMatch(world)) {
+    camera.x += dragDeltaX / CONFIG.CAMERA_ZOOM;
+    camera.x = Math.max(0, Math.min(CONFIG.WORLD_WIDTH - VISIBLE_WORLD_WIDTH, camera.x));
+    return;
+  }
+
   const controlledHero = world.units.find((u) => u.team === 'player' && u.isHero && u.controlled && isAliveEntity(u));
 
   if (controlledHero) {

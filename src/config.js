@@ -20,6 +20,7 @@ export const CONFIG = {
   CAMERA_ZOOM: 0.7, // S8: render-time scale only — sim stays in unscaled world px. <1 shows more battlefield at once.
 
   AI_SIGHT_RANGE: 260, // px; how close an AI unit must be to see an enemy for scouting purposes
+  AI_DECISION_JITTER: 0.125, // S9: ±12.5% seed-derived variance on each team's decisionInterval reset
 
   DEATH_DURATION: 0.5, // seconds a unit spends toppling before removal
   ATTACK_ANIM_DURATION: 0.18, // seconds the attack lunge pose holds
@@ -56,6 +57,19 @@ export const CONFIG = {
   FORMATION_SLOTS_PER_RANK: 6, // unit count before a rank overflows into a new column
   FORMATION_Y_BAND: 200, // px of vertical spread a full rank occupies — (SLOTS_PER_RANK - 1) * SPACING_Y, fits within GROUND_Y's ~240px of headroom above the HUD
   ARCHER_COHESION_DISTANCE: 150, // px — archers under Defend hold rather than advance ahead of/without a warrior escort this close
+
+  // S9 parallax background (render/parallax.js) — render-only, no sim impact.
+  // Speeds are fractions of camera.x; farther/slower layers listed first.
+  PARALLAX_LAYER_SPEEDS: [0.2, 0.5, 0.8],
+  PARALLAX_MOUNTAIN_TILE_WIDTH: 400,
+  PARALLAX_MOUNTAIN_HEIGHT: 90,
+  PARALLAX_MOUNTAIN_BASE_Y: 160,
+  PARALLAX_TREE_TILE_WIDTH: 150,
+  PARALLAX_TREE_HEIGHT: 60,
+  PARALLAX_TREE_BASE_Y: 300,
+  PARALLAX_BUSH_TILE_WIDTH: 70,
+  PARALLAX_BUSH_HEIGHT: 18,
+  PARALLAX_BUSH_BASE_Y: 420,
 
   BASE_HERO_COST: 600,
   HERO_COST_MULTIPLIER: 1.5, // per death

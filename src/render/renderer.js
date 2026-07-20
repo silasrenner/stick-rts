@@ -1,7 +1,9 @@
 import { CONFIG } from '../config.js';
+import { isWatchAiMatch } from '../sim/world.js';
 import { drawStickFigure } from './stickFigure.js';
 import { drawStatue, drawStructure, drawMine, drawHealthBar } from './structures.js';
-import { drawHUD, drawBuildMenu, drawWinLoseOverlay } from './ui.js';
+import { drawHUD, drawBuildMenu, drawWinLoseOverlay, drawMenuScreen } from './ui.js';
+import { drawParallax } from './parallax.js';
 
 const LEGEND_LINE =
   'Your command: Q Attack  W Defend  E Retreat   |   Hero: H Toggle control  ←/→ Move  J Attack  K Special   |   Debug: F FPS  S Stress-spawn';
@@ -11,8 +13,10 @@ const LEGEND_LINE =
 // of the "no off-screen enemy info" rule: if it isn't drawn, it isn't
 // known. HUD/build menu/legend/overlay are screen-space and unaffected
 // by camera position.
-export function render(ctx, world, camera, uiMessage) {
+export function render(ctx, world, camera, uiMessage, uiState) {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+  drawParallax(ctx, camera);
 
   ctx.save();
   ctx.translate(-camera.x, 0);
@@ -48,6 +52,15 @@ export function render(ctx, world, camera, uiMessage) {
 
   ctx.restore();
 
+  // The landing menu replaces the HUD/build-menu/win-lose stack entirely —
+  // drawHUD has no matchState guard of its own (it reads world.teams.player.*
+  // unconditionally), so this early return is required, not optional, to
+  // avoid "Gold: 0 / Units: 0" bleeding onto the menu.
+  if (world.matchState === 'menu') {
+    drawMenuScreen(ctx, uiState);
+    return;
+  }
+
   drawLegend(ctx, world);
   drawHUD(ctx, world, uiMessage);
   drawBuildMenu(ctx, world);
@@ -70,11 +83,21 @@ function drawProjectile(ctx, pos) {
 }
 
 function drawLegend(ctx, world) {
-  const difficulty = world.teams.ai.difficulty;
-  const label = difficulty ? difficulty[0].toUpperCase() + difficulty.slice(1) : 'none';
-
   ctx.fillStyle = '#8a8a96';
   ctx.font = '11px monospace';
+
+  if (isWatchAiMatch(world)) {
+    const label = (d) => d[0].toUpperCase() + d.slice(1);
+    ctx.fillText(
+      `Watching: ${label(world.teams.player.difficulty)} vs ${label(world.teams.ai.difficulty)}   |   Drag to pan camera`,
+      10,
+      ctx.canvas.height - 44
+    );
+    return;
+  }
+
+  const difficulty = world.teams.ai.difficulty;
+  const label = difficulty ? difficulty[0].toUpperCase() + difficulty.slice(1) : 'none';
   ctx.fillText(`AI difficulty: ${label}`, 10, ctx.canvas.height - 58);
   ctx.fillText(LEGEND_LINE, 10, ctx.canvas.height - 44);
 }

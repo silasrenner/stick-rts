@@ -1,7 +1,7 @@
 import { CONFIG } from '../config.js';
 import { canAfford, getUnitCount, hasLivingOrQueuedHero, getHeroCost, countQueued } from '../sim/systems/economy.js';
 import { getCap, livingStructures } from '../sim/systems/supply.js';
-import { isAliveEntity } from '../sim/world.js';
+import { isAliveEntity, isWatchAiMatch } from '../sim/world.js';
 
 const BUILD_MENU_ITEMS = [
   { kind: 'miner', action: 'unit', label: 'Miner', costFn: () => CONFIG.UNIT_STATS.miner.cost },
@@ -67,7 +67,10 @@ export function getBuildButtonDisabledReason(world, button) {
 }
 
 export function drawBuildMenu(ctx, world) {
-  if (world.matchState !== 'playing') return; // clicks are inert once the match ends; don't imply otherwise
+  // Clicks are inert once the match ends; don't imply otherwise. Also
+  // hidden during Watch AI — neither side is player-controlled, so a build
+  // menu that always affects 'player' would be misleading and clickable.
+  if (world.matchState !== 'playing' || isWatchAiMatch(world)) return;
 
   for (const button of getBuildMenuButtons(ctx.canvas)) {
     const reason = getBuildButtonDisabledReason(world, button);
@@ -193,14 +196,13 @@ const DIFFICULTY_BUTTON_WIDTH = 90;
 const DIFFICULTY_BUTTON_HEIGHT = 24;
 const DIFFICULTY_BUTTON_GAP = 10;
 
-// Below the Rematch button — clicking one resets the match at that
-// difficulty, fulfilling the brief's "win/lose screen offers rematch and
-// difficulty change."
-export function getDifficultyButtonRects(canvas) {
+// Row of 3 difficulty buttons centered on canvas at a given y — shared
+// layout math for the win/lose overlay and every S9 menu screen that picks
+// a difficulty (Play, Settings' default, Watch AI's two side pickers).
+function difficultyButtonRectsAt(canvas, y) {
   const totalWidth =
     DIFFICULTY_ORDER.length * DIFFICULTY_BUTTON_WIDTH + (DIFFICULTY_ORDER.length - 1) * DIFFICULTY_BUTTON_GAP;
   const startX = canvas.width / 2 - totalWidth / 2;
-  const y = canvas.height / 2 + 64;
 
   return DIFFICULTY_ORDER.map((difficulty, i) => ({
     difficulty,
@@ -213,8 +215,52 @@ export function getDifficultyButtonRects(canvas) {
   }));
 }
 
+// Below the Rematch button — clicking one resets the match at that
+// difficulty, fulfilling the brief's "win/lose screen offers rematch and
+// difficulty change."
+export function getDifficultyButtonRects(canvas) {
+  return difficultyButtonRectsAt(canvas, canvas.height / 2 + 64);
+}
+
+// Shared draw for any row of difficulty-button rects — highlights
+// `activeDifficulty` if it matches one of the rendered buttons.
+function drawDifficultyButtons(ctx, rects, activeDifficulty) {
+  for (const { difficulty, rect } of rects) {
+    const active = difficulty === activeDifficulty;
+    ctx.fillStyle = active ? '#3a4d3a' : '#2c2c33';
+    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    ctx.strokeStyle = active ? '#4caf50' : '#55555f';
+    ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+    ctx.fillStyle = '#e8e8ee';
+    ctx.font = '12px monospace';
+    ctx.fillText(difficulty[0].toUpperCase() + difficulty.slice(1), rect.x + rect.w / 2, rect.y + rect.h / 2 + 4);
+  }
+}
+
+function drawMenuButton(ctx, rect, label, active = false) {
+  ctx.fillStyle = active ? '#3a4d3a' : '#2c2c33';
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.strokeStyle = active ? '#4caf50' : '#55555f';
+  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.fillStyle = '#e8e8ee';
+  ctx.font = '14px monospace';
+  ctx.fillText(label, rect.x + rect.w / 2, rect.y + rect.h / 2 + 5);
+}
+
+export function getBackButtonRect(canvas) {
+  return { x: 20, y: 20, w: 80, h: 28 };
+}
+
+function drawBackButton(ctx) {
+  drawMenuButton(ctx, getBackButtonRect(ctx.canvas), '< Back');
+}
+
+export function getBackToMenuButtonRect(canvas) {
+  return { x: canvas.width / 2 - 70, y: canvas.height / 2 + 20, w: 140, h: 30 };
+}
+
 export function drawWinLoseOverlay(ctx, world) {
-  if (world.matchState === 'playing') return;
+  if (world.matchState !== 'won' && world.matchState !== 'lost') return;
 
   ctx.save();
   ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
@@ -224,6 +270,12 @@ export function drawWinLoseOverlay(ctx, world) {
   ctx.fillStyle = world.matchState === 'won' ? '#4caf50' : '#e03030';
   ctx.font = 'bold 32px monospace';
   ctx.fillText(world.matchState === 'won' ? 'Victory!' : 'Defeat', ctx.canvas.width / 2, ctx.canvas.height / 2 - 20);
+
+  if (isWatchAiMatch(world)) {
+    drawMenuButton(ctx, getBackToMenuButtonRect(ctx.canvas), 'Back to Menu');
+    ctx.restore();
+    return;
+  }
 
   const rect = getRematchButtonRect(ctx.canvas);
   ctx.fillStyle = '#2c2c33';
@@ -238,21 +290,140 @@ export function drawWinLoseOverlay(ctx, world) {
   ctx.fillStyle = '#8a8a96';
   ctx.fillText('Difficulty', ctx.canvas.width / 2, ctx.canvas.height / 2 + 58);
 
-  const activeDifficulty = world.teams.ai.difficulty;
-  for (const { difficulty, rect: btnRect } of getDifficultyButtonRects(ctx.canvas)) {
-    const active = difficulty === activeDifficulty;
-    ctx.fillStyle = active ? '#3a4d3a' : '#2c2c33';
-    ctx.fillRect(btnRect.x, btnRect.y, btnRect.w, btnRect.h);
-    ctx.strokeStyle = active ? '#4caf50' : '#55555f';
-    ctx.strokeRect(btnRect.x, btnRect.y, btnRect.w, btnRect.h);
-    ctx.fillStyle = '#e8e8ee';
-    ctx.font = '12px monospace';
-    ctx.fillText(
-      difficulty[0].toUpperCase() + difficulty.slice(1),
-      btnRect.x + btnRect.w / 2,
-      btnRect.y + btnRect.h / 2 + 4
-    );
-  }
+  drawDifficultyButtons(ctx, getDifficultyButtonRects(ctx.canvas), world.teams.ai.difficulty);
 
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------------
+// S9 landing menu — matchState 'menu'. uiState is main.js's own
+// (non-world) persistent UI state: { menuScreen, settings, watchSetup }.
+// ---------------------------------------------------------------------
+
+const MENU_BUTTON_WIDTH = 200;
+const MENU_BUTTON_HEIGHT = 40;
+const MENU_BUTTON_GAP = 16;
+const MENU_ITEMS = [
+  { id: 'play', label: 'Play' },
+  { id: 'watchAi', label: 'Watch AI' },
+  { id: 'settings', label: 'Settings' },
+];
+
+export function getMainMenuButtonRects(canvas) {
+  const totalHeight = MENU_ITEMS.length * MENU_BUTTON_HEIGHT + (MENU_ITEMS.length - 1) * MENU_BUTTON_GAP;
+  const startY = canvas.height / 2 - totalHeight / 2 + 20;
+  const x = canvas.width / 2 - MENU_BUTTON_WIDTH / 2;
+  return MENU_ITEMS.map((item, i) => ({
+    ...item,
+    rect: { x, y: startY + i * (MENU_BUTTON_HEIGHT + MENU_BUTTON_GAP), w: MENU_BUTTON_WIDTH, h: MENU_BUTTON_HEIGHT },
+  }));
+}
+
+function drawMainMenu(ctx) {
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#e8e8ee';
+  ctx.font = 'bold 40px monospace';
+  ctx.fillText('STICK RTS', ctx.canvas.width / 2, ctx.canvas.height / 2 - 100);
+
+  for (const { label, rect } of getMainMenuButtonRects(ctx.canvas)) {
+    drawMenuButton(ctx, rect, label);
+  }
+}
+
+export function getPlayDifficultyRects(canvas) {
+  return { difficulty: difficultyButtonRectsAt(canvas, canvas.height / 2), back: getBackButtonRect(canvas) };
+}
+
+function drawPlayDifficultyScreen(ctx) {
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#e8e8ee';
+  ctx.font = 'bold 22px monospace';
+  ctx.fillText('Select Difficulty', ctx.canvas.width / 2, ctx.canvas.height / 2 - 40);
+
+  const rects = getPlayDifficultyRects(ctx.canvas);
+  drawDifficultyButtons(ctx, rects.difficulty, null);
+  drawMenuButton(ctx, rects.back, '< Back');
+}
+
+const WATCH_ROW_LABEL_OFFSET = 24;
+
+export function getWatchSetupRects(canvas) {
+  return {
+    playerDifficulty: difficultyButtonRectsAt(canvas, 140),
+    aiDifficulty: difficultyButtonRectsAt(canvas, 220),
+    reroll: { x: canvas.width / 2 - 60, y: 280, w: 120, h: 28 },
+    start: { x: canvas.width / 2 - 60, y: 330, w: 120, h: 34 },
+    back: getBackButtonRect(canvas),
+  };
+}
+
+function drawWatchAiSetupScreen(ctx, uiState) {
+  const { playerDifficulty, aiDifficulty, seed } = uiState.watchSetup;
+  const rects = getWatchSetupRects(ctx.canvas);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#e8e8ee';
+  ctx.font = 'bold 20px monospace';
+  ctx.fillText('Watch AI', ctx.canvas.width / 2, 80);
+
+  ctx.font = '12px monospace';
+  ctx.fillStyle = '#8a8a96';
+  ctx.fillText('Left side', ctx.canvas.width / 2, 140 - WATCH_ROW_LABEL_OFFSET);
+  drawDifficultyButtons(ctx, rects.playerDifficulty, playerDifficulty);
+
+  ctx.fillStyle = '#8a8a96';
+  ctx.fillText('Right side', ctx.canvas.width / 2, 220 - WATCH_ROW_LABEL_OFFSET);
+  drawDifficultyButtons(ctx, rects.aiDifficulty, aiDifficulty);
+
+  ctx.fillStyle = '#8a8a96';
+  ctx.fillText(`Seed: ${seed ?? 'Random'}`, ctx.canvas.width / 2, 270);
+  drawMenuButton(ctx, rects.reroll, 'Reroll Seed');
+  drawMenuButton(ctx, rects.start, 'Start');
+  drawMenuButton(ctx, rects.back, '< Back');
+}
+
+export function getSettingsRects(canvas) {
+  return {
+    fpsToggle: { x: canvas.width / 2 - 50, y: 140, w: 100, h: 28 },
+    defaultDifficulty: difficultyButtonRectsAt(canvas, 220),
+    back: getBackButtonRect(canvas),
+  };
+}
+
+function drawSettingsScreen(ctx, uiState) {
+  const rects = getSettingsRects(ctx.canvas);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#e8e8ee';
+  ctx.font = 'bold 20px monospace';
+  ctx.fillText('Settings', ctx.canvas.width / 2, 80);
+
+  ctx.font = '12px monospace';
+  ctx.fillStyle = '#8a8a96';
+  ctx.fillText('FPS Overlay', ctx.canvas.width / 2, 116);
+  drawMenuButton(ctx, rects.fpsToggle, uiState.settings.fpsVisible ? 'On' : 'Off', uiState.settings.fpsVisible);
+
+  ctx.fillStyle = '#8a8a96';
+  ctx.fillText('Default Difficulty', ctx.canvas.width / 2, 196);
+  drawDifficultyButtons(ctx, rects.defaultDifficulty, uiState.settings.defaultDifficulty);
+
+  drawMenuButton(ctx, rects.back, '< Back');
+}
+
+export function drawMenuScreen(ctx, uiState) {
+  ctx.save();
+  switch (uiState.menuScreen) {
+    case 'playDifficulty':
+      drawPlayDifficultyScreen(ctx);
+      break;
+    case 'watchSetup':
+      drawWatchAiSetupScreen(ctx, uiState);
+      break;
+    case 'settings':
+      drawSettingsScreen(ctx, uiState);
+      break;
+    default:
+      drawMainMenu(ctx);
+  }
   ctx.restore();
 }

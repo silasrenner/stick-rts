@@ -6,6 +6,117 @@ state, decisions, and the next session's entry point. See
 
 ## Status
 
+**S9 complete (Visuals + menus + Watch AI).** Built per §5's S9 block, in
+dependency order: parallax backdrop (new `render/parallax.js`, 3 tiled
+layers scrolling at 0.2/0.5/0.8× `camera.x`, render-only — reads only
+`camera.x` and canvas size, zero `world` access); seeded PRNG (new
+`sim/rng.js`, mulberry32 — `createWorld(seed)` derives two independent
+per-team RNG streams so same-seed reproducibility holds regardless of
+tick-order interleaving; `tools/headless.js` gained `--seed=N`); a real
+landing menu (`matchState` gains `'menu'` as `createWorld()`'s actual
+initial state — the app no longer boots straight into a live match — with
+Play/Watch AI/Settings screens in `ui.js`, all sharing a factored-out
+`drawDifficultyButtons` helper now reused in 4 places instead of 1); Watch
+AI mode (both teams get a `difficulty`, reusing the exact mechanism
+`--batch` already exercised — zero new AI logic needed; free click-drag
+camera pan via a new `bindDrag` in `input/mouse.js` and a Watch-AI branch
+in `camera.js`'s `updateCamera`; player input and the build menu
+suppressed via a new `isWatchAiMatch(world)` helper).
+
+**Real bug caught before it could ship, not found live:** `drawWinLoseOverlay`'s
+old guard was `if (world.matchState === 'playing') return;` — that doesn't
+exclude `'menu'`, so once a third `matchState` value existed it would have
+rendered "Defeat" over the landing page on every fresh load. Caught by
+reading the actual guard condition against the new state space before
+wiring the menu in, not by seeing it break live. Fixed to
+`!== 'won' && !== 'lost'`.
+
+**Real regression caught during implementation, not shipped:** the plan's
+draft had `resetMatch`'s default difficulty argument fall back to the new
+Settings-driven default (`uiState.settings.defaultDifficulty`) unconditionally.
+That would have silently broken "Rematch keeps the just-ended match's own
+difficulty" (a working v1 behavior) — clicking Rematch on a Hard match would
+have reset to whatever the Settings default happened to be instead of Hard.
+Fixed to `world.teams.ai.difficulty ?? uiState.settings.defaultDifficulty`,
+preserving the original fallback chain and only using the new default when
+`ai.difficulty` is genuinely unset.
+
+**Hard-vs-Hard asymmetry investigation — mechanism found via direct ablation,
+not assumed.** The session's own re-baseline (`--batch --player=hard
+--enemy=hard --trials=10`, two independent seeds) came back a clean 5/10
+split both times — 20 real trials, no dominant side, versus S8's documented
+skew. Rather than credit this to S7's targeting-priority change (the
+plausible-sounding assumption), tested it directly: forcing
+`AI_DECISION_JITTER` to 0 reproduces the *exact* old behavior — `player`
+wins 10/10 at precisely 1229.7s every trial, completely seed-independent.
+**This session's own decision-timer jitter (Phase 2 of this session, not S7)
+is what actually broke the determinism.** Went further and ruled out both
+named hypotheses for the underlying mechanism by direct test, not
+assumption: with jitter still forced to 0, flipping `behavior.js`'s
+`['player','ai']` iteration order didn't change the winner (still 3/3
+`player`, exactly 1229.7s); reversing `world.units` iteration order in
+`findNearestEnemyWithin`/`findPriorityUnitWithin` also didn't change it
+(still 3/3, exactly 1229.7s). Both diagnostic edits reverted before
+continuing (`git diff` confirmed clean). Net honest outcome: the precise
+underlying mechanism that made the pre-jitter match deterministic is still
+unidentified — two plausible hypotheses were tested and ruled out rather
+than left unexamined — but the practical fix is known, shipped, and
+verified across 20 real trials, which is a stronger result than "found the
+root cause" would have been if that root cause turned out to be S7 (it
+isn't).
+
+**Verified live via `claude-in-chrome`** (fresh port 8020, per the
+established disk-cache lesson): fresh load shows the landing page with
+parallax visible behind the menu buttons, zero console errors; Play → Hard
+→ live match confirmed via `window.__world.matchState`/`ai.difficulty`;
+Settings' FPS toggle and default-difficulty both confirmed taking effect
+live (screenshotted "On" state and live fps counter, "Hard" highlight);
+regression-checked that Rematch and difficulty-change still work on a
+*normal* (non-Watch-AI) win/lose overlay after the menu now sits in front
+of every match (forced a Victory, clicked "Easy," confirmed
+`ai.difficulty` changed and `matchState` reset to `'playing'` via a real
+dispatched click, not scripted state mutation); Watch AI setup screen
+(Reroll Seed confirmed changing `uiState.watchSetup.seed`) → Start → both
+sides confirmed autonomously building/spending with zero player input
+(player side reached the unit cap unassisted); player-input suppression
+confirmed both by code path (`setPlayerCommand`'s early-return) and live
+(pressed `q`, `teams.player.command` stayed `'defend'`); build menu
+confirmed absent from the screenshot during Watch AI; free camera drag-pan
+confirmed via dispatched mousedown/mousemove/mouseup (`camera.x` moved
+0 → 857.14, matching the `dragDelta / CAMERA_ZOOM` math, and correctly
+clamped at the 0 floor when dragging past the left edge); forced a Watch AI
+match to end and confirmed "Back to Menu" renders instead of Rematch, and
+that clicking it resets `matchState` to `'menu'`. Zero console errors
+across the entire verification pass. `node tools/headless.js` (both
+default invariant mode and `--seed`-based `--batch` runs) passing
+throughout, including after the Phase 5 diagnostic edits were reverted.
+
+Files added: `src/render/parallax.js`, `src/sim/rng.js`. Modified:
+`src/config.js` (+parallax/jitter constants), `src/sim/world.js`
+(`createWorld(seed)`, per-team `rng`, `matchState` now starts `'menu'`,
+`isWatchAiMatch`), `src/sim/ai/behavior.js` (jittered decision timer),
+`src/render/ui.js` (menu screens, `drawDifficultyButtons` extraction,
+win/lose-overlay Watch AI branch, build-menu Watch AI guard),
+`src/render/renderer.js` (`drawParallax` call, `render()`'s menu branch,
+`drawLegend`'s Watch AI text), `src/render/camera.js` (`updateCamera`'s
+Watch AI free-pan branch), `src/input/mouse.js` (`bindDrag`), `src/main.js`
+(persistent `uiState`, menu/Watch-AI click routing, `startWatchAiMatch`,
+`backToMenu`, input-suppression guards), `tools/headless.js` (`--seed=N`,
+required `matchState = 'playing'` fix in both entry points now that
+`createWorld()` defaults to `'menu'`).
+
+Repo checkpoint not yet committed — pending explicit user request.
+
+**Next entry point:** S1–S9 (the full v1 + v2 roadmap) are now complete.
+No further planned session exists. The Hard-vs-Hard asymmetry's precise
+root mechanism remains open (two hypotheses ruled out, practical fix
+shipped and verified — see above) if AI-vs-AI internals become a focus
+again; otherwise what's left is user playtesting of the full v2 feature
+set (parallax, menus, Watch AI, seeded jitter) the same way v1's S6 closed
+out — no code changes queued until that surfaces specific feedback.
+
+---
+
 **S8 complete (Scale + economy).** Built per §5's S8 block: camera zoom
 (`CONFIG.CAMERA_ZOOM` 0.7, render-time scale only — `renderer.js`,
 `camera.js`'s clamp/hero-follow/cull-width all switched from raw
