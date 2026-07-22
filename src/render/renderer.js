@@ -19,13 +19,21 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   drawParallax(ctx, camera);
 
   ctx.save();
+  // S10: scale before translate — canvas composes transforms so the
+  // *last*-called op acts on points first, so scale-then-translate is what
+  // makes camera.x a world-space left-edge coordinate (screenX =
+  // zoom*(worldX - camera.x)), matching every consumer in camera.js
+  // (edge-scroll, hero-follow, pan clamps, cursor-anchored zoom). The old
+  // translate-then-scale order silently computed zoom*worldX - camera.x
+  // instead — invisible while zoom was a fixed constant, but it would
+  // break cursor-anchored zoom now that zoom is dynamic.
+  ctx.scale(camera.zoom, camera.zoom);
   ctx.translate(-camera.x, 0);
-  ctx.scale(CONFIG.CAMERA_ZOOM, CONFIG.CAMERA_ZOOM);
 
-  // Visible world span widens under zoom-out (ZOOM < 1) — cull against
+  // Visible world span widens under zoom-out (zoom < 1) — cull against
   // that, not the raw viewport width, or entities the zoom reveals get
   // wrongly culled. CAMERA_CULL_MARGIN is expressed in world px here too.
-  const visibleWorldWidth = CONFIG.VIEWPORT_WIDTH / CONFIG.CAMERA_ZOOM;
+  const visibleWorldWidth = CONFIG.VIEWPORT_WIDTH / camera.zoom;
   const visible = (x) =>
     x >= camera.x - CONFIG.CAMERA_CULL_MARGIN && x <= camera.x + visibleWorldWidth + CONFIG.CAMERA_CULL_MARGIN;
 

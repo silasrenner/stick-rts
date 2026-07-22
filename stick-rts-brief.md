@@ -29,7 +29,7 @@ Claude Code proposes the stack in the planning session with a short justificatio
 ### Battlefield
 
 - Single horizontal lane with a scrolling camera (edge-scroll and/or drag; camera snaps to hero while in direct control).
-- **Limited intelligence**: the player only sees what's on screen. No minimap enemy markers, no alerts about enemy army composition or movement. Scouting means physically pushing units (or your hero) toward the enemy side. Off-screen friendly units still fight; a minimal "your statue is under attack" warning is the only allowed off-screen signal.
+- **Limited intelligence**: the player only sees what's on screen. No minimap enemy markers, no alerts about enemy army composition or movement. Scouting means physically pushing units (or your hero) toward the enemy side. Off-screen friendly units still fight; a minimal "your statue is under attack" warning is the only allowed off-screen signal. **Superseded for v3 (S10)** — see PLAN.md §4 decision 11: both sides are now fully visible; free pan/zoom anywhere. Viewport culling remains, purely as a rendering optimization, not an intel rule.
 - Player statue on left, AI statue on right. Statues have large HP pools and are the win condition.
 - One gold mine near each base with a fixed number of mining slots (e.g., 4).
 
@@ -101,7 +101,7 @@ If parameter tuning alone can't make Hard feel threatening, flag it at a human g
 - [x] All 3 heroes purchasable, directly controllable, with working specials; re-purchase rules enforced
 - [x] Toggling hero control in/out works cleanly; hero behaves sensibly when not controlled
 - [x] Easy is beatable by a first-time player; Hard beats a player who ignores composition
-- [x] Scrolling camera works smoothly; no enemy information leaks from off-screen (composition, positions, build activity)
+- [x] Scrolling camera works smoothly; no enemy information leaks from off-screen (composition, positions, build activity) — **superseded for v3 (S10), see PLAN.md §4 decision 11**: full visibility is now the shipped design, this criterion described v1/v2 only
 - [x] Supply structures purchasable, raise the cap correctly, and gate the statue (statue immune while any structure stands); over-cap StarCraft behavior on destruction; build menu blocks unit purchases at cap with clear feedback
 - [x] Stable 60fps on a typical laptop with ~40 units on screen
 - [x] All balance constants (costs, HP, damage, speeds, AI parameters) live in one config module
@@ -129,7 +129,7 @@ Suggested session breakdown (refine in Session 0):
 
 ## Resolved Design Decisions
 
-1. **Camera**: scrolling camera with camera-limited intelligence — no enemy info until you physically scout. (Owner decision)
+1. **Camera**: scrolling camera with camera-limited intelligence — no enemy info until you physically scout. (Owner decision) **Superseded for v3 (S10), see PLAN.md §4 decision 11**: dynamic zoom + free pan everywhere, both sides fully visible.
 2. **Hero choice**: switchable on each re-purchase. (Owner decision)
 3. **Population cap**: purchasable supply structures, StarCraft-style — see Supply Structures section. (Owner decision)
 4. **AI structure**: one parameterized behavior tree for all three difficulties in v1; per-difficulty personalities parked for v2. (Owner decision)

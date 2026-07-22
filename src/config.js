@@ -2,7 +2,7 @@ export const CONFIG = {
   TICK_HZ: 60,
 
   VIEWPORT_WIDTH: 1400, // what the canvas element actually renders
-  WORLD_WIDTH: 7000, // total battlefield; viewport is ~20% of it (brief's 10-30% range) — final ratio tuned in S6
+  WORLD_WIDTH: 4200, // S10: 3x viewport (was 5x/7000) — shorter reinforcement travel time, primary pacing dial
   CANVAS_HEIGHT: 540,
   GROUND_Y: 440, // shared baseline for units, statues, structures, mines — leaves room below for legend/build menu
 
@@ -10,14 +10,16 @@ export const CONFIG = {
   IDLE_ANIM_HZ: 0.6,
 
   PLAYER_HOME_X: 100,
-  AI_HOME_X: 6900, // WORLD_WIDTH - 100
+  AI_HOME_X: 4100, // WORLD_WIDTH - 100
   PLAYER_FLEE_X: 40,
-  AI_FLEE_X: 6960, // WORLD_WIDTH - 40
+  AI_FLEE_X: 4160, // WORLD_WIDTH - 40
 
   EDGE_SCROLL_MARGIN: 60, // px from viewport edge that triggers camera scroll
   EDGE_SCROLL_SPEED: 900, // px/s
   CAMERA_CULL_MARGIN: 100, // px beyond the viewport edge before an entity stops being drawn
-  CAMERA_ZOOM: 0.7, // S8: render-time scale only — sim stays in unscaled world px. <1 shows more battlefield at once.
+  CAMERA_ZOOM: 0.7, // S8: render-time scale only — sim stays in unscaled world px. <1 shows more battlefield at once. S10: now just the starting value — camera.zoom is runtime state.
+  CAMERA_ZOOM_MIN: 1400 / 4200, // S10: VIEWPORT_WIDTH / WORLD_WIDTH — the entire map fits the viewport at min zoom
+  CAMERA_ZOOM_MAX: 1.4, // S10: 2x the starting zoom; tunable if it feels too tight/loose
 
   AI_SIGHT_RANGE: 260, // px; how close an AI unit must be to see an enemy for scouting purposes
   AI_DECISION_JITTER: 0.125, // S9: ±12.5% seed-derived variance on each team's decisionInterval reset

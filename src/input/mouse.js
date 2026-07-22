@@ -27,9 +27,10 @@ export function bindMouseMove(canvas, handler) {
   canvas.addEventListener('mouseleave', () => handler(null));
 }
 
-// Click-and-drag panning (Watch AI's free camera). mousedown arms it on the
-// canvas; mousemove/mouseup listen on window so a drag that leaves the
-// canvas mid-gesture still resolves correctly instead of getting stuck.
+// Click-and-drag camera panning (S10: promoted from Watch AI to all match
+// modes). mousedown arms it on the canvas; mousemove/mouseup listen on
+// window so a drag that leaves the canvas mid-gesture still resolves
+// correctly instead of getting stuck.
 export function bindDrag(canvas, handler) {
   let dragging = false;
   let lastX = 0;
@@ -48,4 +49,21 @@ export function bindDrag(canvas, handler) {
   window.addEventListener('mouseup', () => {
     dragging = false;
   });
+}
+
+// Scroll-wheel zoom, cursor-anchored. preventDefault stops the page from
+// scrolling; { passive: false } is required for preventDefault to take
+// effect on a wheel listener.
+export function bindWheel(canvas, handler) {
+  canvas.addEventListener(
+    'wheel',
+    (event) => {
+      event.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const x = (event.clientX - rect.left) * scaleX;
+      handler(event.deltaY, x);
+    },
+    { passive: false }
+  );
 }

@@ -5,10 +5,16 @@ out of PLAN.md (2026-07-19 restructure) to keep the active plan lean.
 Read this file only when debugging something that needs historical
 context — PLAN.md carries everything a new session needs going forward.
 
+**Completed sessions only.** In-progress state, partial work, and
+dirty-tree warnings belong in `PLAN.md`'s Status section, never here —
+this file is explicitly not read by a new session. S10's in-progress
+narrative was mistakenly filed here on 2026-07-19 and has been moved to
+PLAN.md Status; it will return as a narrative once S10 closes.
+
 Contents:
-1. Session status narratives (most recent first): S9, S8, S7,
-   v2 planning session, S6, S5. (S1–S4 narratives were compacted into
-   later entries during v1 and are not separately preserved.)
+1. Session status narratives (most recent first): S9, S8, S7, v2
+   planning session, S6, S5. (S1–S4 narratives were compacted
+   into later entries during v1 and are not separately preserved.)
 2. Resolved/open question log as it stood at end of S9.
 3. Completed session specifications with stop conditions: v1 (S1–S6)
    and v2 (S7–S9).

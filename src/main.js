@@ -17,9 +17,9 @@ import {
   getSettingsRects,
   PURCHASE_REASON_TEXT,
 } from './render/ui.js';
-import { createCamera, updateCamera } from './render/camera.js';
+import { createCamera, updateCamera, zoomAt } from './render/camera.js';
 import { bindDebugKeys } from './input/keyboard.js';
-import { bindClick, pointInRect, bindMouseMove, bindDrag } from './input/mouse.js';
+import { bindClick, pointInRect, bindMouseMove, bindDrag, bindWheel } from './input/mouse.js';
 import { createKeyState } from './input/keyState.js';
 
 const DEFAULT_DIFFICULTY = 'medium';
@@ -102,6 +102,9 @@ function toggleHeroControl() {
   const hero = world.units.find((u) => u.team === 'player' && u.isHero && u.state !== 'dying');
   if (!hero) return;
   hero.controlled = !hero.controlled;
+  // S10: re-enabling direct control resumes hero-follow even if manual
+  // pan/zoom had broken it earlier.
+  if (hero.controlled) camera.followBroken = false;
 }
 
 function attackWithControlledHero() {
@@ -305,6 +308,13 @@ bindMouseMove(canvas, (x) => {
 
 bindDrag(canvas, (dx) => {
   dragDeltaX += dx;
+});
+
+// S10: cursor-anchored scroll-wheel zoom. Exponential step (1.1^n) so
+// zoom feels smooth and frame-rate-independent regardless of wheel notch
+// size across trackpads/mice; deltaY > 0 (scroll down) zooms out.
+bindWheel(canvas, (deltaY, x) => {
+  zoomAt(camera, x, Math.pow(1.1, -deltaY / 100));
 });
 
 const accumulator = createAccumulator(1000 / CONFIG.TICK_HZ);
