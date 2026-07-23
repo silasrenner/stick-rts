@@ -7,12 +7,13 @@ context — PLAN.md carries everything a new session needs going forward.
 
 **Completed sessions only.** In-progress state, partial work, and
 dirty-tree warnings belong in `PLAN.md`'s Status section, never here —
-this file is explicitly not read by a new session. S10's in-progress
-narrative was mistakenly filed here on 2026-07-19 and has been moved to
-PLAN.md Status; it will return as a narrative once S10 closes.
+this file is explicitly not read by a new session. (S10's in-progress
+narrative was mistakenly filed here mid-session on 2026-07-19 and moved
+to PLAN.md Status; now that S10 has closed, its completed narrative
+lives here properly, below.)
 
 Contents:
-1. Session status narratives (most recent first): S9, S8, S7, v2
+1. Session status narratives (most recent first): S10, S9, S8, S7, v2
    planning session, S6, S5. (S1–S4 narratives were compacted
    into later entries during v1 and are not separately preserved.)
 2. Resolved/open question log as it stood at end of S9.
@@ -22,6 +23,96 @@ Contents:
 ---
 
 ## 1. Session Status Narratives
+
+**S10 complete (Camera, visibility & map).** Built per PLAN.md §7's S10
+block: `camera.zoom` promoted to runtime state (`render/camera.js`),
+scroll-wheel zoom anchored at the cursor's world position via
+`zoomAt()` (clamped to `[CAMERA_ZOOM_MIN, CAMERA_ZOOM_MAX]`, the min
+computed so the whole map fits the viewport), free click-drag pan
+promoted from Watch-AI-only to every match mode, edge-scroll retained,
+`camera.followBroken` flag so manual pan/zoom yields hero-follow until
+direct control is re-toggled, full player visibility (audit confirmed
+viewport culling was already the only camera-relates gating — nothing
+else to remove), `WORLD_WIDTH` 7000→4200 (5×→3× viewport). Config,
+camera, mouse, main, and renderer changes landed together; renderer's
+scale-before-translate ordering fix was required for cursor-anchored
+zoom math to hold (translate-then-scale silently computed
+`zoom*worldX - camera.x` instead of `zoom*(worldX - camera.x)` — invisible
+while zoom was a fixed constant, would have broken zoom-anchoring the
+moment zoom became dynamic).
+
+**Live browser verification (fresh port, per the disk-cache lesson) —
+all camera items confirmed working.** Cursor-anchored zoom: dispatched
+a real `wheel` event and compared the world point under the cursor
+before/after — zero drift. Zoom-in/zoom-out both clamp at exactly
+`CAMERA_ZOOM_MAX`/`CAMERA_ZOOM_MIN`. Full zoom-out shows both statues on
+one screen (screenshot-confirmed). Drag-pan confirmed in both normal
+play and Watch AI. Edge-scroll confirmed (reaches the exact computed pan
+clamp). Hero-follow: confirmed it breaks on manual pan/zoom
+(`followBroken` set, camera holds position independent of hero
+movement) and resumes exactly on the H re-toggle (`followBroken`
+cleared, camera snaps back to the hero-centered position with zero
+diff). Formation/mine layout sanity-checked visually at 4200px — tight,
+legible, no overlap. Zero console errors across two fresh page loads.
+**Verification-methodology note for future browser sessions:** this
+Chrome automation environment throttles/suspends `requestAnimationFrame`
+in backgrounded/unfocused tabs — idle `wait` calls alone can silently
+stall both the sim tick loop and camera updates with no error, which
+looks like a frozen game but isn't one. Prefer the exposed
+`window.__forceTicks(n)` debug hook (synchronous, bypasses rAF
+entirely) for deterministic verification over real-time waits;
+interspersed real interactions (clicks/hovers) can also restore rAF but
+less reliably.
+
+**Balance finding — the difficulty hierarchy does not survive the
+shorter map.** Full `--batch` re-baseline first ran with
+`AI_DECISION_JITTER` at its shipping value (0.125, unintentionally —
+worth flagging explicitly, since it means that first pass measured the
+shipping regime, not a clean map-length ablation) and showed Medium
+beating Hard outright and Easy/Hard splitting — hierarchy already
+looked broken. A follow-up clean ablation (`AI_DECISION_JITTER` forced
+to 0, matching S8's original deterministic methodology exactly, seed=42
+— seed choice is provably inert at jitter=0 per S9's own ablation
+below) confirmed the break isn't a jitter/scouting-staleness artifact:
+Easy beat Hard outright (239.3s) and Medium beat Hard outright (517.0s)
+with jitter fully off. Full comparison table against the S8 baseline is
+in PLAN.md §5.
+
+Instrumented cumulative gold-spent, gold-earned, and living combat-unit
+count at first contact (~110–112s) for both Hard matchups, via a
+scratch script reusing the repo's own sim modules (not committed —
+diagnostic only). **First attempt used `STARTING_GOLD − currentGold` as
+a proxy for cumulative spend and was wrong** — mining income adds
+directly to `team.gold` (confirmed by grep: the only three gold-mutation
+sites in `sim/` are mining's deposit and economy's three buy-time
+deductions), so that proxy nets spend against income and drastically
+understates spend once mining has produced anything, which it has well
+before 110s. Corrected by tracking real per-tick gold deltas (positive
+deltas summed as earned, negative as spent). Corrected numbers: in M vs
+H, Hard spent exactly as much as Medium (1875g each) but had 2 combat
+units to Medium's 3, having earned more (1825g vs 1650g) and banked
+more (250g vs 75g). In E vs H, Hard spent *more* than Easy (1875g vs
+1625g) yet had fewer combat units (2 vs 4), with banked gold tied
+(200g). Hard converts equal-or-greater spend into fewer combat units at
+contact — not simple hoarding. Hypothesis (unconfirmed, first task of
+S12): Hard's build order is weighted toward a higher-cost/slower payoff
+that assumed the old 7000px runway. Full finding recorded in PLAN.md §6.
+
+Separately: the pre-jitter H-vs-H mirror-match asymmetry (mechanism
+still unidentified, see below) turns out to be map-length-sensitive —
+it reverses winner at 4200px (enemy, 1131.9s) versus 7000px (player,
+1229.7s) under the identical jitter=0 ablation methodology. Doesn't
+resolve the mechanism; rules out one possible read of it (a fixed
+positional bias) and adds a second unexplained variable.
+
+S12 (AI re-tune) scoped in PLAN.md §7, gated on `WORLD_WIDTH` being
+settled by an owner playtest first — not started this session. Diagnostic
+config edits (`AI_DECISION_JITTER` forced to 0 for the ablation) were
+reverted before finishing; `git diff` confirmed clean back to the
+session's WIP checkpoint before any of this narrative's PLAN.md/
+HISTORY.md updates were written.
+
+---
 
 **S9 complete (Visuals + menus + Watch AI).** Built per §5's S9 block, in
 dependency order: parallax backdrop (new `render/parallax.js`, 3 tiled

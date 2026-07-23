@@ -13,56 +13,35 @@ if that isn't true, this file is wrong.
 
 ## Status
 
-**S1–S9 complete and committed.** Full v1 + v2 roadmap shipped: engine,
+**S1–S10 complete and committed.** Full v1 + v2 roadmap shipped: engine,
 units/combat, economy/match loop, heroes, AI (3 difficulties), balance
 pass, formation system, production queue, zoom, menus, Watch AI, seeded
-PRNG. Owner playtesting of v2 surfaced four items of feedback, scoped
-into v3 (S10–S11) below, plus this file's restructure (done: history
-moved to `HISTORY.md`).
+PRNG — plus v3's S10 (dynamic camera/zoom, free pan, full visibility,
+3× map). Full S10 build/verification narrative is in HISTORY.md §1 (S9
+entry is directly above it); this section only carries what's still
+open.
 
-### ⚠️ S10 IS PARTIALLY IMPLEMENTED AND UNCOMMITTED — READ BEFORE TOUCHING CODE
-
-**Do not start S10 from scratch. The working tree is already modified.**
-Run `git status` / `git diff` first and reconcile against this list.
-
-Implemented in the working tree, uncommitted (S10 checklist items 1–6):
-- `config.js` — `WORLD_WIDTH` 7000 → 4200 (5× → 3× viewport),
-  `AI_HOME_X`/`AI_FLEE_X` recalculated, `CAMERA_ZOOM_MIN`/
-  `CAMERA_ZOOM_MAX` added.
-- `render/camera.js` — `camera.zoom` promoted to runtime state,
-  `visibleWorldWidth(camera)` helper replaces the stale module-level
-  constant, `camera.followBroken` flag, `zoomAt()` cursor-anchored zoom,
-  Watch-AI-only gate removed from `bindDrag` consumption (free pan now
-  applies to every match mode).
-- `input/mouse.js` — new `bindWheel()`.
-- `main.js` — wires scroll-wheel zoom via `zoomAt`, clears
-  `followBroken` on hero-control re-toggle.
-- `render/renderer.js` — scale-before-translate ordering fix (cursor-
-  anchored zoom math depends on it), culling reads `camera.zoom` instead
-  of the old fixed constant.
-- `stick-rts-brief.md` — superseded-notes in place (Battlefield bullet,
-  matching acceptance criterion, Resolved Design Decisions #1), all
-  pointing at §4 decision 11.
-
-`node tools/headless.js` (invariant mode) passes against this tree.
-
-**Not yet done (see §7's S10 stop condition):** `tasks/todo.md`
-reconciliation, the 6-pairing `--batch` re-baseline, the live browser
-verification pass, §5 table replacement, this Status update, the commit.
-
-**Known inconsistency:** `tasks/todo.md`'s S10 checklist shows items 1–8
-all unchecked despite 1–6 being implemented. Reconcile by re-reading the
-code, not by trusting either list — the real question is whether
-anything was silently skipped.
-
-**Design change accepted for v3 (supersedes v1 brief §Battlefield and old
+**Design change shipped in v3 (supersedes v1 brief §Battlefield and old
 §2.4):** camera-limited intelligence is removed. Both sides are fully
 visible — the player may pan/zoom anywhere and see everything at any
 time. Scouting-as-information-gathering is no longer a player-side
 mechanic. See §4 for knock-on decisions.
 
-**Next entry point: S10 verification & close-out** — §7's S10 block, run
-in the order given under "Close-out sequence."
+**Open balance finding (S10, unresolved):** the AI difficulty hierarchy
+does not survive the shorter map, even with jitter removed — see §6.
+S12 (AI re-tune) is scoped in §7 but gated on `WORLD_WIDTH` being
+settled by owner playtest first; not started.
+
+**Next entry point: owner playtest for map-length feel.** Does 4200
+(3×) play right, or does it need another pass before S12's AI re-tune
+locks parameters against a value that might still move? After that:
+S11 (HUD/build-UI redesign — render-only, independent of the playtest
+outcome per its Independence note) or S12 (AI re-tune, gated on the
+playtest settling `WORLD_WIDTH`), in whichever order the owner prefers.
+
+**Last commit:** `55b1860` (S10 code, pre-verification WIP) → this
+close-out commit (hash recorded in a follow-up line/commit immediately
+after, since a commit cannot embed its own hash in its own tree).
 
 ---
 
@@ -236,30 +215,85 @@ stick-rts/
 
 ## 5. Current Balance Baselines
 
-Post-S8 re-tune, jitter disabled (deterministic), 180000-tick budget,
-2 trials each — clean hierarchy Hard > Medium > Easy, zero stalemates:
+**S10 map-isolated ablation (seed=42, `AI_DECISION_JITTER` forced to 0,
+1 trial/pairing, 180000-tick budget, `WORLD_WIDTH`=4200).** This table
+isolates map length as the only variable versus the S8 table below —
+jitter is off, exactly as S8 measured it, so any difference is
+attributable to the 7000→4200 map-length change alone. **This is NOT
+the shipping-regime baseline** — normal gameplay runs with
+`AI_DECISION_JITTER`=0.125 (S9). A jitter-on baseline at 4200 is
+deliberately deferred until after S12's AI re-tune, since measuring the
+shipping regime against a hierarchy already known to be broken (see §6)
+would just be re-confirming the same finding at more expense:
 
-- E vs E 1362.3s · M vs M 484.2s · H vs H 1229.7s (left/`player` wins)
-- E vs M: Medium wins, 511.2s
-- E vs H: Hard wins, 1376.9s
-- M vs H: Hard wins, 895.6s
+| Pairing | Winner @ 4200 (jitter=0) | Length | S8 @ 7000 (jitter=0) | Δ length |
+|---|---|---|---|---|
+| E vs E | player | 305.1s | player, 1362.3s | −1057.2s (−77.6%) |
+| M vs M | player | 422.6s | player, 484.2s | −61.6s (−12.7%) |
+| H vs H | enemy | 1131.9s | player, 1229.7s | −97.8s (−8.0%), **winner side flipped** |
+| E vs M | enemy (Medium) | 270.6s | Medium, 511.2s | −240.6s (−47.1%), same winner |
+| E vs H | player (**Easy**) | 239.3s | Hard, 1376.9s | −1137.6s (−82.6%), **winner flipped** |
+| M vs H | player (**Medium**) | 517.0s | Hard, 895.6s | −378.6s (−42.3%), **winner flipped** |
 
-With jitter enabled (S9, normal gameplay): outcomes are seed-dependent —
-H vs H measured a 5/10 split across 20 trials / 2 seeds. For
-reproducible comparisons always pin `--seed=N`. **These baselines are
-already invalidated — `WORLD_WIDTH` is 4200 in the working tree. Every
-figure above was measured at 7000. Do not cite them until the S10
-re-baseline replaces this table.**
+Hierarchy does not survive: Easy beats Hard and Medium beats Hard
+outright, with jitter fully removed so this isn't a jitter/scouting-
+staleness artifact — see §6's balance finding for the first-contact
+instrumentation and the open hypothesis. H vs H's winner flip is the
+pre-existing unidentified mirror-match asymmetry (§6), not a new
+finding — it's seed-independent at jitter=0 regardless of map length.
+
+With jitter enabled (S9, normal gameplay, 7000px): outcomes are
+seed-dependent — H vs H measured a 5/10 split across 20 trials / 2
+seeds. For reproducible comparisons always pin `--seed=N`. **Deferred:
+the jitter-on baseline at 4200px** — do not run/cite one until S12's AI
+re-tune has addressed the hierarchy break above; a shipping-regime
+number measured against known-broken AI would misrepresent where things
+stand.
 
 ---
 
 ## 6. Open Items
 
+- **Balance finding (S10): the difficulty hierarchy does not survive
+  the shorter map, even with jitter removed.** In the §5 ablation
+  (seed=42, jitter=0, 4200px), Easy beats Hard outright (239.3s) and
+  Medium beats Hard outright (517.0s). Instrumented cumulative
+  gold-spent/gold-earned and living combat-unit count at first contact
+  (first tick either side takes damage, ~110–112s into both matches;
+  tracked via per-tick balance deltas, not `STARTING_GOLD − currentGold`
+  — that proxy silently nets spend against mining income and is wrong
+  once mining has produced anything, which it has well before ~110s):
+  - **M vs H** (contact at 112.1s): Medium — 3 combat units, 1875g
+    spent, 1650g earned, 75g banked. Hard — 2 combat units, **1875g
+    spent (identical to Medium)**, 1825g earned, 250g banked.
+  - **E vs H** (contact at 110.9s): Easy — 4 combat units, 1625g spent,
+    1525g earned, 200g banked. Hard — 2 combat units, **1875g spent
+    (more than Easy)**, 1775g earned, 200g banked (tied).
+
+  Hard is not simply behind — in both matchups it spent the same or
+  more total gold than its opponent but converted that spend into fewer
+  living combat units by first contact. **Hypothesis for S12 (not yet
+  confirmed):** Hard's purchase priorities are weighted toward a
+  higher-cost/slower payoff (a structure, an archer-heavy composition,
+  or a hero purchase sitting in the production queue) rather than cheap
+  fast warriors — a build order that assumed the old 7000px map's longer
+  travel-time runway to pay off before contact, and no longer gets there
+  in time at 3×. S12's first task is reading `ai/difficulties.js`
+  directly to check this against Hard's actual parameter table rather
+  than continuing to infer it from headless output alone.
+
 - **H-vs-H pre-jitter determinism mechanism unidentified.** Practical
   fix (jitter) shipped and verified; two hypotheses ruled out by direct
   ablation (team iteration order; unit-array iteration order in target
   search). Only matters if AI-vs-AI internals become a focus again —
-  details in HISTORY.md §1 (S9 entry).
+  details in HISTORY.md §1 (S9 entry). **S10 update:** the pre-jitter
+  asymmetry is map-length-sensitive, not a fixed property of the sim —
+  at 4200px it reverses direction (enemy wins, 1131.9s) versus 7000px
+  (player wins, 1229.7s). Same ablation methodology (jitter forced to
+  0), different winner. This doesn't resolve the mechanism — it rules
+  out "it's just always `player`/left-side" as an explanation and adds a
+  second unexplained variable (map length) to whatever's already
+  unidentified.
 - **Deeper balance pass** deliberately open: `decisionInterval`,
   `heroPurchaseDelay`, `retreatThreshold` untouched since S5; no
   evidence yet they need changing.
@@ -417,3 +451,37 @@ the build bar. Headless untouched and passing. Zero console errors.
 **Independence note:** S11 is render-only and does not depend on the
 S10 re-baseline outcome. If S10 closes with a balance finding, S11 can
 proceed while that decision waits at a gate rather than blocking on it.
+
+### S12 — AI re-tune (scoped, not started)
+**Gate: do not start until `WORLD_WIDTH` is settled by owner playtest.**
+S10 shipped 4200 as a starting point, not a final value — if playtest
+feedback moves it again, `difficulties.js` parameters tuned against 4200
+would need re-tuning a second time. Starting S12 before that playtest
+risks wasted work.
+
+**Build:** address §6's balance finding — the difficulty hierarchy
+(Hard > Medium > Easy) does not hold at the shorter map, even with
+jitter removed, and Hard's first-contact profile (equal-or-higher spend,
+fewer combat units) suggests its build-order priorities assumed the old
+map's longer runway.
+- **First task:** read `src/sim/ai/difficulties.js` in full and report
+  whether Hard is structurally just Medium with a more front-loaded
+  economy and a later threshold purchase (matching §6's hypothesis), or
+  something else entirely (a different composition-counter weighting, a
+  longer `decisionInterval`, a delayed `heroPurchaseDelay`, etc.). This
+  is a read-and-report step before any parameter changes — confirm the
+  mechanism against the actual config, not just the headless output in
+  §6.
+- From there: re-tune whatever `difficulties.js` parameters the read
+  identifies as the cause, re-run the §5 ablation methodology (jitter
+  forced to 0 first, to confirm the fix in isolation from jitter noise),
+  then the full jitter-on `--batch` re-baseline (deferred from §5) to
+  produce the actual shipping-regime baseline table.
+- No `WORLD_WIDTH` changes in S12 itself — that's the owner-playtest
+  gate's decision, made before S12 starts, not during it.
+
+**Stop condition:** `difficulties.js` read-and-report delivered.
+Hierarchy holds (Hard > Medium > Easy, or an owner-accepted alternative)
+across all 6 pairings at jitter=0. Jitter-on `--batch` re-baseline
+recorded in §5, replacing the "deferred" note. Headless invariant mode
+passes. `git status` clean and the commit hash recorded in Status.
