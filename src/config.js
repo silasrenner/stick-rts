@@ -73,6 +73,25 @@ export const CONFIG = {
   PARALLAX_BUSH_HEIGHT: 18,
   PARALLAX_BUSH_BASE_Y: 420,
 
+  // S11 HUD/build-UI layout (render-only) — top strip, bottom build+queue
+  // bar, glyph icons. Everything here is screen-space px; unaffected by
+  // camera.zoom (UI draws post-restore, see renderer.js). HUD_PANEL_WIDTH
+  // is fixed, not content-derived — the S10 bug was one unbounded-width
+  // text line (the production queue listed inline); every top-strip row
+  // must fit this width, and the queue itself moved to bounded chips below.
+  HUD_PANEL_WIDTH: 230,
+  HUD_GLYPH_SCALE: 0.22, // drawStickFigure() scale for army-count + chip icons
+  BUILD_BUTTON_WIDTH: 120,
+  BUILD_BUTTON_HEIGHT: 30,
+  BUILD_BUTTON_GAP: 8,
+  BUILD_BUTTON_MARGIN_BOTTOM: 6,
+  BUILD_BUTTON_ICON_SCALE: 0.3,
+  BUILD_PROGRESS_BAR_HEIGHT: 3,
+  QUEUE_CHIP_WIDTH: 46,
+  QUEUE_CHIP_HEIGHT: 28,
+  QUEUE_CHIP_GAP: 4,
+  BOTTOM_BAR_ROW_GAP: 4, // gap between the queue-chip row and the build-button row
+
   BASE_HERO_COST: 600,
   HERO_COST_MULTIPLIER: 1.5, // per death
   HERO_RESPAWN_COOLDOWN: 30, // seconds

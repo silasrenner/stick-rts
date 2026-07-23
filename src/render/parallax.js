@@ -63,8 +63,20 @@ function drawBushes(ctx, camera, canvasWidth) {
 }
 
 export function drawParallax(ctx, camera) {
-  const canvasWidth = ctx.canvas.width;
-  drawMountains(ctx, camera, canvasWidth);
-  drawTrees(ctx, camera, canvasWidth);
-  drawBushes(ctx, camera, canvasWidth);
+  // S11 audit: drawParallax runs before renderer.js's world ctx.scale(camera.zoom, ...)
+  // transform, so its tile-count math already uses the fixed screen-space
+  // ctx.canvas.width — coverage was never actually broken by zoom. What was
+  // broken: tile size/scroll rate stayed pixel-fixed regardless of zoom, so
+  // a zoomed-out foreground (which shrinks) no longer matched a
+  // pixel-static background, a visible scale mismatch. Fixed the same way
+  // the world transform is: scale this layer's own draw by camera.zoom too,
+  // using the effective (pre-scale) width for tile-count math so tiles
+  // still cover the full canvas after the scale is applied.
+  ctx.save();
+  ctx.scale(camera.zoom, camera.zoom);
+  const effectiveWidth = ctx.canvas.width / camera.zoom;
+  drawMountains(ctx, camera, effectiveWidth);
+  drawTrees(ctx, camera, effectiveWidth);
+  drawBushes(ctx, camera, effectiveWidth);
+  ctx.restore();
 }

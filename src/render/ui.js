@@ -2,6 +2,7 @@ import { CONFIG } from '../config.js';
 import { canAfford, getUnitCount, hasLivingOrQueuedHero, getHeroCost, countQueued } from '../sim/systems/economy.js';
 import { getCap, livingStructures } from '../sim/systems/supply.js';
 import { isAliveEntity, isWatchAiMatch } from '../sim/world.js';
+import { drawStickFigure, TEAM_COLORS } from './stickFigure.js';
 
 const BUILD_MENU_ITEMS = [
   { kind: 'miner', action: 'unit', label: 'Miner', costFn: () => CONFIG.UNIT_STATS.miner.cost },
@@ -12,11 +13,6 @@ const BUILD_MENU_ITEMS = [
   { kind: 'hawkeye', action: 'hero', label: 'Hawkeye', costFn: (world) => getHeroCost(world, 'player') },
   { kind: 'vanguard', action: 'hero', label: 'Vanguard', costFn: (world) => getHeroCost(world, 'player') },
 ];
-
-const BUTTON_WIDTH = 120;
-const BUTTON_HEIGHT = 30;
-const BUTTON_GAP = 8;
-const BUTTON_MARGIN_BOTTOM = 6;
 
 // Single source of truth for why a purchase failed — used both for the
 // persistent disabled-reason label under each build-menu button and for
@@ -29,14 +25,81 @@ export const PURCHASE_REASON_TEXT = {
   heroCooldown: 'Hero respawning...',
 };
 
+// unit.x/unit.y is normally a world position; here we treat (x, feetY) as
+// an icon-space anchor (the glyph's feet) and rely on drawStickFigure's own
+// geometry (stickFigure.js) — an outer translate+scale shrinks it to icon
+// size without needing a scale param on drawStickFigure itself.
+function drawUnitGlyph(ctx, x, feetY, kind, { isHero = false, scale = CONFIG.HUD_GLYPH_SCALE } = {}) {
+  ctx.save();
+  ctx.translate(x, feetY);
+  ctx.scale(scale, scale);
+  drawStickFigure(ctx, {
+    x: 0,
+    y: 0,
+    facing: 1,
+    kind,
+    team: 'player',
+    isHero,
+    state: 'idle',
+    animPhase: 0,
+    attackAnimTimer: 0,
+    controlled: false,
+    deathTimer: 0,
+  });
+  ctx.restore();
+}
+
+// 'structure' isn't a unit kind (no entry in stickFigure.js's KIND_COLORS),
+// so it gets its own tiny icon rather than a drawStickFigure reuse — a
+// direct reuse of structures.js's drawStructure would also draw a health
+// bar we don't want at icon scale.
+function drawStructureGlyph(ctx, x, feetY, size = 14) {
+  ctx.save();
+  ctx.fillStyle = '#2c2c33';
+  ctx.strokeStyle = TEAM_COLORS.player;
+  ctx.lineWidth = 1.5;
+  ctx.fillRect(x - size / 2, feetY - size, size, size);
+  ctx.strokeRect(x - size / 2, feetY - size, size, size);
+  ctx.restore();
+}
+
+function drawKindGlyph(ctx, x, feetY, button) {
+  if (button.action === 'structure') drawStructureGlyph(ctx, x, feetY);
+  else drawUnitGlyph(ctx, x, feetY, button.kind, { isHero: button.action === 'hero', scale: CONFIG.BUILD_BUTTON_ICON_SCALE });
+}
+
+function getBuildButtonRowWidth() {
+  const { BUILD_BUTTON_WIDTH: w, BUILD_BUTTON_GAP: gap } = CONFIG;
+  return BUILD_MENU_ITEMS.length * w + (BUILD_MENU_ITEMS.length - 1) * gap;
+}
+
+export function getBuildButtonRowRect(canvas) {
+  return { y: canvas.height - CONFIG.BUILD_BUTTON_HEIGHT - CONFIG.BUILD_BUTTON_MARGIN_BOTTOM, h: CONFIG.BUILD_BUTTON_HEIGHT };
+}
+
+// Directly above the build-button row — the two rows together are the
+// "one bottom bar (build + queue)" from PLAN.md §5.
+export function getQueueChipRowRect(canvas) {
+  const buildRow = getBuildButtonRowRect(canvas);
+  return { y: buildRow.y - CONFIG.BOTTOM_BAR_ROW_GAP - CONFIG.QUEUE_CHIP_HEIGHT, h: CONFIG.QUEUE_CHIP_HEIGHT };
+}
+
+// Top edge of the whole consolidated bottom bar — renderer.js's legend
+// anchors above this so the two never collide regardless of tuning changes
+// to either bar's height.
+export function getBottomBarTop(canvas) {
+  return getQueueChipRowRect(canvas).y;
+}
+
 export function getBuildMenuButtons(canvas) {
-  const totalWidth = BUILD_MENU_ITEMS.length * BUTTON_WIDTH + (BUILD_MENU_ITEMS.length - 1) * BUTTON_GAP;
+  const { BUILD_BUTTON_WIDTH: w, BUILD_BUTTON_GAP: gap } = CONFIG;
+  const totalWidth = getBuildButtonRowWidth();
   const startX = (canvas.width - totalWidth) / 2;
-  const y = canvas.height - BUTTON_HEIGHT - BUTTON_MARGIN_BOTTOM;
+  const { y, h } = getBuildButtonRowRect(canvas);
 
   return BUILD_MENU_ITEMS.map((item, i) => ({
     ...item,
-    rect: { x: startX + i * (BUTTON_WIDTH + BUTTON_GAP), y, w: BUTTON_WIDTH, h: BUTTON_HEIGHT },
+    rect: { x: startX + i * (w + gap), y, w, h },
   }));
 }
 
@@ -66,40 +129,125 @@ export function getBuildButtonDisabledReason(world, button) {
   return null;
 }
 
+// Groups consecutive identical (action, kind) queue entries into stacked
+// chips — e.g. [warrior,warrior,archer] -> [{warrior,count:2},{archer,count:1}].
+// Consecutive (not global) grouping preserves the queue's actual build order.
+function groupQueueChips(queue) {
+  const chips = [];
+  for (const item of queue) {
+    const last = chips[chips.length - 1];
+    if (last && last.action === item.action && last.kind === item.kind) last.count += 1;
+    else chips.push({ action: item.action, kind: item.kind, count: 1 });
+  }
+  return chips;
+}
+
+function drawQueueChip(ctx, x, y, w, h, chip) {
+  ctx.fillStyle = '#2c2c33'; // solid — see drawBuildMenu's note on avoiding bleed-through at high zoom
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = '#55555f';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x, y, w, h);
+
+  drawKindGlyph(ctx, x + w / 2 - 6, y + h - 7, { action: chip.action, kind: chip.kind });
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#e8e8ee';
+  ctx.font = '10px monospace';
+  ctx.fillText(`×${chip.count}`, x + w - 4, y + h - 4);
+  ctx.textAlign = 'left';
+}
+
+// Bounded overflow indicator — this is what makes the row's width bounded
+// regardless of queue length, instead of the S10 bug's unbounded text line.
+function drawQueueOverflowChip(ctx, x, y, w, h, remaining) {
+  ctx.fillStyle = '#2c2c33'; // solid — see drawBuildMenu's note on avoiding bleed-through at high zoom
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = '#55555f';
+  ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = '#8a8a96';
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(`+${remaining}`, x + w / 2, y + h / 2 - 1);
+  ctx.fillText('more', x + w / 2, y + h / 2 + 10);
+  ctx.textAlign = 'left';
+}
+
+function drawQueueChipRow(ctx, queuedItems) {
+  const chips = groupQueueChips(queuedItems);
+  if (chips.length === 0) return;
+
+  const canvas = ctx.canvas;
+  const { y, h } = getQueueChipRowRect(canvas);
+  const { QUEUE_CHIP_WIDTH: chipW, QUEUE_CHIP_GAP: gap } = CONFIG;
+  const rowWidth = getBuildButtonRowWidth();
+  const startX = (canvas.width - rowWidth) / 2;
+  const maxSlots = Math.max(1, Math.floor((rowWidth + gap) / (chipW + gap)));
+
+  const overflow = chips.length > maxSlots;
+  const visibleCount = overflow ? maxSlots - 1 : chips.length;
+
+  for (let i = 0; i < visibleCount; i++) {
+    drawQueueChip(ctx, startX + i * (chipW + gap), y, chipW, h, chips[i]);
+  }
+  if (overflow) {
+    const remaining = chips.slice(visibleCount).reduce((sum, c) => sum + c.count, 0);
+    drawQueueOverflowChip(ctx, startX + visibleCount * (chipW + gap), y, chipW, h, remaining);
+  }
+}
+
 export function drawBuildMenu(ctx, world) {
   // Clicks are inert once the match ends; don't imply otherwise. Also
   // hidden during Watch AI — neither side is player-controlled, so a build
   // menu that always affects 'player' would be misleading and clickable.
   if (world.matchState !== 'playing' || isWatchAiMatch(world)) return;
 
+  const queue = world.teams.player.productionQueue;
+  drawQueueChipRow(ctx, queue.slice(1));
+
+  const activeItem = queue[0] ?? null;
+
   for (const button of getBuildMenuButtons(ctx.canvas)) {
     const reason = getBuildButtonDisabledReason(world, button);
     const cost = button.costFn(world);
     const { x, y, w, h } = button.rect;
+    const isActive = activeItem && activeItem.action === button.action && activeItem.kind === button.kind;
 
-    ctx.globalAlpha = reason ? 0.55 : 1;
-    ctx.fillStyle = button.action === 'hero' ? '#3a3320' : '#2c2c33';
+    // Solid fills throughout (never ctx.globalAlpha) — at CAMERA_ZOOM_MAX
+    // world content can reach into the footer band (pre-existing S10
+    // camera/ground-plane geometry, out of S11's scope), and a translucent
+    // disabled-button background let it bleed through. "Disabled" reads via
+    // color choice instead: muted fill/border/label, not transparency.
+    ctx.fillStyle = reason ? '#232328' : button.action === 'hero' ? '#3a3320' : '#2c2c33';
     ctx.fillRect(x, y, w, h);
     ctx.strokeStyle = reason ? '#7a3a3a' : '#55555f';
     ctx.lineWidth = 1;
     ctx.strokeRect(x, y, w, h);
-    ctx.fillStyle = '#e8e8ee';
+
+    drawKindGlyph(ctx, x + 12, y + h - 9, button);
+
+    ctx.fillStyle = reason ? '#6a6a72' : '#e8e8ee';
     ctx.font = '10px monospace';
-    ctx.fillText(`${button.label} (${cost}g)`, x + 5, y + 13);
+    ctx.fillText(`${button.label} (${cost}g)`, x + 24, y + 13);
 
     if (reason) {
-      ctx.globalAlpha = 1;
       ctx.fillStyle = '#e0704a';
       ctx.font = '7px monospace';
-      ctx.fillText(PURCHASE_REASON_TEXT[reason], x + 5, y + 24);
+      ctx.fillText(PURCHASE_REASON_TEXT[reason], x + 24, y + 24);
     }
-    ctx.globalAlpha = 1;
+
+    if (isActive) {
+      const progress = Math.max(0, Math.min(1, 1 - activeItem.remaining / activeItem.total));
+      const barH = CONFIG.BUILD_PROGRESS_BAR_HEIGHT;
+      ctx.fillStyle = '#1a1a1f';
+      ctx.fillRect(x, y + h - barH, w, barH);
+      ctx.fillStyle = '#8fd1e0';
+      ctx.fillRect(x, y + h - barH, w * progress, barH);
+    }
   }
 }
 
 // Own-team-only living-unit counts by kind — never reads the enemy team.
-// Doubles as the production-queue panel's context (the queue's items are
-// what's about to add to these counts).
 function getArmyComposition(world, team) {
   const counts = { miner: 0, warrior: 0, archer: 0 };
   for (const unit of world.units) {
@@ -109,9 +257,18 @@ function getArmyComposition(world, team) {
   return counts;
 }
 
-function getQueueItemLabel(item) {
-  if (item.action === 'structure') return 'Structure';
-  return BUILD_MENU_ITEMS.find((b) => b.kind === item.kind)?.label ?? item.kind;
+// Glyph + count per kind, replacing the old "Miners: N Warriors: N
+// Archers: N" text line with the owner-approved icon presentation.
+function drawArmyCompositionRow(ctx, x, y, composition) {
+  const KIND_COL_WIDTH = 50;
+  ctx.font = '11px monospace';
+  ctx.fillStyle = '#e8e8ee';
+  ctx.textAlign = 'left';
+  ['miner', 'warrior', 'archer'].forEach((kind, i) => {
+    const cx = x + i * KIND_COL_WIDTH;
+    drawUnitGlyph(ctx, cx + 6, y + 4, kind);
+    ctx.fillText(String(composition[kind]), cx + 15, y);
+  });
 }
 
 export function drawHUD(ctx, world, uiMessage) {
@@ -121,21 +278,27 @@ export function drawHUD(ctx, world, uiMessage) {
   const command = world.teams.player.command;
   const heroCooldown = world.teams.player.heroCooldownTimer;
   const composition = getArmyComposition(world, 'player');
-  const queue = world.teams.player.productionQueue;
+  // The brief's one allowed off-screen signal: retriggered on every hit to
+  // the player's statue (see combat.js applyDamage), independent of camera
+  // culling. S11: folded into the top strip instead of a separate floating
+  // banner, per PLAN.md §5's "one compact top strip ... statue warning".
+  const statueWarning = world.matchState === 'playing' && world.teams.player.statueWarningTimer > 0;
 
   const lineHeight = 16;
-  let panelLines = 4; // gold, units, command, army composition
-  if (queue.length > 0) panelLines += 1;
-  if (queue.length > 1) panelLines += 1;
-  if (heroCooldown > 0) panelLines += 1;
-  if (uiMessage && uiMessage.text) panelLines += 1;
+  let rows = 4; // gold, units, command, army composition glyph row
+  if (heroCooldown > 0) rows += 1;
+  if (uiMessage && uiMessage.text) rows += 1;
+  if (statueWarning) rows += 1;
 
-  // Contrast backdrop for the HUD text stack — previously plain text
-  // directly on the battlefield, which washed out against light terrain.
+  // Fixed-width backdrop — the S10 bug was an unbounded-width text line
+  // (the production queue listed inline here); every row below is a short,
+  // bounded string that comfortably fits CONFIG.HUD_PANEL_WIDTH, and the
+  // queue itself now lives in the bottom bar's bounded chip row instead.
   ctx.fillStyle = 'rgba(20, 20, 26, 0.6)';
-  ctx.fillRect(4, 4, 260, 8 + panelLines * lineHeight);
+  ctx.fillRect(4, 4, CONFIG.HUD_PANEL_WIDTH, 8 + rows * lineHeight);
 
   let y = 16;
+  ctx.textAlign = 'left';
   ctx.fillStyle = '#e8e8ee';
   ctx.font = '13px monospace';
   ctx.fillText(`Gold: ${gold}`, 10, y);
@@ -144,46 +307,34 @@ export function drawHUD(ctx, world, uiMessage) {
   y += lineHeight;
   ctx.fillText(`Command: ${command[0].toUpperCase()}${command.slice(1)}`, 10, y);
   y += lineHeight;
-  ctx.fillText(`Miners: ${composition.miner}  Warriors: ${composition.warrior}  Archers: ${composition.archer}`, 10, y);
-  y += lineHeight;
 
-  if (queue.length > 0) {
-    ctx.fillStyle = '#8fd1e0';
-    ctx.fillText(`Building: ${getQueueItemLabel(queue[0])} (${Math.max(0, queue[0].remaining).toFixed(1)}s)`, 10, y);
-    ctx.fillStyle = '#e8e8ee';
-    y += lineHeight;
-  }
-  if (queue.length > 1) {
-    ctx.fillStyle = '#8a8a96';
-    ctx.fillText(`Queued: ${queue.slice(1).map(getQueueItemLabel).join(', ')}`, 10, y);
-    ctx.fillStyle = '#e8e8ee';
-    y += lineHeight;
-  }
+  drawArmyCompositionRow(ctx, 10, y, composition);
+  y += lineHeight;
 
   if (heroCooldown > 0) {
     ctx.fillStyle = '#e0a030';
+    ctx.font = '13px monospace';
     ctx.fillText(`Hero respawns in ${Math.ceil(heroCooldown)}s`, 10, y);
+    ctx.fillStyle = '#e8e8ee';
     y += lineHeight;
   }
 
   if (uiMessage && uiMessage.text) {
     ctx.fillStyle = '#e0a030';
     ctx.fillText(uiMessage.text, 10, y);
+    ctx.fillStyle = '#e8e8ee';
     y += lineHeight;
   }
 
-  // The brief's one allowed off-screen signal: retriggered on every hit to
-  // the player's statue (see combat.js applyDamage), independent of camera
-  // culling and of the uiMessage slot above (build-menu feedback).
-  if (world.matchState === 'playing' && world.teams.player.statueWarningTimer > 0) {
+  if (statueWarning) {
     const pulse = 0.6 + 0.4 * Math.sin(world.matchElapsedTime * 10);
     ctx.save();
-    ctx.textAlign = 'center';
     ctx.globalAlpha = pulse;
     ctx.fillStyle = '#e03030';
-    ctx.font = 'bold 15px monospace';
-    ctx.fillText('Your statue is under attack!', ctx.canvas.width / 2, 24);
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText('Your statue is under attack!', 10, y);
     ctx.restore();
+    y += lineHeight;
   }
 }
 

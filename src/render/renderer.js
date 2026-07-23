@@ -2,7 +2,7 @@ import { CONFIG } from '../config.js';
 import { isWatchAiMatch } from '../sim/world.js';
 import { drawStickFigure } from './stickFigure.js';
 import { drawStatue, drawStructure, drawMine, drawHealthBar } from './structures.js';
-import { drawHUD, drawBuildMenu, drawWinLoseOverlay, drawMenuScreen } from './ui.js';
+import { drawHUD, drawBuildMenu, drawWinLoseOverlay, drawMenuScreen, getBottomBarTop } from './ui.js';
 import { drawParallax } from './parallax.js';
 
 const LEGEND_LINE =
@@ -90,24 +90,32 @@ function drawProjectile(ctx, pos) {
   ctx.fill();
 }
 
+const LEGEND_LINE_GAP = 6; // px above the bottom bar (build+queue) before the legend's lower line
+const LEGEND_LINE_HEIGHT = 14;
+
+// S11: anchored off getBottomBarTop() instead of fixed canvas.height offsets
+// — the redesigned bottom bar (build buttons + queue chips) claims more of
+// the footer than the old single build-menu row, so the legend must track
+// its actual height rather than assume a fixed one.
 function drawLegend(ctx, world) {
   ctx.fillStyle = '#8a8a96';
   ctx.font = '11px monospace';
+  const bottomLineY = getBottomBarTop(ctx.canvas) - LEGEND_LINE_GAP;
 
   if (isWatchAiMatch(world)) {
     const label = (d) => d[0].toUpperCase() + d.slice(1);
     ctx.fillText(
       `Watching: ${label(world.teams.player.difficulty)} vs ${label(world.teams.ai.difficulty)}   |   Drag to pan camera`,
       10,
-      ctx.canvas.height - 44
+      bottomLineY
     );
     return;
   }
 
   const difficulty = world.teams.ai.difficulty;
   const label = difficulty ? difficulty[0].toUpperCase() + difficulty.slice(1) : 'none';
-  ctx.fillText(`AI difficulty: ${label}`, 10, ctx.canvas.height - 58);
-  ctx.fillText(LEGEND_LINE, 10, ctx.canvas.height - 44);
+  ctx.fillText(`AI difficulty: ${label}`, 10, bottomLineY - LEGEND_LINE_HEIGHT);
+  ctx.fillText(LEGEND_LINE, 10, bottomLineY);
 }
 
 function lerp(a, b, t) {
