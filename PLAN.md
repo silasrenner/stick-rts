@@ -39,9 +39,9 @@ S11 (HUD/build-UI redesign — render-only, independent of the playtest
 outcome per its Independence note) or S12 (AI re-tune, gated on the
 playtest settling `WORLD_WIDTH`), in whichever order the owner prefers.
 
-**Last commit:** `55b1860` (S10 code, pre-verification WIP) → this
-close-out commit (hash recorded in a follow-up line/commit immediately
-after, since a commit cannot embed its own hash in its own tree).
+**Last commit:** `4bb9589` — "docs: close out S10 -- live browser
+verification, map-isolated ablation, balance finding" (preceded by
+`55b1860`, the S10 code WIP checkpoint).
 
 ---
 
