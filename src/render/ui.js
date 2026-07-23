@@ -25,6 +25,17 @@ export const PURCHASE_REASON_TEXT = {
   heroCooldown: 'Hero respawning...',
 };
 
+// Button-local state labels must fit beside the glyph at the smallest useful
+// type size. The full reason remains available through PURCHASE_REASON_TEXT
+// for click feedback; these are the compact, persistent status labels.
+const BUTTON_REASON_TEXT = {
+  gold: 'Need more gold',
+  cap: 'Population full',
+  maxStructures: 'Structures full',
+  heroAlive: 'Hero deployed',
+  heroCooldown: 'Hero respawning',
+};
+
 // unit.x/unit.y is normally a world position; here we treat (x, feetY) as
 // an icon-space anchor (the glyph's feet) and rely on drawStickFigure's own
 // geometry (stickFigure.js) — an outer translate+scale shrinks it to icon
@@ -149,7 +160,9 @@ function drawQueueChip(ctx, x, y, w, h, chip) {
   ctx.lineWidth = 1;
   ctx.strokeRect(x, y, w, h);
 
-  drawKindGlyph(ctx, x + w / 2 - 6, y + h - 7, { action: chip.action, kind: chip.kind });
+  // Reserve the chip's right edge for a two-digit stacked count. Centering
+  // the glyph caused its right arm to collide with ×80 at queue stress size.
+  drawKindGlyph(ctx, x + 10, y + h - 7, { action: chip.action, kind: chip.kind });
 
   ctx.textAlign = 'right';
   ctx.fillStyle = '#e8e8ee';
@@ -226,15 +239,16 @@ export function drawBuildMenu(ctx, world) {
 
     drawKindGlyph(ctx, x + 12, y + h - 9, button);
 
-    ctx.fillStyle = reason ? '#6a6a72' : '#e8e8ee';
+    // Separate the unit name from cost/state. A single "Forgemaster (1350g)"
+    // line overflowed its 120px card; two deliberate hierarchy lines remain
+    // readable in every hero, cap, and queue state.
+    ctx.fillStyle = reason ? '#9696a2' : '#e8e8ee';
     ctx.font = '10px monospace';
-    ctx.fillText(`${button.label} (${cost}g)`, x + 24, y + 13);
+    ctx.fillText(button.label, x + 24, y + 12);
 
-    if (reason) {
-      ctx.fillStyle = '#e0704a';
-      ctx.font = '7px monospace';
-      ctx.fillText(PURCHASE_REASON_TEXT[reason], x + 24, y + 24);
-    }
+    ctx.fillStyle = reason ? '#e0704a' : isActive ? '#8fd1e0' : '#d8c67a';
+    ctx.font = '8px monospace';
+    ctx.fillText(reason ? BUTTON_REASON_TEXT[reason] : `${cost}g`, x + 24, y + 23);
 
     if (isActive) {
       const progress = Math.max(0, Math.min(1, 1 - activeItem.remaining / activeItem.total));

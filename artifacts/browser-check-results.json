@@ -1,0 +1,21 @@
+{
+  "state": {
+    "units": 80,
+    "cap": 80,
+    "queue": 25,
+    "heroCooldown": 29.583333333333357,
+    "statueWarning": 2.583333333333335,
+    "canvas": {
+      "width": 1400,
+      "height": 540
+    }
+  },
+  "roundTrip": {
+    "before": 1900,
+    "after": 1900,
+    "drift": 0,
+    "zoom": 0.7,
+    "x": 900
+  },
+  "consoleErrors": []
+}

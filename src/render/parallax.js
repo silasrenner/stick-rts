@@ -73,7 +73,11 @@ export function drawParallax(ctx, camera) {
   // using the effective (pre-scale) width for tile-count math so tiles
   // still cover the full canvas after the scale is applied.
   ctx.save();
+  // Use the same ground-plane pivot as renderer.js so backdrop layers and
+  // battlefield share a stable visual horizon at every zoom level.
+  ctx.translate(0, CONFIG.GROUND_Y);
   ctx.scale(camera.zoom, camera.zoom);
+  ctx.translate(0, -CONFIG.GROUND_Y);
   const effectiveWidth = ctx.canvas.width / camera.zoom;
   drawMountains(ctx, camera, effectiveWidth);
   drawTrees(ctx, camera, effectiveWidth);

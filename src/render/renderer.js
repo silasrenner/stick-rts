@@ -27,8 +27,14 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   // translate-then-scale order silently computed zoom*worldX - camera.x
   // instead — invisible while zoom was a fixed constant, but it would
   // break cursor-anchored zoom now that zoom is dynamic.
+  // Preserve the ground-plane composition through zoom. Scaling from the
+  // canvas origin made GROUND_Y jump from 147px at min zoom to 616px at max:
+  // zoom-out left a void beneath the battle and zoom-in pushed it into the
+  // footer. This keeps screenX = zoom*(worldX-cameraX) and makes
+  // screenY = GROUND_Y + zoom*(worldY-GROUND_Y).
+  ctx.translate(0, CONFIG.GROUND_Y);
   ctx.scale(camera.zoom, camera.zoom);
-  ctx.translate(-camera.x, 0);
+  ctx.translate(-camera.x, -CONFIG.GROUND_Y);
 
   // Visible world span widens under zoom-out (zoom < 1) — cull against
   // that, not the raw viewport width, or entities the zoom reveals get
