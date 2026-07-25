@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Stick RTS</title>
   <style>
     html, body {
@@ -15,6 +16,9 @@
     canvas {
       background: #2a2a33;
       image-rendering: pixelated;
+      /* Keep touch drags inside the game so Pointer Events receive them
+         instead of the browser treating them as page pan/zoom gestures. */
+      touch-action: none;
     }
   </style>
 </head>

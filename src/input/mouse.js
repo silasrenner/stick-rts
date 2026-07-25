@@ -27,28 +27,33 @@ export function bindMouseMove(canvas, handler) {
   canvas.addEventListener('mouseleave', () => handler(null));
 }
 
-// Click-and-drag camera panning (S10: promoted from Watch AI to all match
-// modes). mousedown arms it on the canvas; mousemove/mouseup listen on
-// window so a drag that leaves the canvas mid-gesture still resolves
-// correctly instead of getting stuck.
+// Pointer events cover mouse, pen, and touch. The previous mouse-only
+// listeners made camera panning unreachable on mobile even though tap-generated
+// click events still operated UI buttons. Pointer capture plus the window
+// listeners keep a drag continuous after it leaves the canvas.
 export function bindDrag(canvas, handler) {
-  let dragging = false;
+  let activePointerId = null;
   let lastX = 0;
 
-  canvas.addEventListener('mousedown', (event) => {
-    dragging = true;
+  canvas.addEventListener('pointerdown', (event) => {
+    if (!event.isPrimary || activePointerId !== null) return;
+    activePointerId = event.pointerId;
     lastX = event.clientX;
+    canvas.setPointerCapture?.(event.pointerId);
   });
-  window.addEventListener('mousemove', (event) => {
-    if (!dragging) return;
+  window.addEventListener('pointermove', (event) => {
+    if (event.pointerId !== activePointerId) return;
     const scaleX = canvas.width / canvas.getBoundingClientRect().width;
     const deltaX = (event.clientX - lastX) * scaleX;
     lastX = event.clientX;
     handler(deltaX);
   });
-  window.addEventListener('mouseup', () => {
-    dragging = false;
-  });
+  const endDrag = (event) => {
+    if (event.pointerId !== activePointerId) return;
+    activePointerId = null;
+  };
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', endDrag);
 }
 
 // Scroll-wheel zoom, cursor-anchored. preventDefault stops the page from
