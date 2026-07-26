@@ -29,7 +29,8 @@ export function bindMouseMove(canvas, handler) {
 export function bindCameraGestures(canvas, { onPan, onZoom, onDragEnd }) {
   const pointers = new Map();
   let lastPan = null;
-  let panDistance = 0;
+  let startPan = null;
+  let dragStarted = false;
   let lastPinch = null;
   const DRAG_THRESHOLD_PX = 7;
 
@@ -40,9 +41,10 @@ export function bindCameraGestures(canvas, { onPan, onZoom, onDragEnd }) {
     return { x: (a.x + b.x) / 2, distance: Math.hypot(a.x - b.x, a.y - b.y) };
   };
   const beginSinglePointer = () => {
-    const point = pointers.values().next().value;
-    lastPan = point ?? null;
-    panDistance = 0;
+    const point = pointers.values().next().value ?? null;
+    lastPan = point;
+    startPan = point;
+    dragStarted = false;
     lastPinch = null;
   };
 
@@ -64,11 +66,18 @@ export function bindCameraGestures(canvas, { onPan, onZoom, onDragEnd }) {
       lastPinch = current;
       return;
     }
-    if (!lastPan) return;
+    if (!lastPan || !startPan) return;
     const deltaX = point.x - lastPan.x;
-    panDistance += Math.abs(event.clientX - lastPan.screenX);
+    if (!dragStarted) {
+      if (Math.abs(point.screenX - startPan.screenX) < DRAG_THRESHOLD_PX) return;
+      dragStarted = true;
+      // Apply the full displacement once the gesture becomes a drag, so the
+      // threshold never creates a dead zone in camera movement.
+      onPan(point.x - startPan.x);
+    } else {
+      onPan(deltaX);
+    }
     lastPan = point;
-    if (Math.abs(deltaX) >= 0 && panDistance >= DRAG_THRESHOLD_PX * (canvas.width / canvas.getBoundingClientRect().width)) onPan(deltaX);
   });
 
   const endPointer = (event) => {
@@ -76,8 +85,10 @@ export function bindCameraGestures(canvas, { onPan, onZoom, onDragEnd }) {
     pointers.delete(event.pointerId);
     if (pointers.size === 1) beginSinglePointer();
     else if (pointers.size === 0) {
-      if (panDistance >= DRAG_THRESHOLD_PX) onDragEnd?.();
+      if (dragStarted) onDragEnd?.();
       lastPan = null;
+      startPan = null;
+      dragStarted = false;
       lastPinch = null;
     }
   };
