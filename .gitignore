@@ -1,2 +1,4 @@
 .DS_Store
 node_modules/
+.release-gate-chrome/
+artifacts/release-gates/*.json

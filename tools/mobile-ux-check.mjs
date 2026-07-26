@@ -1,6 +1,6 @@
 // Mobile regression check. Requires a local server on 8034 and Chrome CDP on 9223.
-const CDP_PORT = 9223;
-const APP_URL = `http://127.0.0.1:8034/?mobile-ux-check=${Date.now()}`;
+const CDP_PORT = Number(process.env.CDP_PORT || 9223);
+const APP_URL = process.env.APP_URL || `http://127.0.0.1:8034/?mobile-ux-check=${Date.now()}`;
 
 async function openTarget(url) {
   const response = await fetch(`http://127.0.0.1:${CDP_PORT}/json/new?${encodeURIComponent(url)}`, { method: 'PUT' });

@@ -1,6 +1,6 @@
 // Desktop regression check. Requires a local server on 8034 and Chrome CDP on 9223.
-const CDP_PORT = 9223;
-const APP_URL = `http://127.0.0.1:8034/?desktop-ux-check=${Date.now()}`;
+const CDP_PORT = Number(process.env.CDP_PORT || 9223);
+const APP_URL = process.env.APP_URL || `http://127.0.0.1:8034/?desktop-ux-check=${Date.now()}`;
 async function openTarget(url) { const response = await fetch(`http://127.0.0.1:${CDP_PORT}/json/new?${encodeURIComponent(url)}`, { method: 'PUT' }); if (!response.ok) throw new Error(`CDP target failed: ${response.status}`); return response.json(); }
 function connect(url) { const ws = new WebSocket(url); let id = 0; const pending = new Map(); const errors = []; ws.onmessage = ({ data }) => { const message = JSON.parse(data); if (!message.id) { if (message.method === 'Runtime.exceptionThrown') errors.push(message.params.exceptionDetails.text); return; } const request = pending.get(message.id); pending.delete(message.id); message.error ? request.reject(new Error(message.error.message)) : request.resolve(message.result); }; const ready = new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; }); const send = (method, params = {}) => new Promise((resolve, reject) => { const requestId = ++id; pending.set(requestId, { resolve, reject }); ws.send(JSON.stringify({ id: requestId, method, params })); }); return { ws, ready, send, errors }; }
 const target = await openTarget('about:blank'); const { ws, ready, send, errors } = connect(target.webSocketDebuggerUrl); await ready;
