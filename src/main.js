@@ -15,11 +15,12 @@ import {
   getPlayDifficultyRects,
   getWatchSetupRects,
   getSettingsRects,
+  getZoomButtonRects,
   PURCHASE_REASON_TEXT,
 } from './render/ui.js';
 import { createCamera, updateCamera, zoomAt } from './render/camera.js';
 import { bindDebugKeys } from './input/keyboard.js';
-import { bindClick, pointInRect, bindMouseMove, bindDrag, bindWheel } from './input/mouse.js';
+import { bindClick, pointInRect, bindMouseMove, bindCameraGestures, bindWheel } from './input/mouse.js';
 import { createKeyState } from './input/keyState.js';
 
 const DEFAULT_DIFFICULTY = 'medium';
@@ -76,6 +77,7 @@ function resetMatch(difficulty = world.teams.ai.difficulty ?? uiState.settings.d
   world.teams.ai.difficulty = difficulty;
   uiMessage = { text: '', timer: 0 };
   camera.x = 0;
+  camera.targetX = 0;
 }
 
 function startWatchAiMatch(playerDifficulty, aiDifficulty, seed) {
@@ -86,6 +88,7 @@ function startWatchAiMatch(playerDifficulty, aiDifficulty, seed) {
   world.teams.ai.difficulty = aiDifficulty;
   uiMessage = { text: '', timer: 0 };
   camera.x = 0;
+  camera.targetX = 0;
   // Captured even if "Random" was picked, so a spectator can note/reuse a
   // good match's seed afterward.
   uiState.watchSetup.seed = resolvedSeed;
@@ -95,6 +98,7 @@ function backToMenu() {
   world = createWorld();
   uiState.menuScreen = 'main';
   camera.x = 0;
+  camera.targetX = 0;
 }
 
 function toggleHeroControl() {
@@ -269,6 +273,17 @@ function handleWatchAiClick(x, y) {
 }
 
 bindClick(canvas, (x, y) => {
+  if (world.matchState !== 'menu') {
+    const zoomButtons = getZoomButtonRects(canvas);
+    if (pointInRect(x, y, zoomButtons.in)) {
+      zoomAt(camera, canvas.width / 2, 1.25);
+      return;
+    }
+    if (pointInRect(x, y, zoomButtons.out)) {
+      zoomAt(camera, canvas.width / 2, 0.8);
+      return;
+    }
+  }
   if (world.matchState === 'menu') {
     handleMenuClick(x, y);
     return;
@@ -306,8 +321,9 @@ bindMouseMove(canvas, (x) => {
   mouseX = x;
 });
 
-bindDrag(canvas, (dx) => {
-  dragDeltaX += dx;
+bindCameraGestures(canvas, {
+  onPan: (dx) => { dragDeltaX += dx; },
+  onZoom: (x, factor) => zoomAt(camera, x, factor),
 });
 
 // S10: cursor-anchored scroll-wheel zoom. Exponential step (1.1^n) so

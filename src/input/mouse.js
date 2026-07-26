@@ -1,14 +1,17 @@
-// Thin click wrapper — converts a click event to canvas-local coordinates
-// (accounting for any CSS scaling) and hands them to the caller, which
-// does its own hit-testing against whatever's currently on screen.
+// Canvas input helpers keep CSS-scaled mobile coordinates in the game's
+// fixed logical 1400x540 coordinate system.
+function canvasPoint(canvas, clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (clientX - rect.left) * (canvas.width / rect.width),
+    y: (clientY - rect.top) * (canvas.height / rect.height),
+  };
+}
+
 export function bindClick(canvas, handler) {
   canvas.addEventListener('click', (event) => {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const x = (event.clientX - rect.left) * scaleX;
-    const y = (event.clientY - rect.top) * scaleY;
-    handler(x, y);
+    const point = canvasPoint(canvas, event.clientX, event.clientY);
+    handler(point.x, point.y);
   });
 }
 
@@ -16,59 +19,75 @@ export function pointInRect(x, y, rect) {
   return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h;
 }
 
-// Tracks cursor x in canvas-local coordinates for edge-scroll; null once
-// the mouse leaves the canvas so the camera stops scrolling.
 export function bindMouseMove(canvas, handler) {
-  canvas.addEventListener('mousemove', (event) => {
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    handler((event.clientX - rect.left) * scaleX);
-  });
+  canvas.addEventListener('mousemove', (event) => handler(canvasPoint(canvas, event.clientX, event.clientY).x));
   canvas.addEventListener('mouseleave', () => handler(null));
 }
 
-// Pointer events cover mouse, pen, and touch. The previous mouse-only
-// listeners made camera panning unreachable on mobile even though tap-generated
-// click events still operated UI buttons. Pointer capture plus the window
-// listeners keep a drag continuous after it leaves the canvas.
-export function bindDrag(canvas, handler) {
-  let activePointerId = null;
-  let lastX = 0;
+// One controller serves desktop drag, mobile one-finger pan, and pinch zoom.
+// A small physical-pixel threshold lets normal UI taps stay taps.
+export function bindCameraGestures(canvas, { onPan, onZoom, onDragEnd }) {
+  const pointers = new Map();
+  let lastPan = null;
+  let panDistance = 0;
+  let lastPinch = null;
+  const DRAG_THRESHOLD_PX = 7;
+
+  const pinch = () => {
+    const points = [...pointers.values()];
+    if (points.length !== 2) return null;
+    const [a, b] = points;
+    return { x: (a.x + b.x) / 2, distance: Math.hypot(a.x - b.x, a.y - b.y) };
+  };
+  const beginSinglePointer = () => {
+    const point = pointers.values().next().value;
+    lastPan = point ?? null;
+    panDistance = 0;
+    lastPinch = null;
+  };
 
   canvas.addEventListener('pointerdown', (event) => {
-    if (!event.isPrimary || activePointerId !== null) return;
-    activePointerId = event.pointerId;
-    lastX = event.clientX;
+    if (!event.isPrimary && event.pointerType !== 'touch') return;
+    pointers.set(event.pointerId, { ...canvasPoint(canvas, event.clientX, event.clientY), screenX: event.clientX });
     canvas.setPointerCapture?.(event.pointerId);
+    if (pointers.size === 1) beginSinglePointer();
+    else if (pointers.size === 2) lastPinch = pinch();
   });
+
   window.addEventListener('pointermove', (event) => {
-    if (event.pointerId !== activePointerId) return;
-    const scaleX = canvas.width / canvas.getBoundingClientRect().width;
-    const deltaX = (event.clientX - lastX) * scaleX;
-    lastX = event.clientX;
-    handler(deltaX);
+    if (!pointers.has(event.pointerId)) return;
+    const point = { ...canvasPoint(canvas, event.clientX, event.clientY), screenX: event.clientX };
+    pointers.set(event.pointerId, point);
+    if (pointers.size >= 2) {
+      const current = pinch();
+      if (current && lastPinch && current.distance > 0 && lastPinch.distance > 0) onZoom(current.x, current.distance / lastPinch.distance);
+      lastPinch = current;
+      return;
+    }
+    if (!lastPan) return;
+    const deltaX = point.x - lastPan.x;
+    panDistance += Math.abs(event.clientX - lastPan.screenX);
+    lastPan = point;
+    if (Math.abs(deltaX) >= 0 && panDistance >= DRAG_THRESHOLD_PX * (canvas.width / canvas.getBoundingClientRect().width)) onPan(deltaX);
   });
-  const endDrag = (event) => {
-    if (event.pointerId !== activePointerId) return;
-    activePointerId = null;
+
+  const endPointer = (event) => {
+    if (!pointers.has(event.pointerId)) return;
+    pointers.delete(event.pointerId);
+    if (pointers.size === 1) beginSinglePointer();
+    else if (pointers.size === 0) {
+      if (panDistance >= DRAG_THRESHOLD_PX) onDragEnd?.();
+      lastPan = null;
+      lastPinch = null;
+    }
   };
-  window.addEventListener('pointerup', endDrag);
-  window.addEventListener('pointercancel', endDrag);
+  window.addEventListener('pointerup', endPointer);
+  window.addEventListener('pointercancel', endPointer);
 }
 
-// Scroll-wheel zoom, cursor-anchored. preventDefault stops the page from
-// scrolling; { passive: false } is required for preventDefault to take
-// effect on a wheel listener.
 export function bindWheel(canvas, handler) {
-  canvas.addEventListener(
-    'wheel',
-    (event) => {
-      event.preventDefault();
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const x = (event.clientX - rect.left) * scaleX;
-      handler(event.deltaY, x);
-    },
-    { passive: false }
-  );
+  canvas.addEventListener('wheel', (event) => {
+    event.preventDefault();
+    handler(event.deltaY, canvasPoint(canvas, event.clientX, event.clientY).x);
+  }, { passive: false });
 }

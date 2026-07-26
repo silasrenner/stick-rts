@@ -102,6 +102,33 @@ export function getBottomBarTop(canvas) {
   return getQueueChipRowRect(canvas).y;
 }
 
+// Screen-space zoom controls are intentionally large enough to remain
+// discoverable on phones; pinch remains available as the direct gesture.
+export function getZoomButtonRects(canvas) {
+  const size = 34;
+  const gap = 6;
+  const x = canvas.width - size - 10;
+  return {
+    in: { x, y: 10, w: size, h: size },
+    out: { x, y: 10 + size + gap, w: size, h: size },
+  };
+}
+
+export function drawZoomControls(ctx) {
+  const rects = getZoomButtonRects(ctx.canvas);
+  for (const [action, rect] of Object.entries(rects)) {
+    ctx.fillStyle = '#24242c';
+    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    ctx.strokeStyle = '#777783';
+    ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+    ctx.fillStyle = '#f0f0f4';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(action === 'in' ? '+' : '−', rect.x + rect.w / 2, rect.y + 24);
+  }
+  ctx.textAlign = 'left';
+}
+
 export function getBuildMenuButtons(canvas) {
   const { BUILD_BUTTON_WIDTH: w, BUILD_BUTTON_GAP: gap } = CONFIG;
   const totalWidth = getBuildButtonRowWidth();
