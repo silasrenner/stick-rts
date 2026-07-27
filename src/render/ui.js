@@ -129,6 +129,18 @@ export function drawZoomControls(ctx) {
   ctx.textAlign = 'left';
 }
 
+export function getWatchSpeedButtonRect(canvas) {
+  return { x: canvas.width - 160, y: 10, w: 112, h: 36 };
+}
+
+export function drawWatchSpeedButton(ctx, speed) {
+  const rect = getWatchSpeedButtonRect(ctx.canvas);
+  ctx.fillStyle = '#24242c'; ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.strokeStyle = '#88889a'; ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.fillStyle = '#f0f0f4'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(`${speed}×`, rect.x + rect.w / 2, rect.y + 24); ctx.textAlign = 'left';
+}
+
 export function getTouchCommandRects(canvas, world) {
   const army = [
     { action: 'attack', label: 'ATTACK', rect: { x: canvas.width - 160, y: 10, w: 112, h: 36 } },

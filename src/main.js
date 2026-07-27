@@ -16,6 +16,7 @@ import {
   getWatchSetupRects,
   getSettingsRects,
   getZoomButtonRects,
+  getWatchSpeedButtonRect,
   getTouchCommandRects,
   PURCHASE_REASON_TEXT,
 } from './render/ui.js';
@@ -38,6 +39,7 @@ const uiState = {
   menuScreen: 'main', // 'main' | 'playDifficulty' | 'watchSetup' | 'settings'
   settings: { fpsVisible: false, defaultDifficulty: DEFAULT_DIFFICULTY },
   watchSetup: { playerDifficulty: 'hard', aiDifficulty: 'hard', seed: null },
+  watchSpeed: 1,
   touchControlsEnabled: window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0,
 };
 
@@ -78,6 +80,7 @@ function resetMatch(difficulty = world.teams.ai.difficulty ?? uiState.settings.d
   world.matchState = 'playing';
   world.teams.ai.difficulty = difficulty;
   uiMessage = { text: '', timer: 0 };
+  uiState.watchSpeed = 1;
   camera.x = 0;
   camera.targetX = 0;
 }
@@ -89,6 +92,7 @@ function startWatchAiMatch(playerDifficulty, aiDifficulty, seed) {
   world.teams.player.difficulty = playerDifficulty;
   world.teams.ai.difficulty = aiDifficulty;
   uiMessage = { text: '', timer: 0 };
+  uiState.watchSpeed = 1;
   camera.x = 0;
   camera.targetX = 0;
   // Captured even if "Random" was picked, so a spectator can note/reuse a
@@ -270,8 +274,12 @@ function handleMenuClick(x, y) {
 // overlay) — the build menu is hidden and player commands are suppressed,
 // so there's nothing else on screen a click could meaningfully hit.
 function handleWatchAiClick(x, y) {
-  if (world.matchState !== 'won' && world.matchState !== 'lost') return;
-  if (pointInRect(x, y, getBackToMenuButtonRect(canvas))) backToMenu();
+  if (world.matchState === 'playing' && pointInRect(x, y, getWatchSpeedButtonRect(canvas))) {
+    const speeds = [1, 5, 10, 20];
+    uiState.watchSpeed = speeds[(speeds.indexOf(uiState.watchSpeed) + 1) % speeds.length];
+    return;
+  }
+  if ((world.matchState === 'won' || world.matchState === 'lost') && pointInRect(x, y, getBackToMenuButtonRect(canvas))) backToMenu();
 }
 
 function touchControlAt(x, y) {
@@ -399,7 +407,7 @@ function tick(dt) {
 function frame(time) {
   const deltaMs = time - lastTime;
   lastTime = time;
-  accumulator.advance(deltaMs, tick);
+  accumulator.advance(deltaMs * (isWatchAiMatch(world) && world.matchState === 'playing' ? uiState.watchSpeed : 1), tick);
   updateCamera(camera, world, mouseX, deltaMs / 1000, dragDeltaX);
   dragDeltaX = 0; // consumed for this frame — only read inside updateCamera's Watch-AI branch, harmless otherwise
   render(ctx, world, camera, uiMessage, uiState);
