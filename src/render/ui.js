@@ -129,6 +129,41 @@ export function drawZoomControls(ctx) {
   ctx.textAlign = 'left';
 }
 
+export function getTouchCommandRects(canvas, world) {
+  const army = [
+    { action: 'attack', label: 'ATTACK', rect: { x: canvas.width - 160, y: 10, w: 112, h: 36 } },
+    { action: 'defend', label: 'DEFEND', rect: { x: canvas.width - 160, y: 52, w: 112, h: 36 } },
+    { action: 'retreat', label: 'RETREAT', rect: { x: canvas.width - 160, y: 94, w: 112, h: 36 } },
+  ];
+  const hero = world.units.find((u) => u.team === 'player' && u.isHero && u.state !== 'dying');
+  if (!hero) return { army, hero: [] };
+  const y = getBottomBarTop(canvas) - 52;
+  const startX = canvas.width - 330;
+  return { army, hero: [
+    { action: 'heroControl', label: hero.controlled ? 'AUTO' : 'CONTROL', rect: { x: startX, y, w: 74, h: 42 }, enabled: true },
+    { action: 'heroLeft', label: '◀', rect: { x: startX + 80, y, w: 48, h: 42 }, enabled: hero.controlled },
+    { action: 'heroAttack', label: 'ATK', rect: { x: startX + 134, y, w: 58, h: 42 }, enabled: hero.controlled && hero.attackTimer <= 0 },
+    { action: 'heroSpecial', label: 'SKILL', rect: { x: startX + 198, y, w: 70, h: 42 }, enabled: hero.controlled && hero.specialTimer <= 0 },
+    { action: 'heroRight', label: '▶', rect: { x: startX + 274, y, w: 48, h: 42 }, enabled: hero.controlled },
+  ] };
+}
+
+export function drawTouchCommandControls(ctx, world) {
+  const controls = getTouchCommandRects(ctx.canvas, world);
+  for (const control of [...controls.army, ...controls.hero]) {
+    const enabled = control.enabled !== false;
+    ctx.fillStyle = enabled ? '#24242c' : '#17171c';
+    ctx.strokeStyle = enabled ? '#88889a' : '#3e3e48';
+    ctx.fillRect(control.rect.x, control.rect.y, control.rect.w, control.rect.h);
+    ctx.strokeRect(control.rect.x, control.rect.y, control.rect.w, control.rect.h);
+    ctx.fillStyle = enabled ? '#f0f0f4' : '#777783';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(control.label, control.rect.x + control.rect.w / 2, control.rect.y + 25);
+  }
+  ctx.textAlign = 'left';
+}
+
 export function getBuildMenuButtons(canvas) {
   const { BUILD_BUTTON_WIDTH: w, BUILD_BUTTON_GAP: gap } = CONFIG;
   const totalWidth = getBuildButtonRowWidth();

@@ -2,7 +2,7 @@ import { CONFIG } from '../config.js';
 import { isWatchAiMatch } from '../sim/world.js';
 import { drawStickFigure } from './stickFigure.js';
 import { drawStatue, drawStructure, drawMine, drawHealthBar } from './structures.js';
-import { drawHUD, drawBuildMenu, drawWinLoseOverlay, drawMenuScreen, getBottomBarTop, drawZoomControls } from './ui.js';
+import { drawHUD, drawBuildMenu, drawWinLoseOverlay, drawMenuScreen, getBottomBarTop, drawZoomControls, drawTouchCommandControls } from './ui.js';
 import { drawParallax } from './parallax.js';
 
 const LEGEND_LINE =
@@ -78,6 +78,7 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   drawLegend(ctx, world);
   drawHUD(ctx, world, uiMessage);
   drawZoomControls(ctx);
+  if (uiState.touchControlsEnabled && !isWatchAiMatch(world) && world.matchState === 'playing') drawTouchCommandControls(ctx, world);
   drawBuildMenu(ctx, world);
   drawWinLoseOverlay(ctx, world);
 }

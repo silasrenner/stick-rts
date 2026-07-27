@@ -16,6 +16,7 @@ import {
   getWatchSetupRects,
   getSettingsRects,
   getZoomButtonRects,
+  getTouchCommandRects,
   PURCHASE_REASON_TEXT,
 } from './render/ui.js';
 import { createCamera, updateCamera, zoomAt } from './render/camera.js';
@@ -37,6 +38,7 @@ const uiState = {
   menuScreen: 'main', // 'main' | 'playDifficulty' | 'watchSetup' | 'settings'
   settings: { fpsVisible: false, defaultDifficulty: DEFAULT_DIFFICULTY },
   watchSetup: { playerDifficulty: 'hard', aiDifficulty: 'hard', seed: null },
+  touchControlsEnabled: window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0,
 };
 
 let world = createWorld(); // starts in matchState 'menu'
@@ -271,6 +273,45 @@ function handleWatchAiClick(x, y) {
   if (world.matchState !== 'won' && world.matchState !== 'lost') return;
   if (pointInRect(x, y, getBackToMenuButtonRect(canvas))) backToMenu();
 }
+
+function touchControlAt(x, y) {
+  if (!uiState.touchControlsEnabled || world.matchState !== 'playing' || isWatchAiMatch(world)) return null;
+  return [...getTouchCommandRects(canvas, world).army, ...getTouchCommandRects(canvas, world).hero]
+    .find((control) => control.enabled !== false && pointInRect(x, y, control.rect)) ?? null;
+}
+
+function runTouchControl(action) {
+  if (action === 'attack' || action === 'defend' || action === 'retreat') setPlayerCommand(action);
+  else if (action === 'heroControl') toggleHeroControl();
+  else if (action === 'heroAttack') attackWithControlledHero();
+  else if (action === 'heroSpecial') specialWithControlledHero();
+}
+
+function canvasPoint(event) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: (event.clientX - rect.left) * (canvas.width / rect.width), y: (event.clientY - rect.top) * (canvas.height / rect.height) };
+}
+
+let heldHeroControl = null;
+canvas.addEventListener('pointerdown', (event) => {
+  if (event.pointerType !== 'touch') return;
+  const control = touchControlAt(canvasPoint(event).x, canvasPoint(event).y);
+  if (!control) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  canvas.setPointerCapture(event.pointerId);
+  if (control.action === 'heroLeft' || control.action === 'heroRight') {
+    heldHeroControl = { pointerId: event.pointerId, key: control.action === 'heroLeft' ? 'arrowleft' : 'arrowright' };
+    keyState.setVirtual(heldHeroControl.key, true);
+  } else runTouchControl(control.action);
+});
+function releaseHeldHeroControl(event) {
+  if (!heldHeroControl || event.pointerId !== heldHeroControl.pointerId) return;
+  keyState.setVirtual(heldHeroControl.key, false);
+  heldHeroControl = null;
+}
+canvas.addEventListener('pointerup', releaseHeldHeroControl);
+canvas.addEventListener('pointercancel', releaseHeldHeroControl);
 
 bindClick(canvas, (x, y) => {
   if (world.matchState !== 'menu') {

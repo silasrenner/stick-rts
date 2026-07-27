@@ -38,6 +38,13 @@ const landscape = await evaluate(`(() => { const canvas = document.querySelector
 if (landscape.rotate !== 'none' || landscape.width > 844 || Math.abs(landscape.ratio - 1400 / 540) > 0.02) throw new Error(`Landscape canvas is not fitted correctly: ${JSON.stringify(landscape)}`);
 
 await evaluate(`window.__resetMatch('medium'); window.__camera.x = 900; window.__camera.targetX = 900; window.__camera.zoom = 0.7;`);
+// Army controls occupy the touch-only top-right tray. A tap must change the
+// real player command without initiating a camera gesture.
+const attackTap = await evaluate(`(() => { const r = document.querySelector('#game').getBoundingClientRect(); return { x: r.left + (1250 / 1400) * r.width, y: r.top + (28 / 540) * r.height }; })()`);
+await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 9, ...attackTap }] });
+await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+const commandAfterTouch = await evaluate(`window.__world.teams.player.command`);
+if (commandAfterTouch !== 'attack') throw new Error(`Touch attack control did not issue a command: ${commandAfterTouch}`);
 await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 1, x: 550, y: 180 }, { id: 2, x: 650, y: 180 }] });
 await send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ id: 1, x: 500, y: 180 }, { id: 2, x: 700, y: 180 }] });
 await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });

@@ -6,6 +6,7 @@ const ARROW_KEYS = new Set(['arrowleft', 'arrowright', 'arrowup', 'arrowdown']);
 // right now," sampled once per sim tick.
 export function createKeyState() {
   const held = new Set();
+  const virtualHeld = new Set();
 
   window.addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
@@ -18,6 +19,11 @@ export function createKeyState() {
   });
 
   return {
-    isDown: (key) => held.has(key.toLowerCase()),
+    isDown: (key) => held.has(key.toLowerCase()) || virtualHeld.has(key.toLowerCase()),
+    setVirtual: (key, active) => {
+      const normalized = key.toLowerCase();
+      if (active) virtualHeld.add(normalized);
+      else virtualHeld.delete(normalized);
+    },
   };
 }
