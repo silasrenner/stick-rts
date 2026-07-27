@@ -47,5 +47,6 @@ export const DIFFICULTIES = {
     heroPurchaseDelay: 20,
     heroKind: 'auto',
     defendMineThreshold: 400,
+    globalVision: true,
   },
 };
