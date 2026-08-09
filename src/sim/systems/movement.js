@@ -66,13 +66,17 @@ export function updateMovement(world, dt) {
         // Get home; no formation slot — retreat isn't a battle line.
         desiredX = unit.homeX;
       } else if (unit.kind === 'archer') {
-        // Defend, archer: don't advance/hold apart from a warrior escort.
-        if (nearestFriendlyWarriorDistance(world, unit) > CONFIG.ARCHER_COHESION_DISTANCE) {
-          desiredX = unit.x; // includes the zero-living-warriors case (distance is Infinity)
-          holding = true;
-        } else {
+        // A newly spawned defender must first reach its own mine-side slot.
+        // Cohesion prevents an already-positioned archer from advancing
+        // unsupported, but must not freeze it at home when no warrior exists.
+        const sign = unit.team === 'player' ? 1 : -1;
+        const behindAssignedSlot = sign * unit.x < sign * (unit.slotX ?? unit.homeX) - 2;
+        if (behindAssignedSlot || nearestFriendlyWarriorDistance(world, unit) <= CONFIG.ARCHER_COHESION_DISTANCE) {
           desiredX = unit.slotX ?? unit.homeX;
           desiredY = unit.slotY ?? unit.y;
+        } else {
+          desiredX = unit.x;
+          holding = true;
         }
       } else {
         // Defend, everyone else: the screening line formation.js computed.
