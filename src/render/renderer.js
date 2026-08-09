@@ -1,9 +1,10 @@
 import { CONFIG } from '../config.js';
 import { isWatchAiMatch } from '../sim/world.js';
 import { drawStickFigure } from './stickFigure.js';
-import { drawStatue, drawStructure, drawMine, drawHealthBar } from './structures.js';
+import { drawStatue, drawStructure, drawTurret, drawMine, drawHealthBar } from './structures.js';
 import { drawHUD, drawBuildMenu, drawWinLoseOverlay, drawMenuScreen, getBottomBarTop, drawZoomControls, drawTouchCommandControls, drawWatchSpeedButton } from './ui.js';
 import { drawParallax } from './parallax.js';
+import { drawWatchTelemetryOverlay } from './watchTelemetryOverlay.js';
 
 const LEGEND_LINE =
   'Your command: Q Attack  W Defend  E Retreat   |   Hero: H Toggle control  ←/→ Move  J Attack  K Special   |   Debug: F FPS  S Stress-spawn';
@@ -50,7 +51,7 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   if (visible(world.statues.ai.x)) drawStatue(ctx, world.statues.ai);
 
   for (const structure of world.structures) {
-    if (visible(structure.x)) drawStructure(ctx, structure);
+    if (visible(structure.x)) structure.isTurret ? drawTurret(ctx, structure) : drawStructure(ctx, structure);
   }
 
   for (const unit of world.units) {
@@ -77,7 +78,8 @@ export function render(ctx, world, camera, uiMessage, uiState) {
 
   drawLegend(ctx, world);
   drawHUD(ctx, world, uiMessage);
-  drawZoomControls(ctx);
+  drawWatchTelemetryOverlay(ctx, world);
+  drawZoomControls(ctx, isWatchAiMatch(world));
   if (isWatchAiMatch(world) && world.matchState === 'playing') drawWatchSpeedButton(ctx, uiState.watchSpeed);
   if (uiState.touchControlsEnabled && !isWatchAiMatch(world) && world.matchState === 'playing') drawTouchCommandControls(ctx, world);
   drawBuildMenu(ctx, world);
@@ -111,15 +113,7 @@ function drawLegend(ctx, world) {
   ctx.font = '11px monospace';
   const bottomLineY = getBottomBarTop(ctx.canvas) - LEGEND_LINE_GAP;
 
-  if (isWatchAiMatch(world)) {
-    const label = (d) => d[0].toUpperCase() + d.slice(1);
-    ctx.fillText(
-      `Watching: ${label(world.teams.player.difficulty)} vs ${label(world.teams.ai.difficulty)}   |   Drag to pan camera`,
-      10,
-      bottomLineY
-    );
-    return;
-  }
+  if (isWatchAiMatch(world)) return;
 
   const difficulty = world.teams.ai.difficulty;
   const label = difficulty ? difficulty[0].toUpperCase() + difficulty.slice(1) : 'none';

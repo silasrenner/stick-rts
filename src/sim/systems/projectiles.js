@@ -11,7 +11,7 @@ export function updateProjectiles(world, dt) {
     }
 
     const target = findEntityById(world, projectile.targetId);
-    if (target) applyDamage(world, target, projectile.damage);
+    if (target) applyDamage(world, target, projectile.damage, projectile.team);
   }
   world.projectiles = remaining;
 }
