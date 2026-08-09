@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Stick RTS generated asset candidate",
+  "type": "object",
+  "required": ["asset_id", "kind", "prompt_file", "reference_files", "provider", "model", "created_at", "output_file", "status"],
+  "properties": {
+    "asset_id": {"type": "string"},
+    "kind": {"enum": ["style-lock", "environment-layer", "building", "unit", "effect", "ui"]},
+    "prompt_file": {"type": "string"},
+    "reference_files": {"type": "array", "items": {"type": "string"}},
+    "provider": {"type": "string"},
+    "model": {"type": "string"},
+    "generation_id": {"type": ["string", "null"]},
+    "seed": {"type": ["integer", "null"]},
+    "dimensions": {"type": "array", "items": {"type": "integer"}, "minItems": 2, "maxItems": 2},
+    "created_at": {"type": "string"},
+    "output_file": {"type": "string"},
+    "status": {"enum": ["candidate", "approved", "rejected"]},
+    "owner_notes": {"type": ["string", "null"]}
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "parent_master": "assets/art/source/sunmeadow/sunmeadow-league-assets-master.jpg",
+  "parent_sha256": "43c78db7117041ecf0721479fe218aa11bf56941f41b0cc7b1700e269681e5ff",
+  "status": "owner-approved raw parent-source selection",
+  "selected_roles": [
+    {
+      "role": "miner",
+      "candidate_file": "artifacts/sunmeadow-intake-v01/preferred-role-sources/miner-source.png",
+      "source_crop": [0, 1120, 220, 1280],
+      "read": "helmeted miner family with pickaxe, ore cart, and ground-level mining props",
+      "runtime_work_deferred": ["background cleanup", "single-pose isolation", "ground anchor", "mine/carry/walk/defeat states"]
+    },
+    {
+      "role": "warrior",
+      "candidate_file": "artifacts/sunmeadow-intake-v01/preferred-role-sources/warrior-shield-source.png",
+      "source_crop": [145, 590, 365, 715],
+      "read": "green-cloaked shield warrior with sword; green-and-gold sun emblem",
+      "runtime_work_deferred": ["background cleanup", "single-pose isolation", "ground anchor", "walk/attack/defeat states"]
+    },
+    {
+      "role": "archer",
+      "candidate_file": "artifacts/sunmeadow-intake-v01/preferred-role-sources/archer-source.png",
+      "source_crop": [145, 705, 365, 830],
+      "read": "green-cloaked bow archer with light armor and warm-gold accents",
+      "runtime_work_deferred": ["background cleanup", "single-pose isolation", "ground anchor", "walk/fire/defeat states"]
+    },
+    {
+      "role": "first_hero",
+      "candidate_file": "artifacts/sunmeadow-intake-v01/preferred-role-sources/sun-guard-hero-source.png",
+      "source_crop": [770, 485, 985, 785],
+      "read": "sun-guard champion with bright sword, green/gold armor, and sun-emblem shield",
+      "runtime_work_deferred": ["background cleanup", "game-scale silhouette", "ground anchor", "idle/walk/attack/special/defeat states"]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "asset_id": "open-frontier-master-v01",
+  "kind": "environment-master",
+  "source_file": "assets/art/source/open-frontier/open-frontier-master.jpg",
+  "source_dimensions": [1280, 720],
+  "source_sha256": "6b36501ac6b1a1d9012a23821b302785374e13ecf6c6557dbcdb0e18403ce54e",
+  "usage": "Direct production background source for the first Open Frontier map. Preserve this master unchanged; derive renderer-specific crops/layers from approved copies only.",
+  "target_viewport": [1400, 540],
+  "render_note": "The source is 16:9 while the current gameplay viewport is 1400x540. It must be composited through an intentional gameplay crop or a separately approved outpainted/wide extension; do not stretch it non-uniformly.",
+  "status": "owner-approved-source",
+  "approval_note": "Owner directed that the original image be used rather than an AI-generated substitute."
+}

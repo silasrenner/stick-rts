@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Animated sprite editor &amp; pixel art tool">
+    <meta name="author" content="Igara Studio S.A.">
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Aseprite" />
+    <meta property="og:description" content="Animated sprite editor &amp; pixel art tool" />
+    <meta property="og:image" content="https://www.aseprite.org/assets/images/og-image.png" />
+    <meta property="og:url" content="https://www.aseprite.org/" />
+
+    <title>Aseprite - Docs - Cli</title>
+    <link rel="shortcut icon" href="/assets/images/favicon.png">
+
+    
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+    <link href="/assets/css/fontawesome.min.css" rel="stylesheet">
+    <link href="/assets/css/brands.min.css" rel="stylesheet">
+    <link href="/assets/css/solid.min.css" rel="stylesheet">
+    <link href="/assets/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/assets/css/aseprite.css?v=40" rel="stylesheet">
+  </head>
+
+  <body>
+    <div class="navbar navbar-default navbar-static-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse"></button>
+          <a class="navbar-brand" href="/" title="Home"></a>
+        </div>
+        <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            <li class="docs-button ">
+              <a href="/docs/"><i class="sprite sprite-docs"></i>&nbsp;Docs</a></li>
+            <li><a href="https://blog.aseprite.org/"><i class="sprite sprite-blog"></i>&nbsp;Blog</a></li>
+            <li><a href="https://community.aseprite.org/"><i class="sprite sprite-community"></i>&nbsp;Community</a></li>
+            <li ><a href="/support/"><i class="sprite sprite-support"></i>&nbsp;Support</a></li>
+            <li class="buy-button">
+              <a href="/buy/"><i class="sprite sprite-download"></i>&nbsp;Buy Now</a></li>
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+                        <li class=""><a href="/user/">
+                              <i class="sprite sprite-user"></i>&nbsp;Sign&nbsp;in</a>
+                          </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+<div class="top-shadow"></div>
+<div id="content-wrapper">
+<div id="content">
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      <ul class="nav nav-tabs nav-justified">
+<li class="active"><a href="/docs/">Documentation</a></li>
+<li class=""><a href="/api/">API</a></li>
+<li class=""><a href="/faq/">FAQ</a></li>
+<li class=""><a href="/quickref/">Quick Reference</a></li>
+<li class=""><a href="/tutorial/">Tutorial</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-3" style="padding-top: 2em">
+      <script type="text/javascript" src="/assets/js/search.js?v=2"></script>
+      <script type="text/javascript">
+        searchUrl = "/search/docs";
+        document.addEventListener("click", onSearchDismiss);
+      </script>
+      <input id="search-terms" type="text" class="form-control" placeholder="Search documentation..." autofocus onfocus="onSearchFocus(event)" onkeydown="onSearchKeyDown(event)" oninput="onSearchInput(event)">
+      <a href="https://community.aseprite.org/t/14148" style="float:right; font-size:small; font-style:italic;">Feedback</a>
+      <ul id="search-result" class="search-result" onkeydown="onSearchResultKeyDown(event)">
+        <li><small class="text-right">press ENTER to search or ESC to cancel</small></li>
+      </ul>
+      <h3 id="table-of-contents">Table of contents<a href="#table-of-contents" class="section_anchor"></a></h3>
+<p><a href="/docs/./">Overview</a></p>
+<p><a href="/docs/./basics/">Basics</a></p>
+<ul>
+<li><a href="/docs/./workspace/">Workspace</a></li>
+<li><a href="/docs/./sprite/">Image &amp; Sprite</a></li>
+<li><a href="/docs/./color/">Color</a></li>
+<li><a href="/docs/./drawing/">Drawing</a></li>
+<li><a href="/docs/./selecting/">Selecting</a></li>
+<li><a href="/docs/./transformations/">Transformations</a></li>
+</ul>
+<p><a href="/docs/./sprite/">Sprite</a></p>
+<ul>
+<li><a href="/docs/./layers/">Layers</a></li>
+<li><a href="/docs/./animation/">Animation</a></li>
+<li><a href="/docs/./tilemap/">Tilemap</a></li>
+<li><a href="/docs/./slices/">Slices</a></li>
+</ul>
+<p><a href="/docs/./files/">Files</a></p>
+<ul>
+<li><a href="/docs/./save/">Save</a></li>
+<li><a href="/docs/./exporting/">Exporting</a></li>
+<li><a href="/docs/./sprite-sheet/">Sprite Sheet</a></li>
+<li><a href="/docs/./cli/">CLI</a></li>
+</ul>
+<p><a href="/docs/./customization/">Customization</a></p>
+<ul>
+<li><a href="/docs/./preferences/">Preferences</a></li>
+<li><a href="/docs/./keyboard-shortcuts/">Keyboard Shortcuts</a></li>
+<li><a href="/docs/./workspace-layout/">Workspace Layout</a></li>
+<li><a href="/docs/./extensions/">Extensions</a></li>
+<li><a href="/docs/./scripting/">Scripting</a></li>
+</ul>
+      <hr>
+      <p><em><a href="https://github.com/aseprite/docs/edit/main/cli.md">Edit page</a></em></p>
+    </div>
+    <div id="doc_content" class="col-md-9">
+      <h1 id="aseprite-command-line-interface">Aseprite Command Line Interface<a href="#aseprite-command-line-interface" class="section_anchor"></a></h1>
+<p>You can convert or export your sprites to other formats (or
+textures+json data) from the command line.  See
+<a href="#platform-specific-details">Platform-specific Details</a> section to
+know how to use the command line.</p>
+<ul>
+<li><a href="#options">Options</a></li>
+<li><a href="#use-cases">Use Cases</a></li>
+<li><a href="#platform-specific-details">Platform-specific Details</a></li>
+<li><a href="#automating-the-process">Automating the process</a></li>
+</ul>
+<p><img src="//www.aseprite.org/assets/images/atlas.gif" alt="Atlas"></p>
+<h1 id="options">Options<a href="#options" class="section_anchor"></a></h1>
+<pre>
+Usage:
+  aseprite.exe [OPTIONS] [FILES]...
+
+Options:
+      --<a href="#shell">shell</a>                  Start an interactive console to execute scripts
+  -b, --<a href="#batch">batch</a>                  Do not start the UI
+  -p, --<a href="#preview">preview</a>                Do not execute actions, just print what will be
+                               done
+      --<a href="#save-as">save-as</a> &lt;filename&gt;     Save the last given sprite with other format
+      --<a href="#palette">palette</a> &lt;filename&gt;     Change the palette of the last given sprite
+      --<a href="#scale">scale</a> &lt;factor&gt;         Resize all previously opened sprites
+      --<a href="#dithering-algorithm">dithering-algorithm</a> &lt;algorithm&gt;
+                               Dithering algorithm used in --color-mode
+                               to convert images from RGB to Indexed
+      --<a href="#dithering-matrix">dithering-matrix</a> &lt;matrix&gt;
+                               Matrix used in ordered dithering algorithm
+      --<a href="#color-mode">color-mode</a> &lt;mode&gt;      Change color mode of all previously
+                               opened sprites:
+                                 rgb
+                                 grayscale
+                                 indexed
+      --<a href="#data">data</a> &lt;filename.json&gt;   File to store the sprite sheet metadata
+      --<a href="#format">format</a> &lt;format&gt;        Format to export the data file (json-hash, json-array)
+      --<a href="#sheet">sheet</a> &lt;filename.png&gt;   Image file to save the texture
+      --<a href="#sheet-type">sheet-type</a>             Algorithm to create the sprite sheet:
+                                 horizontal
+                                 vertical
+                                 rows
+                                 columns
+                                 packed
+      --<a href="#sheet-width">sheet-width</a> &lt;pixels&gt;   Sprite sheet width
+      --<a href="#sheet-height">sheet-height</a> &lt;pixels&gt;  Sprite sheet height
+      --<a href="#sheet-columns">sheet-columns</a> &lt;columns&gt;
+      --<a href="#sheet-rows">sheet-rows</a> &lt;rows&gt;
+      --<a href="#sheet-pack">sheet-pack</a>             Use a packing algorithm to avoid waste of space
+                               in the texture
+      --<a href="#split-layers">split-layers</a>           Import each layer of the next given sprite as
+                               a separated image in the sheet
+      --<a href="#split-tags">split-tags</a>             Save each tag as a separated file
+      --<a href="#split-slices">split-slices</a>           Save each slice as a separated file
+      --<a href="#split-grid">split-grid</a>             Save each grid tile as a separated file
+      --<a href="#layer">layer</a> &lt;name&gt; or
+      --<a href="#layer">import-layer</a> &lt;name&gt;    Include just the given layer in the sheet
+      --<a href="#all-layers">all-layers</a>             Make all layers visible
+                               By default hidden layers will be ignored
+      --<a href="#ignore-layer">ignore-layer</a> &lt;name&gt;    Exclude the given layer in the sheet
+                               or save as operation
+      --<a href="#tag">tag</a> &lt;name&gt;
+      --<a href="#tag">frame-tag</a> &lt;name&gt;       Include tagged frames in the sheet
+      --<a href="#frame-range">frame-range</a> from,to    Only export frames in the [from,to] range
+      --<a href="#ignore-empty">ignore-empty</a>           Do not export empty frames/cels
+      --<a href="#merge-duplicates">merge-duplicates</a>       Merge all duplicate frames into one in the sprite sheet
+      --<a href="#border-padding">border-padding</a> &lt;value&gt; Add padding on the texture borders
+      --<a href="#shape-padding">shape-padding</a> &lt;value&gt;  Add padding between frames
+      --<a href="#inner-padding">inner-padding</a> &lt;value&gt;  Add padding inside each frame
+      --<a href="#trim">trim</a>                   Trim whole sprite for --save-as
+                               or individual frames for --sheet
+      --<a href="#trim-sprite">trim-sprite</a>            Trim the whole sprite (for --save-as and --sheet)
+      --<a href="#trim-by-grid">trim-by-grid</a>           Trim all images by its correspondent grid boundaries before exporting
+      --<a href="#extrude">extrude</a>                Extrude all images duplicating all edges one pixel
+      --<a href="#crop">crop</a> x,y,width,height  Crop all the images to the given rectangle
+      --<a href="#slice">slice</a> &lt;name&gt;           Crop the sprite to the given slice area
+      --<a href="#filename-format">filename-format</a> &lt;fmt&gt;  Special format to generate filenames
+      --<a href="#tagname-format">tagname-format</a> &lt;fmt&gt;   Special format to generate tagnames in JSON data
+      --<a href="#script">script</a> &lt;filename&gt;      Execute a specific script
+      --<a href="#script-param">script-param</a> name=value
+                               Parameter for a script executed from the
+                               CLI that you can access with app.params
+      --<a href="#list-layers">list-layers</a>            List layers of the next given sprite
+                               or include layers in JSON data
+      --<a href="#list-layer-hierarchy">list-layer-hierarchy</a>   List layers with groups of the next given sprite
+                               or include layers hierarchy in JSON data
+      --<a href="#list-tags">list-tags</a>              List tags of the next given sprite sprite
+                               or include frame tags in JSON data
+      --<a href="#list-slices">list-slices</a>            List slices of the next given sprite sprite
+                               or include slices in JSON data
+      --<a href="#oneframe">oneframe</a>               Load just the first frame
+      --<a href="#export-tileset">export-tileset</a>         Export only tilesets from visible tilemap layers
+  -v, --<a href="#verbose">verbose</a>                Explain what is being done
+      --<a href="#debug">debug</a>                  Extreme verbose mode and copy log to desktop
+      --<a href="#noinapp">noinapp</a>                Disable "in game" visibility on Steam
+                               Doesn't count playtime
+  -?, --<a href="#help">help</a>                   Display this help and exits
+      --<a href="#version">version</a>                Output version information and exit
+</pre>
+<h2 id="shell">--shell<a href="#shell" class="section_anchor"></a></h2>
+<p>Executes Aseprite in a
+<a href="https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop">REPL mode</a>. You
+can write Lua code in this mode using <a href="//www.aseprite.org/api">the scripting API.</a></p>
+<h2 id="batch">--batch<a href="#batch" class="section_anchor"></a></h2>
+<p>Runs Aseprite only to process command line options, then
+finishes. It's specially useful if you are running Aseprite from a
+script to automate sprite sheet generation, image conversion, etc.
+Example:</p>
+<pre><code>aseprite --batch
+</code></pre>
+<p>Or you can use the shorter form:</p>
+<pre><code>aseprite -b
+</code></pre>
+<h2 id="preview">--preview<a href="#preview" class="section_anchor"></a></h2>
+<p>On <strong>v1.2-beta2</strong>: Only show what will be done (doesn't modify files
+in disk).</p>
+<pre><code>aseprite --preview ...
+</code></pre>
+<h2 id="save-as">--save-as<a href="#save-as" class="section_anchor"></a></h2>
+<p>Saves the latest opened document with the given file name. It's like
+calling <code>File &gt; Save As</code> from the interface.  Example:</p>
+<pre><code>aseprite -b sprite.ase --save-as frame001.png
+</code></pre>
+<p>Will generate <code>frame001.png</code>, <code>frame002.png</code>, etc. for each frame in <code>sprite.ase</code>.</p>
+<p>On <strong>v1.2-beta1</strong>: You can specify
+<a href="#filename-format">--filename-format</a> parameters in the filename
+directly. For example:</p>
+<pre><code>aseprite -b sprite.ase --save-as layer-{layer}-frame-{frame01}.png
+</code></pre>
+<p>It's like using <a href="#split-layers">--split-layers</a> and
+<a href="#filename-format">--filename-format</a> implicitly.</p>
+<h2 id="palette">--palette<a href="#palette" class="section_anchor"></a></h2>
+<p>On <strong>v1.2-beta2</strong>: Changes the color palette of the last given sprite
+in the command. It can be used to save one sprite with different color
+palettes:</p>
+<pre><code>aseprite -b ryu-template.png --palette pal1.png --save-as ryu1.png --palette pal2.png --save-as ryu2.png
+</code></pre>
+<p>On <strong>v1.1</strong> this parameter was used to change the default program
+palette, but it can be done now using the
+<em><a href="/docs/./default-palette/">Save as Default Palette</a></em> menu option.</p>
+<h2 id="scale">--scale<a href="#scale" class="section_anchor"></a></h2>
+<pre><code>aseprite ... --scale FACTOR
+</code></pre>
+<p>Resizes all images with the given <code>FACTOR</code> specified before
+<code>--scale</code> option in the command line. Example:</p>
+<pre><code>aseprite -b original.png --scale 2 --save-as image-x2.png
+</code></pre>
+<h2 id="dithering-algorithm">--dithering-algorithm<a href="#dithering-algorithm" class="section_anchor"></a></h2>
+<pre><code>aseprite -b sprite.ase --dithering-algorithm ALGORITHM
+</code></pre>
+<p>Dithering algorithm used in <a href="#color-mode">--color-mode indexed</a> to convert images from
+RGB to Indexed.</p>
+<ul>
+<li><code>--dithering-algorithm none</code></li>
+<li><code>--dithering-algorithm ordered</code></li>
+<li><code>--dithering-algorithm old</code></li>
+</ul>
+<h2 id="dithering-matrix">--dithering-matrix<a href="#dithering-matrix" class="section_anchor"></a></h2>
+<pre><code>aseprite -b sprite.ase --dithering-matrix MATRIX
+</code></pre>
+<p>Dithering matrix used for
+<a href="#dithering-algorithm">--dithering-algorithm</a> and
+<a href="#color-mode">--color-mode indexed</a> to convert images
+from RGB to Indexed. The <code>MATRIX</code> can be:</p>
+<ul>
+<li><code>--dithering-matrix bayer8x8</code></li>
+<li><code>--dithering-matrix bayer4x4</code></li>
+<li><code>--dithering-matrix bayer2x2</code></li>
+<li>Or the identifier (<code>id</code>) of other dithering matrices in installed extensions.</li>
+</ul>
+<p>These default dithering matrices (<code>bayer8x8</code>, etc.) are in the
+<a href="https://github.com/aseprite/aseprite/tree/master/data/extensions/bayer-matrices">bayer-matrices</a>
+extension of Aseprite, and these
+ids in its <a href="https://github.com/aseprite/aseprite/blob/master/data/extensions/bayer-matrices/package.json#L10">packages.json</a> file.</p>
+<h2 id="color-mode">--color-mode<a href="#color-mode" class="section_anchor"></a></h2>
+<pre><code>aseprite -b sprite.ase --color-mode MODE
+</code></pre>
+<p>Changes the color mode to the given <code>MODE</code> of all previously opened
+sprites. The <code>MODE</code> can be:</p>
+<ul>
+<li><code>--color-mode rgb</code></li>
+<li><code>--color-mode grayscale</code></li>
+<li><code>--color-mode indexed</code></li>
+</ul>
+<p>Remember that <a href="#dithering-algorithm">--dithering-algorithm</a> and <a href="#dithering-matrix">--dithering-matrix</a>
+will affect the RGB → Indexed conversion.</p>
+<p>Examples:</p>
+<pre><code>aseprite -b idx-sprite.ase --color-mode rgb --save-as rgb-output.png
+aseprite -b rgb-sprite.ase --dithering-algorithm ordered --dithering-matrix bayer8x8 --color-mode indexed --save-as idx-output.png
+</code></pre>
+<h2 id="data">--data<a href="#data" class="section_anchor"></a></h2>
+<pre><code>aseprite.exe ... --sheet file.png --data file.json
+</code></pre>
+<p>Saves information about the exported sprite sheet in a JSON
+format. <a href="https://gist.github.com/dacap/db18e5747a4b6e208d3c">Output example.</a></p>
+<p>See <a href="#sheet">--sheet</a> option to change the destination of the sprite sheet image.</p>
+<p>The JSON data can also be written directly to stdout, by explicitly
+using an empty filename, i.e. <code>--data=""</code>.</p>
+<pre><code>aseprite.exe ... --data="" animations.ase
+</code></pre>
+<h2 id="format">--format<a href="#format" class="section_anchor"></a></h2>
+<p>Changes the format used to shave the sprite sheet data specified in
+<a href="#data">--data</a> option. Available formats are:</p>
+<ul>
+<li><code>--format json-hash</code> (default format) (<a href="https://gist.github.com/dacap/db18e5747a4b6e208d3c">example</a>)</li>
+<li><code>--format json-array</code> (<a href="https://gist.github.com/dacap/a32adb9248320326733a">example</a>)</li>
+</ul>
+<h2 id="sheet">--sheet<a href="#sheet" class="section_anchor"></a></h2>
+<pre><code>aseprite ... --sheet SPRITESHEET.png
+</code></pre>
+<p>Exports all images specified in the command line before the <code>--sheet</code>
+option in the <code>SPRITESHEET.png</code> image (the file will be overwritten).</p>
+<p>See <a href="#data">--data</a> option to change the destination of the sprite sheet JSON data.</p>
+<h2 id="sheet-width">--sheet-width<a href="#sheet-width" class="section_anchor"></a></h2>
+<p>Specifies a fixed width (in pixels) for the sprite sheet in <a href="#sheet">--sheet</a>.</p>
+<h2 id="sheet-height">--sheet-height<a href="#sheet-height" class="section_anchor"></a></h2>
+<p>Specifies a fixed height (in pixels) for the sprite sheet in <a href="#sheet">--sheet</a>.</p>
+<h2 id="sheet-type">--sheet-type<a href="#sheet-type" class="section_anchor"></a></h2>
+<p>Type of sprite sheet when <a href="#sheet">--sheet</a> is used:</p>
+<ul>
+<li><code>horizontal</code></li>
+<li><code>vertical</code></li>
+<li><code>rows</code></li>
+<li><code>columns</code></li>
+<li><code>packed</code> (same as <a href="#sheet-pack">--sheet-pack</a>)</li>
+</ul>
+<h2 id="sheet-pack">--sheet-pack<a href="#sheet-pack" class="section_anchor"></a></h2>
+<p>Use a special packing algorithm to avoid waste of space in the sprite sheet.</p>
+<h2 id="split-layers">--split-layers<a href="#split-layers" class="section_anchor"></a></h2>
+<p>Splits the visible layers of the <strong>next document</strong> in the command
+line, so then you can save each layer as an independent image/item. It
+affects <a href="#sheet">--sheet</a> and <a href="#save-as">--save-as</a> options.
+<strong>Warning</strong>: The <code>--split-layers</code> option must be <strong>before</strong> your sprite.</p>
+<ul>
+<li>
+<p>Example:</p>
+<pre><code>aseprite.exe -b --split-layers with-layers.ase --save-as output1.png
+</code></pre>
+<p>Check that <code>--split-layers</code> must be before <code>with-layers.ase</code>. In this example,
+if <code>with-layers.ase</code> contains 3 frames and layers <code>Background</code> and <code>Layer 1</code>,
+the following command will generate 6 files (one for each frame/layer):</p>
+<pre><code>output (Background) 1.png
+output (Background) 2.png
+output (Background) 3.png
+output (Layer 1) 1.png
+output (Layer 1) 2.png
+output (Layer 1) 3.png
+</code></pre>
+</li>
+</ul>
+<p>Since <strong>v1.2-beta1</strong>: If you specify <code>{layer}</code> in the
+<a href="#save-as">--save-as</a> filename, the <code>--split-layers</code> is implicitly
+used. For example</p>
+<pre><code>aseprite.exe -b with-layers.ase --save-as output-{layer}-{frame}.png
+</code></pre>
+<p>To save hidden layers, you can combine this with the <a href="#all-layers">--all-layers</a> option:</p>
+<pre><code>aseprite.exe -b --all-layers with-layers.ase --save-as output-{layer}-{frame}.png
+</code></pre>
+<h2 id="split-tags">--split-tags<a href="#split-tags" class="section_anchor"></a></h2>
+<p>Since <strong>v1.2-beta8</strong>, splits next document tags into different
+files. It affects the <a href="#save-as">--save-as</a> option. Same as doing:</p>
+<pre><code>aseprite.exe -b animations.ase --save-as animations-{tag}.gif
+</code></pre>
+<h2 id="split-slices">--split-slices<a href="#split-slices" class="section_anchor"></a></h2>
+<p>Since <strong>v1.2-beta8</strong>, splits next document slices into different
+files. It affects the <a href="#save-as">--save-as</a> option. Same as doing:</p>
+<pre><code>aseprite.exe -b sheet.ase --save-as part-{slice}.png
+</code></pre>
+<h2 id="split-grid">--split-grid<a href="#split-grid" class="section_anchor"></a></h2>
+<pre><code>aseprite -b --split-grid tilemaps.png --sheet tiles.png
+</code></pre>
+<p>Since <strong>v1.3-beta21</strong>: Indicates that <a href="#sheet">--sheet</a> should export
+each grid cell of the given file as a separate sprite in the sprite
+sheet.</p>
+<h2 id="layer">--layer<a href="#layer" class="section_anchor"></a></h2>
+<p>Selects just one layer to be exported (hides all other layers). It
+affects <a href="#sheet">--sheet</a> and <a href="#save-as">--save-as</a> options.</p>
+<pre><code>aseprite.exe -b --layer "Body Layer" with-layers.ase --save-as body-layer.gif
+</code></pre>
+<p>Saves a <code>body-layer.gif</code> animation showing only the layer called <code>Body Layer</code>.</p>
+<p>On <strong>v1.2-beta2</strong> you can specify multiple layers and/or groups:</p>
+<pre><code>aseprite.exe -b --layer "head/hat" --layer "body/gloves" player.ase --save-as clothes.gif
+</code></pre>
+<p>Will save a <code>clothes.gif</code> animation showing only the <code>hat</code> layer
+(which is a child of <code>head</code> group) and <code>gloves</code> layer which is a child
+of <code>body</code> group.</p>
+<h2 id="all-layers">--all-layers<a href="#all-layers" class="section_anchor"></a></h2>
+<pre><code>aseprite -b ... --all-layers ...
+</code></pre>
+<p>Includes/shows all layers for a
+<a href="#save-as">--save-as</a>/<a href="#sheet">--sheet</a> operation. If your sprite
+contains hidden layers but you want to export those layers too, you
+can use this option.</p>
+<p>Example:</p>
+<pre><code>aseprite -b --all-layers player.aseprite --save-as player-{layer}-{frame}.png
+</code></pre>
+<h2 id="ignore-layer">--ignore-layer<a href="#ignore-layer" class="section_anchor"></a></h2>
+<pre><code>aseprite -b ... --ignore-layer LAYERNAME ...
+</code></pre>
+<p>Hides a specific layer for the final result/render in a
+<a href="#save-as">--save-as</a>/<a href="#sheet">--sheet</a> operation.</p>
+<p>You must specify this parameter before opening the <code>.aseprite</code> file.
+Example:</p>
+<pre><code>aseprite -b --ignore-layer "Guides Layer" player.aseprite --save-as player.gif
+</code></pre>
+<h2 id="tag">--tag<a href="#tag" class="section_anchor"></a></h2>
+<p>Exports the frames inside the given tag only. It works for
+<a href="#sheet">--sheet</a> on <strong>v1.1</strong>, and it works for <a href="#save-as">--save-as</a> since
+<strong>v1.2-beta1</strong>.</p>
+<p>Example:</p>
+<pre><code>aseprite -b --tag "Run Cycle" several-animations.ase --save-as run-cycle.gif
+</code></pre>
+<h2 id="frame-range">--frame-range<a href="#frame-range" class="section_anchor"></a></h2>
+<p>Exports the frames inside the given <code>[from, to]</code> range only.</p>
+<h2 id="ignore-empty">--ignore-empty<a href="#ignore-empty" class="section_anchor"></a></h2>
+<p>Ignores empty frames/layers. It affects <a href="#sheet">--sheet</a> option.</p>
+<p>On <strong>v1.2.10-beta3</strong>: It affects <a href="#save-as">--save-as</a> too.</p>
+<h2 id="border-padding">--border-padding<a href="#border-padding" class="section_anchor"></a></h2>
+<pre><code>aseprite ... --border-padding N ...
+</code></pre>
+<p>Includes a border for the whole sheet of N pixels. It affects <a href="#sheet">--sheet</a> option only.</p>
+<p><img src="/docs/./cli/border-padding.png" alt="Border Padding"></p>
+<h2 id="shape-padding">--shape-padding<a href="#shape-padding" class="section_anchor"></a></h2>
+<pre><code>aseprite ... --shape-padding N ...
+</code></pre>
+<p>Includes a separation between each frame of N pixels. It affects <a href="#sheet">--sheet</a> option only.</p>
+<p><img src="/docs/./cli/shape-padding.png" alt="Shape Padding"></p>
+<h2 id="inner-padding">--inner-padding<a href="#inner-padding" class="section_anchor"></a></h2>
+<pre><code>aseprite ... --inner-padding N ...
+</code></pre>
+<p>Includes a border to each frame of N pixels. It affects <a href="#sheet">--sheet</a> option only.</p>
+<p><img src="/docs/./cli/inner-padding.png" alt="Inner Padding"></p>
+<h2 id="trim">--trim<a href="#trim" class="section_anchor"></a></h2>
+<p>Removes borders from sprites/layers/cels before save
+them. (I.e. executes the <em>Edit &gt; Trim</em> option for each image to be
+exported.)  It affects <a href="#sheet">--sheet</a> and <a href="#save-as">--save-as</a>
+options.</p>
+<h2 id="crop">--crop<a href="#crop" class="section_anchor"></a></h2>
+<pre><code>aseprite ... --crop X,Y,WIDTH,HEIGHT
+</code></pre>
+<p>Exports only the specified rectangle from all sprites/layers/cels. It
+affects <a href="#sheet">--sheet</a> and <a href="#save-as">--save-as</a> options.</p>
+<h2 id="extrude">--extrude<a href="#extrude" class="section_anchor"></a></h2>
+<p>Since <strong>v1.2-beta21</strong>: Extrudes all images/sprites that are going to
+be exported with <a href="#sheet">--sheet</a> duplicating all edges one pixel.</p>
+<h2 id="slice">--slice<a href="#slice" class="section_anchor"></a></h2>
+<p>Since <strong>v1.2-beta8</strong>:</p>
+<pre><code>aseprite ... --slice SLICE
+</code></pre>
+<p>Exports only the area specified by the given slice. It affects
+<a href="#save-as">--save-as</a> option.</p>
+<h2 id="filename-format">--filename-format<a href="#filename-format" class="section_anchor"></a></h2>
+<pre><code>aseprite --filename-format FORMAT
+</code></pre>
+<p>This option specifies the special string used to format filenames
+generated in sprite sheets on <a href="#sheet">--sheet</a> or files generated on
+<a href="#save-as">--save-as</a>.</p>
+<p>The <code>FORMAT</code> string can contain some special values:</p>
+<ul>
+<li><code>{fullname}</code>: Original sprite full filename (path + file + extension).</li>
+<li><code>{path}</code>: Path of the filename. E.g. If the sprite filename is <code>C:\game-assets\file.ase</code> this will be <code>C:\game-assets</code>.</li>
+<li><code>{name}</code>: Name (including extension) of the filename. E.g. If the sprite filename is <code>C:\game-assets\file.ase</code> this will be <code>file.ase</code>.</li>
+<li><code>{title}</code>: Name without extension of the filename. E.g. If the sprite filename is <code>C:\game-assets\file.ase</code> this will be <code>file</code>.</li>
+<li><code>{extension}</code>: Extension of the filename. E.g. If the sprite filename is <code>C:\game-assets\file.ase</code> this will be <code>ase</code>.</li>
+<li><code>{layer}</code>: Current layer name.</li>
+<li><code>{tag}</code>: Current tag name.</li>
+<li><code>{innertag}</code>: Smallest/inner current tag name.</li>
+<li><code>{outertag}</code>: Largest/outer current tag name.</li>
+<li><code>{frame}</code>: Current frame (starting from <code>0</code>). You can use <code>{frame1}</code> to start from 1, or other formats like <code>{frame000}</code>, or <code>{frame001}</code>, etc.</li>
+<li><code>{tagframe}</code>: The current frame in the current tag. It's <code>0</code> for the first frame of the tag, and so on. Same as <code>{frame}</code>, it accepts variants like <code>{tagframe000}</code>.</li>
+<li><code>{duration}</code> The duration of the current frame.</li>
+</ul>
+<p>For example, if <code>animation-with-layers.ase</code> contains three frames with two layers (named <code>Face</code> and <code>Background</code>):</p>
+<pre><code>aseprite -b animation-with-layers.ase --filename-format '{path}/{title}-{layer}-{frame}.{extension}' --save-as output.png
+</code></pre>
+<p>Will generate files like:</p>
+<pre><code>output-Face-0.png
+output-Face-1.png
+output-Face-2.png
+output-Background-0.png
+output-Background-1.png
+output-Background-2.png
+</code></pre>
+<p>On <strong>v1.2-beta1</strong>: You can specify the filename format in the same
+<a href="#save-as">--save-as</a> argument.</p>
+<h2 id="script">--script<a href="#script" class="section_anchor"></a></h2>
+<pre><code>aseprite -script filename.lua
+</code></pre>
+<p>Executes the given script from the command line.</p>
+<h2 id="script-param">--script-param<a href="#script-param" class="section_anchor"></a></h2>
+<p>This is a way to add elements to the <a href="https://github.com/aseprite/api/blob/master/api/app.md#appparams"><code>app.params</code></a> table:</p>
+<pre><code>aseprite -b -script-param key1=value1 -script test.lua
+</code></pre>
+<p>And then <code>test.lua</code></p>
+<pre><code class="language-lua">if app.params["key1"] == "value1" then
+  ...
+end
+</code></pre>
+<h2 id="list-layers">--list-layers<a href="#list-layers" class="section_anchor"></a></h2>
+<pre><code>aseprite --list-layers file.ase
+</code></pre>
+<p>Prints the list of layers in the given file from bottom to top. E.g.</p>
+<p><img src="/docs/./cli/list-layers.png" alt="Layers"></p>
+<pre><code>C:\....&gt; aseprite -b --list-layers file.ase
+Background
+Layer 1
+Layer 2
+</code></pre>
+<p>When used with <a href="#data">--data</a>, the layers will be available in the
+JSON output in the <code>meta</code> attribute. E.g.</p>
+<pre><code>{ "frames": [
+  ...
+ ],
+ "meta": {
+  ...,
+  "layers": [
+   { "name": "Background" },
+   { "name": "Layer 1" },
+   { "name": "Layer 2" }
+  ]
+ }
+}
+</code></pre>
+<h2 id="list-layer-hierarchy">--list-layer-hierarchy<a href="#list-layer-hierarchy" class="section_anchor"></a></h2>
+<pre><code>    aseprite --list-layer-hierarchy file.ase
+</code></pre>
+<p>Prints the list of layers with groups in the given file from bottom to top. E.g.</p>
+<p><img src="/docs/./cli/list-layer-hierarchy.png" alt="Layers"></p>
+<pre><code>C:\....&gt; aseprite -b --list-layer-hierarchy file.ase
+Layer 2
+Group 1/
+  Layer 1.1
+</code></pre>
+<p>When used with <a href="#data">--data</a>, the layers will be available in the
+JSON output in the <code>meta</code> attribute. Same as <a href="#list-layers">--list-layers</a> E.g.</p>
+<pre><code>{ "frames": [
+  ...
+ ],
+ "meta": {
+  ...,
+  "layers": [
+   { "name": "Layer 2" },
+   { "name": "Layer 1.1", "group": "Group 1"}
+  ]
+ }
+}
+</code></pre>
+<h2 id="list-tags">--list-tags<a href="#list-tags" class="section_anchor"></a></h2>
+<pre><code>aseprite --list-tags file.ase
+</code></pre>
+<p>Prints the list of tags in the given file from the first one to the last one. E.g.</p>
+<p><img src="/docs/./cli/list-tags.png" alt="Tags"></p>
+<pre><code>C:\....&gt; aseprite -b --list-tags file.ase
+Walk
+Run
+</code></pre>
+<p>When used with <a href="#data">--data</a>, the tags will be available in the JSON
+output in the <code>meta</code> attribute. E.g.</p>
+<pre><code>{ "frames": [
+  ...
+ ],
+ "meta": {
+  ...,
+  "frameTags": [
+   { "name": "Walk", "from": 0, "to": 3 },
+   { "name": "Run", "from": 4, "to": 6 }
+  ]
+ }
+}
+</code></pre>
+<h2 id="list-slices">--list-slices<a href="#list-slices" class="section_anchor"></a></h2>
+<p>Since <strong>v1.2-beta8</strong>:</p>
+<pre><code>aseprite --list-slices file.ase
+</code></pre>
+<p>Prints the list of slices in the given file.</p>
+<p>When used with <a href="#data">--data</a>, slices will be available in the JSON
+output in the <code>meta</code> attribute. E.g.</p>
+<pre><code>{ "frames": [
+  ...
+ ],
+ "meta": {
+  ...,
+  "slices": [
+    { "name": "cursor",
+      "color": "#0000ffff",
+      "keys": [{ "frame": 0,
+                 "bounds": {"x": 80, "y": 0, "w": 16, "h": 16 },
+                 "center": {"x": 2, "y": 2, "w": 12, "h": 12 },
+                 "pivot": {"x": 8, "y": 8 } }] },
+    ...
+  ]
+ }
+}
+</code></pre>
+<h2 id="oneframe">--oneframe<a href="#oneframe" class="section_anchor"></a></h2>
+<pre><code>aseprite -b --oneframe frame1.png --save-as frame1.pcx
+aseprite -b --oneframe walk-animation.aseprite --save-as walk-thumbnail.png
+</code></pre>
+<p>On <strong>v1.2-beta4</strong>: Load just the first frame of the animation. It's
+useful to load just one frame in a image sequence (e.g. loading just
+<code>frame1.png</code> in case that <code>frame2.png</code>, <code>frame3.png</code>, etc. exist) or
+to load just the first frame of a full animation (e.g. useful to
+create a thumbnail of the animation).</p>
+<h2 id="export-tileset">--export-tileset<a href="#export-tileset" class="section_anchor"></a></h2>
+<pre><code>aseprite -b --export-tileset tilemaps.aseprite --sheet tilesets-sprite-sheet.png
+</code></pre>
+<p>Since <strong>v1.3-beta21</strong>: Indicates that <a href="#sheet">--sheet</a> should export
+tilesets of the visible/filtered layers in the given sprite.</p>
+<h2 id="debug">--debug<a href="#debug" class="section_anchor"></a></h2>
+<p>If you execute Aseprite with the <code>--debug</code> parameter in the command
+line, a special <code>Aseprite-v1.1-dev-DebugOutput.txt</code> file will be
+created in your desktop with possible useful information to know what
+problem is going on (e.g. this is useful to know what is going on in
+case that the program don't start correctly).</p>
+<p>On Steam, you can add this <code>--debug</code> option <a href="http://imgur.com/txXcgzO">from the Aseprite
+properties</a>.</p>
+<h2 id="noinapp">--noinapp<a href="#noinapp" class="section_anchor"></a></h2>
+<p>Avoid connecting to or launching the Steam client. This disables the
+"in game" visibility on Steam.</p>
+<h2 id="verbose">--verbose<a href="#verbose" class="section_anchor"></a></h2>
+<pre><code>aseprite --verbose
+</code></pre>
+<p>It will log more information in the <code>aseprite.log</code> file:</p>
+<ul>
+<li>On Windows: <code>aseprite.log</code> is located in <code>%AppData%\Aseprite\aseprite.log</code></li>
+<li>On macOS and Linux: <code>aseprite.log</code> is located in <code>~/.config/aseprite/aseprite.log</code></li>
+</ul>
+<h2 id="help">--help<a href="#help" class="section_anchor"></a></h2>
+<pre><code>aseprite --help
+</code></pre>
+<p>Shows available command line options in the console output.</p>
+<h2 id="version">--version<a href="#version" class="section_anchor"></a></h2>
+<pre><code>aseprite --version
+</code></pre>
+<p>Shows Aseprite version.</p>
+<h1 id="use-cases">Use Cases<a href="#use-cases" class="section_anchor"></a></h1>
+<h2 id="convert-aseprite-files-into-png-gif-etc-">Convert Aseprite files into PNG, GIF, etc.<a href="#convert-aseprite-files-into-png-gif-etc-" class="section_anchor"></a></h2>
+<pre><code>aseprite.exe -b image.ase --save-as image.png
+aseprite.exe -b animation.ase --save-as animation.gif
+</code></pre>
+<h2 id="convert-an-animation-to-a-sequence-of-png-files-frame1-png-frame2-png-etc-">Convert an animation to a sequence of PNG files (frame1.png, frame2.png, etc.)<a href="#convert-an-animation-to-a-sequence-of-png-files-frame1-png-frame2-png-etc-" class="section_anchor"></a></h2>
+<pre><code>aseprite.exe -b animation.ase --save-as frame1.png
+</code></pre>
+<h2 id="resize-one-sprite-to-several-dimensions">Resize one sprite to several dimensions<a href="#resize-one-sprite-to-several-dimensions" class="section_anchor"></a></h2>
+<pre><code>aseprite.exe -b original.ase --scale 2 --save-as output-x2.png
+aseprite.exe -b original.ase --scale 4 --save-as output-x4.png
+aseprite.exe -b original.ase --scale 6 --save-as output-x6.png
+aseprite.exe -b original.ase --scale 8 --save-as output-x8.png
+</code></pre>
+<h2 id="export-one-layers-to-png/gif-files">Export one layers to PNG/GIF files<a href="#export-one-layers-to-png/gif-files" class="section_anchor"></a></h2>
+<pre><code>aseprite.exe -b --layer "Layer 1" animation.ase --save-as output-Layer-1.gif
+</code></pre>
+<h2 id="export-all-layers-into-different-png/gif-files">Export all layers into different PNG/GIF files<a href="#export-all-layers-into-different-png/gif-files" class="section_anchor"></a></h2>
+<p>If <code>animation.ase</code> contains 3 frames and layers <code>Background</code> and <code>Layer 1</code>,
+the following command will generate 6 files (one for each frame/layer):</p>
+<pre><code>aseprite.exe -b --split-layers animation.ase --save-as output1.png
+</code></pre>
+<p>Generated files will be:</p>
+<pre><code>output (Background) 1.png
+output (Background) 2.png
+output (Background) 3.png
+output (Layer 1) 1.png
+output (Layer 1) 2.png
+output (Layer 1) 3.png
+</code></pre>
+<p>On <strong>v1.2-beta1</strong>: You can specify <a href="#split-layers">--split-layers</a> and
+<a href="#filename-format">--filename-format</a> implicity using something like:</p>
+<pre><code>aseprite.exe -b animation.ase --save-as output-{layer}.png
+</code></pre>
+<h2 id="export-an-animation-to-a-sprite-sheet">Export an animation to a sprite sheet<a href="#export-an-animation-to-a-sprite-sheet" class="section_anchor"></a></h2>
+<pre><code>aseprite.exe -b animation.ase --sheet sheet.png --data sheet.json
+</code></pre>
+<h2 id="export-each-layer-as-a-different-animation-in-the-same-sprite-sheet">Export each layer as a different animation in the same sprite sheet<a href="#export-each-layer-as-a-different-animation-in-the-same-sprite-sheet" class="section_anchor"></a></h2>
+<pre><code>aseprite.exe -b --split-layers animation-with-layers.ase --sheet sheet.png --data sheet.json
+</code></pre>
+<h2 id="export-a-specific-layer-from-a-sprite">Export a specific layer from a sprite<a href="#export-a-specific-layer-from-a-sprite" class="section_anchor"></a></h2>
+<pre><code>aseprite.exe -b --layer=Background sprite.ase --sheet sheet.png --data sheet.json
+</code></pre>
+<h2 id="create-a-texture-atlas-from-several-sprites">Create a texture atlas from several sprites<a href="#create-a-texture-atlas-from-several-sprites" class="section_anchor"></a></h2>
+<pre><code>aseprite.exe -b *.ase --sheet-pack --sheet atlas-bestfit.png --data atlas-bestfit.json
+aseprite.exe -b *.ase --sheet-pack --sheet-width=1024 --sheet-height=1024 --sheet atlas-1024x1024.png --data atlas-1024x1024.json
+</code></pre>
+<h1 id="platform-specific-details">Platform-specific Details<a href="#platform-specific-details" class="section_anchor"></a></h1>
+<p>On Windows, if you've installed the program it should be located
+<code>Program Files</code> folder, try this command:</p>
+<pre><code>"C:\Program Files (x86)\Aseprite\Aseprite.exe" --help
+</code></pre>
+<p>Or</p>
+<pre><code>"C:\Program Files\Aseprite\Aseprite.exe" --help
+</code></pre>
+<p>On macOS, if you've installed the program in <code>/Applications</code>, try the following command:</p>
+<pre><code>/Applications/Aseprite.app/Contents/MacOS/aseprite --help
+</code></pre>
+<h1 id="automating-the-process">Automating the process<a href="#automating-the-process" class="section_anchor"></a></h1>
+<h2 id="if-aseprite-was-installed-directly">If Aseprite was installed directly<a href="#if-aseprite-was-installed-directly" class="section_anchor"></a></h2>
+<p>You could create a <code>convert.bat</code> text file in your assets directory
+(i.e. where your <code>.ase</code> files are located) with some lines like these:</p>
+<pre><code>@set ASEPRITE="C:\Program Files\Aseprite\aseprite.exe"
+%ASEPRITE% -b animation.ase --scale 2 --save-as animation-x2.gif
+%ASEPRITE% -b animation.ase --scale 4 --save-as animation-x4.gif
+</code></pre>
+<p>So each time you modify the original animation in <code>animation.ase</code>,
+double clicking the <code>.bat</code> file you could generate <code>animation-x2.gif</code> and
+<code>animation-x4.gif</code> automatically from the new content.</p>
+<p>For Mac users, you could create a <code>convert.sh</code>:</p>
+<pre><code>ASEPRITE="/Applications/Aseprite.app/Contents/MacOS/aseprite"
+$ASEPRITE -b animation.ase --scale 2 --save-as animation-x2.gif
+$ASEPRITE -b animation.ase --scale 4 --save-as animation-x4.gif
+</code></pre>
+<h2 id="in-the-case-of-steam">In the case of Steam<a href="#in-the-case-of-steam" class="section_anchor"></a></h2>
+<p>Aseprite binary is installed in the following directories.</p>
+<ul>
+<li>Mac <code>~/Library/Application Support/Steam/steamapps/common/Aseprite/Aseprite.app/Contents/MacOS/aseprite</code></li>
+<li>Windows <code>C:\Program Files (x86)\Steam\steamapps\common\Aseprite\Aseprite.exe</code></li>
+<li>Ubuntu <code>~/.steam/debian-installation/steamapps/common/Aseprite/aseprite</code></li>
+</ul>
+    </div>
+      </div>
+</div>
+</div>
+</div>
+    <div class="film-decorator"></div>
+    <div id="footer">
+    <div class="container">
+
+      <div class="row">
+		<div class="col-xs-offset-0 col-xs-6 col-sm-offset-0 col-sm-4 col-md-offset-1 col-md-2">
+		  <h4>Links</h4>
+		  <ul>
+			<li><a href="/">Home</a>
+			<li><a href="https://github.com/aseprite/aseprite/issues">Known Issues</a>
+			<li><a href="https://github.com/aseprite/aseprite/issues/new">Bug Report</a>
+			<li><a href="/contributors/">Contributors</a>
+			<li><a href="/donate/">Donations</a>
+		  </ul>
+		</div>
+		<div class="col-xs-6 col-sm-4 col-md-2">
+		  <h4>Community</h4>
+		  <ul>
+			<li><a href="https://community.aseprite.org/"><i class="fab fa-discourse"></i> Aseprite Community</a>
+			<li><a href="https://discord.gg/Yb2CeX8"><i class="fab fa-discord"></i> Discord Server</a>
+			<li><a href="https://steamcommunity.com/app/431730"><i class="fab fa-steam"></i> Steam Community</a>
+			<li><a href="https://www.reddit.com/r/aseprite/"><i class="fab fa-reddit"></i> /r/aseprite</a>
+		  </ul>
+		</div>
+		<div class="col-xs-6 col-sm-4 col-md-2">
+		  <h4>Documentation</h4>
+		  <ul>
+			<li><a href="/quickref/">Quick reference</a>
+			<li><a href="/docs/">Docs</a> - <a href="/faq/">FAQ</a>
+			<li><a href="/tutorial/">Tutorial</a>
+			<li><a href="http://blog.aseprite.org/">Blog</a></li>
+		  </ul>
+		</div>
+		<div class="col-xs-offset-0 col-xs-6 col-sm-offset-3 col-sm-3 col-md-offset-0 col-md-2">
+		  <h4>Development</h4>
+		  <ul>
+			<li><a href="https://github.com/aseprite/aseprite/"><i class="fab fa-github"></i> GitHub</a></li>
+			<li><a href="https://dev.aseprite.org/">Devblog</a></li>
+			<li><a href="/roadmap/">Roadmap</a>
+			<li><a href="https://github.com/aseprite/aseprite/blob/master/CONTRIBUTING.md">Contribute</a>
+		  </ul>
+		</div>
+		<div class="col-xs-offset-4 col-xs-6 col-sm-offset-0 col-sm-3 col-md-offset-0 col-md-2">
+		  <h4>Social</h4>
+		  <ul>
+			<li><a href="https://twitter.com/aseprite/"><i class="fab fa-twitter"></i> Twitter</a>
+			<li><a href="https://mastodon.art/@aseprite" rel="me"><i class="fab fa-mastodon"></i> Mastodon</a>
+			<li><a href="https://www.facebook.com/aseprite"><i class="fab fa-facebook"></i> Facebook</a>
+			<li><a href="https://www.youtube.com/user/aseprite"><i class="fab fa-youtube"></i> YouTube</a>
+			<li><a href="https://www.instagram.com/aseprite/"><i class="fab fa-instagram"></i> Instagram</a>
+		  </ul>
+		</div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12">
+          <p class="very-bottom">
+&copy; 2001&dash;2026
+<a href="https://igara.com/">Igara Studio S.A.</a> <span>|</span>
+<a href="https://www.aseprite.org/terms/">Terms of Service</a> <span>|</span>
+<a href="https://www.aseprite.org/privacy/">Privacy</a> <span>|</span>
+<a href="https://www.aseprite.org/support/">Support</a>
+          </p>
+        </div>
+      </div>
+
+    </div>
+    </div> <!-- /#footer -->
+
+    <script src="/assets/js/jquery.min.js"></script>
+    <script src="/assets/js/bootstrap.min.js"></script>
+
+
+
+<script>
+$(function(){
+$('.navbar-toggle').click(function(){
+ var updateParCount = 0;
+ var updateParScroll = setInterval(function(){
+  $(window).trigger('resize').trigger('scroll');
+  updateParCount++;
+  if (updateParCount == 20) {
+   clearInterval(updateParScroll);
+  }
+ },20);
+});
+});
+</script>
+  </body>
+</html>

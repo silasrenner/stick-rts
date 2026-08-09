@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stick-rts.local/schemas/runtime-sprite-manifest-v01.json",
+  "title": "Stick RTS Runtime Sprite Manifest",
+  "description": "Maps an approved source-derived transparent sprite sheet to render-only animation clips. It does not contain simulation rules.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "asset_id",
+    "faction",
+    "role",
+    "source",
+    "sheet",
+    "anchor",
+    "clips",
+    "approval_status"
+  ],
+  "properties": {
+    "asset_id": {"type": "string", "pattern": "^[a-z0-9-]+-v[0-9]+$"},
+    "faction": {"enum": ["sunmeadow", "bramblecrest"]},
+    "role": {"enum": ["miner", "warrior", "archer", "hero", "mine", "tower", "hall", "core", "effect"]},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["master_id", "master_sha256", "crop"],
+      "properties": {
+        "master_id": {"type": "string"},
+        "master_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "crop": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["x", "y", "width", "height"],
+          "properties": {
+            "x": {"type": "integer", "minimum": 0},
+            "y": {"type": "integer", "minimum": 0},
+            "width": {"type": "integer", "minimum": 1},
+            "height": {"type": "integer", "minimum": 1}
+          }
+        }
+      }
+    },
+    "sheet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["src", "width", "height", "pixel_art"],
+      "properties": {
+        "src": {"type": "string", "pattern": "^assets/art/runtime/"},
+        "width": {"type": "integer", "minimum": 1},
+        "height": {"type": "integer", "minimum": 1},
+        "pixel_art": {"const": true}
+      }
+    },
+    "anchor": {
+      "type": "object",
+      "description": "Bottom-center ground point in frame pixels; all unit frames must share it.",
+      "additionalProperties": false,
+      "required": ["x", "y", "world_height"],
+      "properties": {
+        "x": {"type": "integer", "minimum": 0},
+        "y": {"type": "integer", "minimum": 0},
+        "world_height": {"type": "integer", "minimum": 1}
+      }
+    },
+    "clips": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["loop", "frames"],
+        "properties": {
+          "loop": {"type": "boolean"},
+          "frames": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["x", "y", "width", "height", "duration_ms"],
+              "properties": {
+                "x": {"type": "integer", "minimum": 0},
+                "y": {"type": "integer", "minimum": 0},
+                "width": {"type": "integer", "minimum": 1},
+                "height": {"type": "integer", "minimum": 1},
+                "duration_ms": {"type": "integer", "minimum": 1}
+              }
+            }
+          }
+        }
+      }
+    },
+    "approval_status": {"enum": ["candidate", "owner-approved", "rejected"]}
+  }
+}

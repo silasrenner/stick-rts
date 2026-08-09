@@ -1,0 +1,16 @@
+{
+  "asset_id": "bramblecrest-assets-master-v01",
+  "source_file": "assets/art/source/bramblecrest/bramblecrest-wardens-assets-master.jpg",
+  "source_dimensions": [1024, 1280],
+  "source_sha256": "62bbe2929d6377efdf196ad9127ce6021322239a38db6b5f6a1977871755c92a",
+  "status": "owner-approved-source-master",
+  "direct_source_inventory": [
+    "Bramblecrest Warden banner and faction marks",
+    "Miner, Warrior, Archer",
+    "Stag-Captain, Runesmith Guardian, Scout Champion",
+    "Iron Mine, Warden Tower, Warden Hall, Runewood Core",
+    "runes, palisades, standing stones, carts, fires, bridge, stream, pine/rock/berry props"
+  ],
+  "usage": "Use directly wherever technically suitable. Derive only missing animation states, cleanup/alpha exports, damage states, or required compatible extensions from this master.",
+  "approval_note": "Supplied by owner as the intended Bramblecrest source master."
+}

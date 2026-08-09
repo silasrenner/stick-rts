@@ -1,4 +1,5 @@
 import { CONFIG } from '../config.js';
+import { drawOpenFrontierBackground } from './openFrontierBackground.js';
 
 // Render-only background — reads camera.x and canvas size, never world
 // state, so it's structurally incapable of coupling to sim logic.
@@ -62,9 +63,14 @@ function drawBushes(ctx, camera, canvasWidth) {
   });
 }
 
-export function drawParallax(ctx, camera) {
+export function drawParallax(ctx, camera, drawBackground = drawOpenFrontierBackground) {
+  // The owner-approved original artwork is the primary production background.
+  // Retain the old procedural layer only as a loading fallback, never as a
+  // generated substitute for the supplied source art.
+  if (drawBackground(ctx)) return;
+
   // S11 audit: drawParallax runs before renderer.js's world ctx.scale(camera.zoom, ...)
-  // transform, so its tile-count math already uses the fixed screen-space
+
   // ctx.canvas.width — coverage was never actually broken by zoom. What was
   // broken: tile size/scroll rate stayed pixel-fixed regardless of zoom, so
   // a zoomed-out foreground (which shrinks) no longer matched a

@@ -1,0 +1,35 @@
+{
+  "parent_master": "assets/art/source/bramblecrest/bramblecrest-wardens-assets-master.jpg",
+  "parent_sha256": "62bbe2929d6377efdf196ad9127ce6021322239a38db6b5f6a1977871755c92a",
+  "status": "owner-approved source board; baseline role parents selected from direct source art",
+  "selected_roles": [
+    {
+      "role": "miner",
+      "candidate_file": "artifacts/bramblecrest-intake-v01/preferred-role-sources-v02/miner-source.png",
+      "source_crop": [0, 485, 170, 615],
+      "read": "helmeted pickaxe miner with lantern, green cloak, and iron/earth palette",
+      "runtime_work_deferred": ["background cleanup", "single-pose isolation", "ground anchor", "mine/carry/walk/defeat states"]
+    },
+    {
+      "role": "warrior",
+      "candidate_file": "artifacts/bramblecrest-intake-v01/preferred-role-sources-v02/warrior-shield-source.png",
+      "source_crop": [170, 485, 340, 615],
+      "read": "broad axe-and-round-shield Warden in green, iron, and brick-red accents",
+      "runtime_work_deferred": ["background cleanup", "single-pose isolation", "ground anchor", "walk/attack/defeat states"]
+    },
+    {
+      "role": "archer",
+      "candidate_file": "artifacts/bramblecrest-intake-v01/preferred-role-sources-v02/archer-source.png",
+      "source_crop": [340, 485, 505, 615],
+      "read": "hooded green ranger with bow, quiver, and practical woodland silhouette",
+      "runtime_work_deferred": ["background cleanup", "single-pose isolation", "ground anchor", "walk/fire/defeat states"]
+    },
+    {
+      "role": "first_hero",
+      "candidate_file": "artifacts/bramblecrest-intake-v01/preferred-role-sources-v02/stag-captain-source.png",
+      "source_crop": [505, 475, 675, 615],
+      "read": "antlered Stag-Captain with axe, command banner, and resilient leader silhouette",
+      "runtime_work_deferred": ["background cleanup", "game-scale silhouette", "ground anchor", "idle/walk/attack/special/defeat states"]
+    }
+  ]
+}
