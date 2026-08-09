@@ -3,7 +3,7 @@ import { createWorld, createUnit, isWatchAiMatch } from './sim/world.js';
 import { createAccumulator } from './sim/loop.js';
 import { runTick } from './sim/tick.js';
 import { setTeamCommand } from './sim/systems/commands.js';
-import { buyUnit, buyStructure, buyHero } from './sim/systems/economy.js';
+import { buyUnit, buyStructure, buyTurret, buyHero } from './sim/systems/economy.js';
 import { attemptHeroAttack, activateSpecial } from './sim/systems/heroes.js';
 import { render } from './render/renderer.js';
 import {
@@ -62,6 +62,12 @@ function attemptBuyUnit(team, kind) {
 
 function attemptBuyStructure(team) {
   const result = buyStructure(world, team);
+  if (!result.ok && team === 'player') showMessage(PURCHASE_REASON_TEXT[result.reason]);
+  return result;
+}
+
+function attemptBuyTurret(team) {
+  const result = buyTurret(world, team);
   if (!result.ok && team === 'player') showMessage(PURCHASE_REASON_TEXT[result.reason]);
   return result;
 }
@@ -176,7 +182,7 @@ function spawnStressTest() {
 // keys the same way the hero-control functions above already are.
 function setPlayerCommand(command) {
   if (isWatchAiMatch(world)) return;
-  setTeamCommand(world, 'player', command);
+  setTeamCommand(world, 'player', command, { userInitiated: true });
 }
 
 // The 'ai' team now makes its own decisions (sim/ai/behavior.js) — no
@@ -323,7 +329,7 @@ canvas.addEventListener('pointercancel', releaseHeldHeroControl);
 
 bindClick(canvas, (x, y) => {
   if (world.matchState !== 'menu') {
-    const zoomButtons = getZoomButtonRects(canvas);
+    const zoomButtons = getZoomButtonRects(canvas, isWatchAiMatch(world));
     if (pointInRect(x, y, zoomButtons.in)) {
       zoomAt(camera, canvas.width / 2, 1.25);
       return;
@@ -361,6 +367,7 @@ bindClick(canvas, (x, y) => {
     if (!pointInRect(x, y, button.rect)) continue;
     if (button.action === 'unit') attemptBuyUnit('player', button.kind);
     else if (button.action === 'structure') attemptBuyStructure('player');
+    else if (button.action === 'turret') attemptBuyTurret('player');
     else attemptBuyHero('player', button.kind);
     return;
   }

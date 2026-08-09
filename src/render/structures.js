@@ -41,6 +41,17 @@ export function drawStructure(ctx, structure) {
   if (!isDestroyed) drawHealthBar(ctx, structure.x, structure.y - STRUCTURE_HEIGHT - 10, structure.hp, structure.maxHp, 24);
 }
 
+export function drawTurret(ctx, turret) {
+  const destroyed = turret.state === 'destroyed';
+  ctx.save(); ctx.globalAlpha = destroyed ? Math.max(0, turret.destroyTimer / CONFIG.STRUCTURE_DESTROY_DURATION) : 1;
+  ctx.fillStyle = '#303744'; ctx.fillRect(turret.x - 16, turret.y - 52, 32, 52);
+  ctx.strokeStyle = TEAM_COLORS[turret.team] ?? '#cccccc'; ctx.lineWidth = 3; ctx.strokeRect(turret.x - 16, turret.y - 52, 32, 52);
+  const direction = turret.team === 'player' ? 1 : -1;
+  ctx.fillStyle = '#9aa0aa'; ctx.fillRect(turret.x, turret.y - 43, direction * 28, 8);
+  ctx.restore();
+  if (!destroyed) drawHealthBar(ctx, turret.x, turret.y - 64, turret.hp, turret.maxHp, 34);
+}
+
 export function drawMine(ctx, mine) {
   ctx.fillStyle = '#c9a227';
   ctx.beginPath();

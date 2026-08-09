@@ -2,7 +2,11 @@ import { CONFIG } from '../../config.js';
 import { isAliveEntity } from '../world.js';
 
 export function livingStructures(world, team) {
-  return world.structures.filter((s) => s.team === team && isAliveEntity(s));
+  return world.structures.filter((s) => s.team === team && !s.isTurret && isAliveEntity(s));
+}
+
+export function livingTurrets(world, team) {
+  return world.structures.filter((s) => s.team === team && s.isTurret && isAliveEntity(s));
 }
 
 export function getCap(world, team) {
@@ -14,6 +18,7 @@ export function getCap(world, team) {
 // statue (statue-gating is enforced by findAttackTarget's tier order
 // below, not by this ranking).
 export function targetPriorityTier(entity) {
+  if (entity.isStartingTurret) return -1;
   if (entity.isStatue) return 3;
   if (entity.isStructure) return 2;
   if (entity.isMiner) return 1;
@@ -54,12 +59,18 @@ function findPriorityUnitWithin(world, unit) {
 // so the statue is only ever reachable once none remain — this is the
 // whole of the statue-gating rule.
 export function findAttackTarget(world, unit) {
+  const enemyTeam = unit.team === 'player' ? 'ai' : 'player';
+  const coreTurret = world.structures.find((structure) =>
+    structure.team === enemyTeam && structure.isStartingTurret && isAliveEntity(structure)
+      && Math.abs(structure.x - unit.x) <= unit.acquireRange
+  );
+  if (coreTurret) return coreTurret;
+
   const unitTarget = findPriorityUnitWithin(world, unit);
   if (unitTarget) return unitTarget;
 
-  const enemyTeam = unit.team === 'player' ? 'ai' : 'player';
-  const structuresInRange = livingStructures(world, enemyTeam).filter(
-    (s) => Math.abs(s.x - unit.x) <= unit.acquireRange
+  const structuresInRange = world.structures.filter(
+    (s) => s.team === enemyTeam && isAliveEntity(s) && Math.abs(s.x - unit.x) <= unit.acquireRange
   );
   if (structuresInRange.length > 0) {
     return structuresInRange.reduce((nearest, s) =>

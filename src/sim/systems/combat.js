@@ -55,9 +55,20 @@ export function updateCombat(world, dt) {
 
     if (unit.attackTimer <= 0) resolveAttack(world, unit, target);
   }
+
+  for (const turret of world.structures) {
+    if (!turret.isTurret || turret.state === 'destroyed') continue;
+    if (turret.attackTimer > 0) turret.attackTimer -= dt;
+    let target = turret.targetId ? findEntityById(world, turret.targetId) : null;
+    if (!target || !isAliveEntity(target) || Math.abs(target.x - turret.x) > turret.acquireRange) {
+      target = findAttackTarget(world, turret);
+      turret.targetId = target ? target.id : null;
+    }
+    if (target && Math.abs(target.x - turret.x) <= turret.range && turret.attackTimer <= 0) resolveAttack(world, turret, target);
+  }
 }
 
-// Fires a single attack from `unit` at `target` — assumes range/cooldown
+// Fires a single attack
 // were already checked by the caller (the auto-loop above, or a manual
 // keypress via heroes.js's attemptHeroAttack). Shared so kit behavior
 // (vanguard's cleave, forgemaster's knockback) applies no matter who
@@ -76,7 +87,7 @@ export function resolveAttack(world, unit, target) {
 
   const hits = unit.kind === 'vanguard' ? findAllEnemiesWithin(world, unit, unit.range) : [target];
   for (const hit of hits) {
-    applyDamage(world, hit, unit.damage);
+    applyDamage(world, hit, unit.damage, unit.team);
     if (hit.kind === 'forgemaster') {
       const dir = Math.sign(unit.x - hit.x) || (unit.team === 'player' ? -1 : 1);
       unit.x += dir * CONFIG.FORGEMASTER_KNOCKBACK;
@@ -88,11 +99,15 @@ export function resolveAttack(world, unit, target) {
 // effect differs by entity kind: units topple, structures fade out, a
 // destroyed statue ends the match. A hero death additionally starts its
 // team's respawn cooldown and escalates the next re-purchase cost.
-export function applyDamage(world, entity, amount) {
+export function applyDamage(world, entity, amount, killerTeam = null) {
   if (!isAliveEntity(entity)) return;
   if (entity.isStatue) world.teams[entity.team].statueWarningTimer = CONFIG.STATUE_WARNING_DURATION;
   entity.hp = Math.max(0, entity.hp - amount);
   if (entity.hp > 0) return;
+
+  if (!entity.isStructure && !entity.isStatue && killerTeam && killerTeam !== entity.team) {
+    world.teams[killerTeam].gold += Math.round(entity.goldValue * CONFIG.UNIT_KILL_REWARD_RATE);
+  }
 
   if (entity.isStatue) {
     entity.state = 'destroyed';
@@ -101,6 +116,9 @@ export function applyDamage(world, entity, amount) {
     entity.state = 'destroyed';
     entity.destroyTimer = CONFIG.STRUCTURE_DESTROY_DURATION;
   } else {
+    // Retain a match-total loss count after the death animation removes the
+    // unit, so Watch telemetry never needs to infer casualties from state.
+    world.teams[entity.team].losses += 1;
     if (entity.isHero) {
       const team = world.teams[entity.team];
       team.heroDeathCount += 1;

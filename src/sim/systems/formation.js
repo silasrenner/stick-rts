@@ -40,9 +40,16 @@ function assignTeamSlots(world, team) {
   const frontLine = eligible.filter((u) => !BACK_LINE_KINDS.has(u.kind));
   const backLine = eligible.filter((u) => BACK_LINE_KINDS.has(u.kind));
 
+  const targetAnchor = world.teams[team].commanderTargetAnchor;
   let anchorX;
   let growthSign;
-  if (command === 'attack') {
+  if (targetAnchor && command !== 'retreat') {
+    // Commander anchors are a bounded contract, computed from real map
+    // geometry at plan acceptance. The formation executes that exact target;
+    // it never replaces it with a generic core-push or defense position.
+    anchorX = targetAnchor.x;
+    growthSign = command === 'attack' ? -sign : sign;
+  } else if (command === 'attack') {
     // Marching toward the enemy: overflow columns trail the lead group
     // toward home rather than overtaking it.
     anchorX = enemyHomeX;
@@ -52,7 +59,7 @@ function assignTeamSlots(world, team) {
     // movement.js): a screening line past the mine zone, toward the
     // enemy. Overflow columns thicken the guard line outward, toward the
     // enemy, per the confirmed multi-column direction.
-    anchorX = homeX + sign * CONFIG.DEFEND_SCREEN_OFFSET;
+    anchorX = homeX + sign * CONFIG.TURRET_SLOT_OFFSETS[world.teams[team].defendAnchor === 'outer' ? 1 : 0];
     growthSign = sign;
   }
 
