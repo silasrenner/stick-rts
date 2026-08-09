@@ -1,8 +1,10 @@
 import { CONFIG } from '../config.js';
 import { canAfford, getUnitCount, hasLivingOrQueuedHero, getHeroCost, countQueued } from '../sim/systems/economy.js';
-import { getCap, livingStructures } from '../sim/systems/supply.js';
+import { getCap, livingStructures, livingTurrets } from '../sim/systems/supply.js';
 import { isAliveEntity, isWatchAiMatch } from '../sim/world.js';
 import { drawStickFigure, TEAM_COLORS } from './stickFigure.js';
+import { formatMatchClock, getGoldDifferential } from './matchTelemetry.js';
+import { getTeamHudLayout } from './teamHud.js';
 
 const BUILD_MENU_ITEMS = [
   { kind: 'miner', action: 'unit', label: 'Miner', costFn: () => CONFIG.UNIT_STATS.miner.cost },
@@ -104,41 +106,43 @@ export function getBottomBarTop(canvas) {
 
 // Screen-space zoom controls are intentionally large enough to remain
 // discoverable on phones; pinch remains available as the direct gesture.
-export function getZoomButtonRects(canvas) {
-  const size = 34;
-  const gap = 6;
-  const x = canvas.width - size - 10;
+export function getZoomButtonRects(canvas, spectator = false) {
+  const size = spectator ? 24 : 34;
+  const gap = spectator ? 4 : 6;
+  const x = canvas.width - size - 8;
+  const y = spectator ? canvas.height - size * 2 - gap - 8 : 10;
   return {
-    in: { x, y: 10, w: size, h: size },
-    out: { x, y: 10 + size + gap, w: size, h: size },
+    in: { x, y, w: size, h: size },
+    out: { x, y: y + size + gap, w: size, h: size },
   };
 }
 
-export function drawZoomControls(ctx) {
-  const rects = getZoomButtonRects(ctx.canvas);
+export function drawZoomControls(ctx, spectator = false) {
+  const rects = getZoomButtonRects(ctx.canvas, spectator);
   for (const [action, rect] of Object.entries(rects)) {
     ctx.fillStyle = '#24242c';
     ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
     ctx.strokeStyle = '#777783';
     ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
     ctx.fillStyle = '#f0f0f4';
-    ctx.font = 'bold 24px sans-serif';
+    ctx.font = `bold ${spectator ? 18 : 24}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(action === 'in' ? '+' : '−', rect.x + rect.w / 2, rect.y + 24);
+    ctx.fillText(action === 'in' ? '+' : '−', rect.x + rect.w / 2, rect.y + rect.h * 0.75);
   }
   ctx.textAlign = 'left';
 }
 
 export function getWatchSpeedButtonRect(canvas) {
-  return { x: canvas.width - 160, y: 10, w: 112, h: 36 };
+  return { x: 8, y: canvas.height - 30, w: 50, h: 22 };
 }
 
 export function drawWatchSpeedButton(ctx, speed) {
   const rect = getWatchSpeedButtonRect(ctx.canvas);
   ctx.fillStyle = '#24242c'; ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
   ctx.strokeStyle = '#88889a'; ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
-  ctx.fillStyle = '#f0f0f4'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText(`${speed}×`, rect.x + rect.w / 2, rect.y + 24); ctx.textAlign = 'left';
+  ctx.fillStyle = '#f0f0f4'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(`${speed}×`, rect.x + rect.w / 2, rect.y + 15);
+  ctx.textAlign = 'left';
 }
 
 export function getTouchCommandRects(canvas, world) {
@@ -337,7 +341,7 @@ export function drawBuildMenu(ctx, world) {
 
 // Own-team-only living-unit counts by kind — never reads the enemy team.
 function getArmyComposition(world, team) {
-  const counts = { miner: 0, warrior: 0, archer: 0 };
+  const counts = { miner: 0, warrior: 0, archer: 0, structure: livingStructures(world, team).length, turret: livingTurrets(world, team).length };
   for (const unit of world.units) {
     if (unit.team !== team || unit.isHero || !isAliveEntity(unit)) continue;
     if (counts[unit.kind] !== undefined) counts[unit.kind] += 1;
@@ -360,6 +364,10 @@ function drawArmyCompositionRow(ctx, x, y, composition) {
 }
 
 export function drawHUD(ctx, world, uiMessage) {
+  if (isWatchAiMatch(world)) {
+    drawWatchTelemetry(ctx, world);
+    return;
+  }
   const gold = world.teams.player.gold;
   const cap = getCap(world, 'player');
   const count = getUnitCount(world, 'player');
@@ -414,16 +422,23 @@ export function drawHUD(ctx, world, uiMessage) {
     y += lineHeight;
   }
 
-  if (statueWarning) {
-    const pulse = 0.6 + 0.4 * Math.sin(world.matchElapsedTime * 10);
-    ctx.save();
-    ctx.globalAlpha = pulse;
-    ctx.fillStyle = '#e03030';
-    ctx.font = 'bold 12px monospace';
-    ctx.fillText('Your statue is under attack!', 10, y);
+  drawWatchTelemetry(ctx, world);
+}
+
+function drawWatchTelemetry(ctx, world) {
+  if (!isWatchAiMatch(world)) return;
+  const panelWidth = CONFIG.HUD_PANEL_WIDTH;
+  for (const team of ['player', 'ai']) {
+    const layout = getTeamHudLayout(ctx.canvas, panelWidth)[team];
+    const state = world.teams[team]; const c = getArmyComposition(world, team);
+    const x = team === 'player' ? layout.x + 8 : layout.x + layout.w - 8;
+    ctx.save(); ctx.fillStyle = 'rgba(20,20,26,.72)'; ctx.fillRect(layout.x, 4, layout.w, 72);
+    ctx.textAlign = team === 'player' ? 'left' : 'right'; ctx.fillStyle = team === 'player' ? TEAM_COLORS.player : TEAM_COLORS.ai; ctx.font = 'bold 12px monospace'; ctx.fillText(team === 'player' ? 'RED' : 'BLUE', x, 18);
+    ctx.fillStyle = '#e8e8ee'; ctx.font = '12px monospace'; ctx.fillText(`${state.gold} gold`, x, 35); ctx.fillText(`${getUnitCount(world, team)}/${getCap(world, team)} pop`, x, 51); ctx.fillText(`M${c.miner} W${c.warrior} A${c.archer} S${c.structure} T${c.turret}`, x, 67);
+    const event = state.commanderEvent; if (event && world.matchElapsedTime - event.at <= 7) { ctx.fillStyle = team === 'player' ? TEAM_COLORS.player : TEAM_COLORS.ai; ctx.fillText(`${event.command.toUpperCase()} ← COMMANDER`, x, 92); }
     ctx.restore();
-    y += lineHeight;
   }
+  const diff = getGoldDifferential(world); ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = '#e8e8ee'; ctx.font = 'bold 16px monospace'; ctx.fillText(formatMatchClock(world.matchElapsedTime), ctx.canvas.width / 2, 20); ctx.fillStyle = diff.team === 'player' ? TEAM_COLORS.player : diff.team === 'ai' ? TEAM_COLORS.ai : '#e8e8ee'; ctx.font = 'bold 13px monospace'; ctx.fillText(`${diff.amount} gold`, ctx.canvas.width / 2, 40); ctx.restore();
 }
 
 export function getRematchButtonRect(canvas) {
@@ -545,6 +560,7 @@ const MENU_BUTTON_GAP = 16;
 const MENU_ITEMS = [
   { id: 'play', label: 'Play' },
   { id: 'watchAi', label: 'Watch AI' },
+  { id: 'leagueHistory', label: 'Strategy League' },
   { id: 'settings', label: 'Settings' },
 ];
 
@@ -584,41 +600,57 @@ function drawPlayDifficultyScreen(ctx) {
   drawMenuButton(ctx, rects.back, '< Back');
 }
 
-const WATCH_ROW_LABEL_OFFSET = 24;
-
 export function getWatchSetupRects(canvas) {
   return {
-    playerDifficulty: difficultyButtonRectsAt(canvas, 140),
-    aiDifficulty: difficultyButtonRectsAt(canvas, 220),
-    reroll: { x: canvas.width / 2 - 60, y: 280, w: 120, h: 28 },
-    start: { x: canvas.width / 2 - 60, y: 330, w: 120, h: 34 },
+    scripted: { x: canvas.width / 2 - 130, y: 170, w: 260, h: 44 },
+    localGemma: { x: canvas.width / 2 - 130, y: 250, w: 260, h: 44 },
     back: getBackButtonRect(canvas),
   };
 }
 
-function drawWatchAiSetupScreen(ctx, uiState) {
-  const { playerDifficulty, aiDifficulty, seed } = uiState.watchSetup;
+function drawWatchAiSetupScreen(ctx) {
   const rects = getWatchSetupRects(ctx.canvas);
-
   ctx.textAlign = 'center';
   ctx.fillStyle = '#e8e8ee';
-  ctx.font = 'bold 20px monospace';
-  ctx.fillText('Watch AI', ctx.canvas.width / 2, 80);
-
-  ctx.font = '12px monospace';
+  ctx.font = 'bold 24px monospace';
+  ctx.fillText('Watch AI', ctx.canvas.width / 2, 105);
+  ctx.font = '13px monospace';
   ctx.fillStyle = '#8a8a96';
-  ctx.fillText('Left side', ctx.canvas.width / 2, 140 - WATCH_ROW_LABEL_OFFSET);
-  drawDifficultyButtons(ctx, rects.playerDifficulty, playerDifficulty);
-
-  ctx.fillStyle = '#8a8a96';
-  ctx.fillText('Right side', ctx.canvas.width / 2, 220 - WATCH_ROW_LABEL_OFFSET);
-  drawDifficultyButtons(ctx, rects.aiDifficulty, aiDifficulty);
-
-  ctx.fillStyle = '#8a8a96';
-  ctx.fillText(`Seed: ${seed ?? 'Random'}`, ctx.canvas.width / 2, 270);
-  drawMenuButton(ctx, rects.reroll, 'Reroll Seed');
-  drawMenuButton(ctx, rects.start, 'Start');
+  ctx.fillText('Choose the commander for both teams', ctx.canvas.width / 2, 132);
+  drawMenuButton(ctx, rects.scripted, 'Scripted AI');
+  drawMenuButton(ctx, rects.localGemma, 'Local Gemma');
   drawMenuButton(ctx, rects.back, '< Back');
+}
+
+export function getLeagueHistoryRects(canvas) {
+  return { back: getBackButtonRect(canvas) };
+}
+
+function drawLeagueHistoryScreen(ctx, history) {
+  const { status, view } = history ?? { status: 'unavailable', view: null };
+  ctx.textAlign = 'center'; ctx.fillStyle = '#e8e8ee'; ctx.font = 'bold 22px monospace';
+  ctx.fillText('Strategy League', ctx.canvas.width / 2, 52);
+  if (status === 'loading') {
+    ctx.font = '13px monospace'; ctx.fillStyle = '#8a8a96'; ctx.fillText('Loading local companion history…', ctx.canvas.width / 2, 120);
+  } else if (status !== 'ready' || !view) {
+    ctx.font = '13px monospace'; ctx.fillStyle = '#d8a050'; ctx.fillText('Local companion history unavailable.', ctx.canvas.width / 2, 120);
+  } else {
+    ctx.font = 'bold 15px monospace'; ctx.fillStyle = '#e8e8ee';
+    ctx.fillText(`${view.matches} completed matches  •  RED ${view.wins.red} — ${view.wins.blue} BLUE`, ctx.canvas.width / 2, 88);
+    for (const [team, x, color] of [['red', 220, TEAM_COLORS.player], ['blue', ctx.canvas.width - 220, TEAM_COLORS.ai]]) {
+      const profile = view.profiles[team];
+      ctx.fillStyle = color; ctx.font = 'bold 14px monospace'; ctx.fillText(`${team.toUpperCase()} r${profile.revision} (${profile.status})`, x, 126);
+      ctx.fillStyle = '#bcbcc6'; ctx.font = '11px monospace'; ctx.fillText(profile.summary, x, 146);
+    }
+    ctx.fillStyle = '#e8e8ee'; ctx.font = 'bold 13px monospace'; ctx.fillText('Recent results', ctx.canvas.width / 2, 190);
+    ctx.font = '12px monospace';
+    if (view.recent.length === 0) { ctx.fillStyle = '#8a8a96'; ctx.fillText('No completed Watch matches recorded yet.', ctx.canvas.width / 2, 216); }
+    view.recent.forEach((match, index) => {
+      ctx.fillStyle = match.winner === 'red' ? TEAM_COLORS.player : TEAM_COLORS.ai;
+      ctx.fillText(`${index + 1}. ${match.winner.toUpperCase()} won  •  ${match.duration}`, ctx.canvas.width / 2, 216 + index * 22);
+    });
+  }
+  drawMenuButton(ctx, getLeagueHistoryRects(ctx.canvas).back, '< Back');
 }
 
 export function getSettingsRects(canvas) {
@@ -657,6 +689,9 @@ export function drawMenuScreen(ctx, uiState) {
       break;
     case 'watchSetup':
       drawWatchAiSetupScreen(ctx, uiState);
+      break;
+    case 'leagueHistory':
+      drawLeagueHistoryScreen(ctx, uiState.leagueHistory);
       break;
     case 'settings':
       drawSettingsScreen(ctx, uiState);

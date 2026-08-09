@@ -1,0 +1,3047 @@
+{
+  "format": "stick-rts-direct-policy-v1",
+  "algorithm": "reinforce-smoke-v1",
+  "episodes": 100,
+  "trainingSeed": 14000,
+  "learningRate": 0.02,
+  "opponentPolicy": "opening-pressure-v1",
+  "environment": {
+    "observationVersion": "full-v1",
+    "actionSpaceVersion": "macro-42-v1",
+    "rewardVersion": "core-terminal-v1",
+    "observationSize": 12,
+    "actionCount": 42
+  },
+  "weights": [
+    [
+      -0.000678608011002126,
+      0.00014744084572377184,
+      0.00012173503772784458,
+      -0.00012981354517752953,
+      -9.318350484910219e-05,
+      0.0,
+      -0.00016200948918426326,
+      9.838220010113712e-05,
+      0.00010268159108482876,
+      3.4196377984021404e-05,
+      -0.00011529107351554301,
+      0.0,
+      0.0003926201205982707,
+      9.909008181967574e-05,
+      0.0001238980875011593,
+      -0.00025799296063545483,
+      -5.594240367322319e-05,
+      0.0,
+      0.00011708973064789042,
+      0.000146170989657522,
+      7.562946491542497e-05,
+      -0.0001351236393882802,
+      -0.00016719358004789524,
+      0.0,
+      0.000297605450906987,
+      6.628857736832418e-05,
+      9.021396435188921e-05,
+      -9.21321965260933e-06,
+      -0.0004851856623173362,
+      0.0,
+      0.00021687159398495887,
+      0.00011877559305310852,
+      8.822103955555812e-05,
+      -8.414832373524892e-05,
+      -0.00012639551032930094,
+      0.0,
+      -4.817512108185099e-05,
+      0.0001234252509112073,
+      8.027530365174328e-05,
+      -1.3311506135759403e-05,
+      2.0976249180207267e-05,
+      0.0
+    ],
+    [
+      -0.0003804549518652908,
+      0.00011769728261376202,
+      9.624886173119113e-05,
+      -9.763018648264372e-05,
+      -5.1824181311227185e-05,
+      0.0,
+      -0.0007527535661641624,
+      9.3414389524892e-05,
+      9.221813420071604e-05,
+      2.423798007318276e-05,
+      -0.00012299358120665152,
+      0.0,
+      0.00010102791331224428,
+      0.00010052704962447621,
+      0.00011022439407492323,
+      -0.00023981585464558298,
+      -4.209147979705036e-05,
+      0.0,
+      0.0005613829618909671,
+      0.00011995669916504356,
+      8.984238704227968e-05,
+      -0.00014487502302829171,
+      -0.0001296690442918379,
+      0.0,
+      0.00042747128754172254,
+      0.00010436040367074911,
+      9.20170556250351e-05,
+      -2.093456091085018e-05,
+      -0.0004766600718367442,
+      0.0,
+      9.956201287007052e-05,
+      8.53087830400238e-05,
+      9.583744609664633e-05,
+      -9.111657272112302e-05,
+      -0.00011948536141013192,
+      0.0,
+      6.447087876363163e-05,
+      9.720991038909228e-05,
+      8.947453554252068e-05,
+      -2.0977191700245446e-05,
+      2.8791260578664385e-05,
+      0.0
+    ],
+    [
+      -0.0004866109581755916,
+      -6.6442882164518765e-06,
+      0.00018184607614173552,
+      -2.4128942454524527e-05,
+      -8.676980980858996e-05,
+      0.0,
+      0.0009710465639313105,
+      -0.00013447212391198336,
+      -0.0001529001003545104,
+      1.0006129919003422e-05,
+      7.240858113363654e-05,
+      0.0,
+      -0.000981981353670092,
+      -0.00036969110879165565,
+      6.353818238253513e-05,
+      -4.038626673925484e-05,
+      0.0001415422330613764,
+      0.0,
+      0.0006661094307855556,
+      7.063593539597608e-05,
+      -0.0001726284979506797,
+      3.1701952362785964e-05,
+      -0.00017077810286508254,
+      0.0,
+      0.00025945489913167406,
+      0.00010427528598524653,
+      -7.463472636385942e-05,
+      2.0423622336339672e-05,
+      -9.18385176611464e-06,
+      0.0,
+      0.001209622598808228,
+      0.00015528605044171613,
+      -1.4265224787960028e-05,
+      2.377718333209984e-05,
+      4.9544904733418024e-05,
+      0.0,
+      -0.0012265053132904475,
+      0.00028207586790096313,
+      -0.0002974167680487253,
+      2.0448571639735654e-05,
+      -8.474663222781862e-05,
+      0.0
+    ],
+    [
+      -0.0012092486480643739,
+      6.783771963537991e-05,
+      1.2514044362206853e-05,
+      -3.1693683596456286e-06,
+      -1.1055397073843835e-05,
+      0.0,
+      -0.0010293253702811347,
+      -3.187329430116613e-05,
+      -4.884387169417742e-06,
+      3.492942076577724e-06,
+      1.3109793111258103e-05,
+      0.0,
+      0.0018660586784423568,
+      -4.21974528792727e-07,
+      2.3348388109932664e-05,
+      -5.670332194442759e-06,
+      1.6438032232613684e-05,
+      0.0,
+      -5.823132335389668e-05,
+      6.004493762212581e-05,
+      -2.9005188329070333e-05,
+      3.4967103285567197e-06,
+      -2.186658951868125e-05,
+      0.0,
+      0.0009333233688862801,
+      -9.85434679645012e-05,
+      -2.8929068810110635e-05,
+      3.49308098488547e-06,
+      3.1869642776285027e-06,
+      0.0,
+      0.00023560503721755185,
+      6.836549505178976e-06,
+      -3.0730864889869635e-05,
+      1.622080591433663e-07,
+      8.953107043241032e-06,
+      0.0,
+      -0.0006660657662723078,
+      1.4266537245695324e-05,
+      -2.9743141044199425e-05,
+      -1.5036102300936149e-06,
+      -1.1900306755094666e-05,
+      0.0
+    ],
+    [
+      -3.284202548122322e-05,
+      -1.2407037681417528e-06,
+      6.2584518108721566e-06,
+      -9.4081552183724e-07,
+      -8.767460869692213e-06,
+      0.0,
+      9.545334891367326e-05,
+      -6.718011172730527e-06,
+      -3.385756244557664e-06,
+      3.9138008828606373e-07,
+      5.565571241793896e-06,
+      0.0,
+      5.539447612286128e-05,
+      -7.0521360032848394e-06,
+      1.3258703230356304e-05,
+      -1.440995870662049e-06,
+      8.396767383957835e-06,
+      0.0,
+      0.00013924968548378362,
+      1.5226363458200617e-05,
+      -1.2097597127041826e-06,
+      1.392342527659442e-06,
+      -7.425277264800347e-06,
+      0.0,
+      -2.2998395635020265e-05,
+      3.2728129678534847e-06,
+      -4.531091417562645e-06,
+      -1.2752254446047028e-06,
+      -7.084919961457617e-08,
+      0.0,
+      -0.00012439108746720338,
+      -5.875140619855948e-07,
+      -3.2225843731876722e-06,
+      8.920735230001346e-07,
+      8.569576496303996e-06,
+      0.0,
+      -0.00011735741692554507,
+      9.0411537536819e-06,
+      -8.692274662423172e-06,
+      1.7257063739231668e-06,
+      -9.939032279426595e-06,
+      0.0
+    ],
+    [
+      -0.00047008716288476243,
+      3.180082073700126e-05,
+      3.98382926287523e-06,
+      -1.536405761401937e-06,
+      -6.85725209398955e-06,
+      0.0,
+      -0.0002538377121271334,
+      -6.7396208315921875e-06,
+      -5.2948159361974585e-06,
+      2.127963744375214e-06,
+      5.97518786336666e-06,
+      0.0,
+      0.0010995139422934406,
+      -3.651891408783901e-06,
+      1.984484527452049e-06,
+      -3.0370064269852595e-06,
+      8.972441894652788e-06,
+      0.0,
+      -0.00047784242048061606,
+      2.7327072199279698e-05,
+      -1.910410043702652e-05,
+      1.9632718258773327e-06,
+      -1.0012433614288103e-05,
+      0.0,
+      0.0006979556920756295,
+      -3.4080399928436083e-05,
+      -1.056209850122356e-05,
+      2.4613372196170907e-06,
+      2.849624096845902e-06,
+      0.0,
+      0.0004557956970399873,
+      1.1721555622406357e-05,
+      -1.2135604777952969e-05,
+      4.626756197473243e-07,
+      3.6469897288921197e-06,
+      0.0,
+      -0.0010253158560977543,
+      1.317109734111935e-05,
+      -2.505197552445384e-05,
+      -5.368508917148767e-07,
+      -6.030075368226086e-06,
+      0.0
+    ],
+    [
+      -0.00031835262958838,
+      9.329563677765344e-05,
+      4.952965497500794e-05,
+      -4.5130649863954906e-06,
+      -3.070080520589182e-05,
+      0.0,
+      0.0004452141843331832,
+      -4.298036370549919e-05,
+      -3.91604023427573e-05,
+      1.3000044553666084e-05,
+      5.913168974632336e-05,
+      0.0,
+      -0.0002856320865046814,
+      -0.00010000409490000474,
+      4.491700652823591e-05,
+      -1.384898532413484e-05,
+      5.795452328646036e-05,
+      0.0,
+      0.0005206477968677905,
+      6.350867243227802e-05,
+      -7.341639175424423e-05,
+      7.78451616841348e-06,
+      -6.22511735706129e-05,
+      0.0,
+      4.606647458339857e-06,
+      5.694873725436798e-05,
+      -7.952179527114474e-05,
+      -7.656239799419808e-07,
+      1.426160644420161e-05,
+      0.0,
+      0.00014460771624942307,
+      0.00014312035868834798,
+      1.6685005040258569e-06,
+      -1.9220893341779373e-07,
+      3.146664916857181e-05,
+      0.0,
+      -0.0006658539604094702,
+      8.99489666707896e-05,
+      -9.033570990858406e-05,
+      -3.815964413203635e-06,
+      -3.026764730871107e-05,
+      0.0
+    ],
+    [
+      -0.001271715496147347,
+      7.858121145487095e-05,
+      1.1985929343677316e-05,
+      -3.7388708070135864e-06,
+      -1.5039214564702778e-05,
+      0.0,
+      -0.0008874238136527893,
+      -2.5985251402744752e-05,
+      -9.664761071952724e-06,
+      4.700187433341736e-06,
+      1.4958806810493194e-05,
+      0.0,
+      0.0024612498848938075,
+      -5.094241627067903e-06,
+      1.5098453028566834e-05,
+      -7.073519073016485e-06,
+      2.0730206383597657e-05,
+      0.0,
+      -0.0006681799330962318,
+      6.846006299750671e-05,
+      -4.094156769153958e-05,
+      4.482607943066696e-06,
+      -2.5012092562347466e-05,
+      0.0,
+      0.0014283800528401727,
+      -9.799704948564905e-05,
+      -2.951163470035688e-05,
+      5.144759484761705e-06,
+      5.499213077196409e-06,
+      0.0,
+      0.0007333836159026717,
+      1.9274900565970767e-05,
+      -3.257060097853439e-05,
+      7.03411791206227e-07,
+      9.637643394918044e-06,
+      0.0,
+      -0.0017223228834755608,
+      2.5170282985863337e-05,
+      -4.926564258951132e-05,
+      -1.5177266450030987e-06,
+      -1.4386930760351939e-05,
+      0.0
+    ],
+    [
+      -0.010344891812020094,
+      0.0006309137913528454,
+      0.00041227994650156423,
+      -0.0004370027564555301,
+      -0.0003060783151370173,
+      0.0,
+      -0.003742119642302338,
+      0.0002170418192752272,
+      0.00032936297033311543,
+      0.00011205398677683888,
+      -0.00040502774277652434,
+      0.0,
+      0.007484257626021399,
+      0.00035777735736354694,
+      0.0004523140199033904,
+      -0.000857900476479095,
+      -0.00019613970648989451,
+      0.0,
+      0.0009081662297266254,
+      0.0006531100446842984,
+      0.00019950343289161065,
+      -0.0004500027758399325,
+      -0.0005450542700694648,
+      0.0,
+      0.004022971719661009,
+      1.5204903619674504e-05,
+      0.0002197639461629014,
+      -3.5589204941575335e-05,
+      -0.001618553398495103,
+      0.0,
+      0.002398591987337268,
+      0.000366851316945835,
+      0.0002626068320067403,
+      -0.00027950694679738475,
+      -0.0004217042604796145,
+      0.0,
+      -7.909653808396606e-05,
+      0.00038992468200488463,
+      0.0002598507364785912,
+      -5.5729060330168956e-05,
+      8.184955765025432e-05,
+      0.0
+    ],
+    [
+      -0.007826990605723144,
+      0.0006309137913528454,
+      0.00041227994650156423,
+      -0.0004370027564555301,
+      -0.0003060783151370173,
+      0.0,
+      -0.0029797028669976684,
+      0.0002170418192752272,
+      0.00032936297033311543,
+      0.00011205398677683888,
+      -0.00040502774277652434,
+      0.0,
+      0.0073849987413552535,
+      0.00035777735736354694,
+      0.0004523140199033904,
+      -0.000857900476479095,
+      -0.00019613970648989451,
+      0.0,
+      -0.0009581981134918012,
+      0.0006531100446842984,
+      0.00019950343289161065,
+      -0.0004500027758399325,
+      -0.0005450542700694648,
+      0.0,
+      0.003762456195287939,
+      1.5204903619674504e-05,
+      0.0002197639461629014,
+      -3.5589204941575335e-05,
+      -0.001618553398495103,
+      0.0,
+      0.0030195000315281027,
+      0.000366851316945835,
+      0.0002626068320067403,
+      -0.00027950694679738475,
+      -0.0004217042604796145,
+      0.0,
+      -0.0017541838116188764,
+      0.00038992468200488463,
+      0.0002598507364785912,
+      -5.5729060330168956e-05,
+      8.184955765025432e-05,
+      0.0
+    ],
+    [
+      -0.00041011814766281297,
+      -0.00021524151575153962,
+      0.00014542900508451566,
+      -1.468627195508385e-05,
+      -5.48869978614534e-05,
+      0.0,
+      0.0002182978464493131,
+      5.431437552368707e-06,
+      -7.112073639714157e-05,
+      -5.698939841609532e-06,
+      -2.2538960744538663e-05,
+      0.0,
+      6.394523556802994e-05,
+      -0.00027929758632528327,
+      1.3813169512533548e-05,
+      -1.6689407744223824e-05,
+      6.0452457536455876e-05,
+      0.0,
+      -0.00014323977725330726,
+      -5.062157026640991e-05,
+      -3.762879292343334e-05,
+      2.2312854504569048e-05,
+      -7.783572949625458e-05,
+      0.0,
+      0.0002674310194827343,
+      2.7277824596867527e-05,
+      -2.842074273622139e-05,
+      6.301225623751555e-06,
+      -1.4743336747297464e-05,
+      0.0,
+      0.0007444574410961827,
+      -0.00017265644756327627,
+      3.112805015681659e-05,
+      2.0643330423869603e-05,
+      1.4137087572793703e-05,
+      0.0,
+      -0.00010598823010276307,
+      0.00022455193783805648,
+      -0.00010594545808185926,
+      1.8644659985700378e-05,
+      -5.689593353004646e-05,
+      0.0
+    ],
+    [
+      -0.0009378910273737262,
+      2.8380157345585033e-05,
+      2.2555023352508526e-05,
+      -3.1307587523538924e-05,
+      -3.0226990539452953e-05,
+      0.0,
+      0.0008500694654029167,
+      -1.3687680064650665e-05,
+      1.0578850826214256e-05,
+      6.817651334221747e-06,
+      -5.671300895068514e-06,
+      0.0,
+      0.0008718179649347355,
+      1.1053291149539926e-05,
+      7.55561804944463e-06,
+      -1.358052674228422e-05,
+      -2.9229884513755795e-05,
+      0.0,
+      -0.0007219512298407949,
+      2.5289291766360632e-05,
+      -1.4076847296993911e-05,
+      8.147653094890309e-06,
+      -2.0001402979810054e-05,
+      0.0,
+      -0.00048070444963677566,
+      -4.2853076893638115e-05,
+      -8.058988418161368e-06,
+      7.817152868868326e-06,
+      -1.3326743035700263e-05,
+      0.0,
+      0.00048281588208336614,
+      1.5990810975896173e-05,
+      9.90922778854252e-06,
+      7.482096429301304e-06,
+      -1.666997291920738e-05,
+      0.0,
+      -1.134808588010815e-05,
+      5.323251697993035e-06,
+      1.1945650840952311e-05,
+      4.482129271020355e-06,
+      2.5546253412891127e-06,
+      0.0
+    ]
+  ],
+  "metrics": [
+    {
+      "seed": 14000,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14001,
+      "actions": 300,
+      "playerReward": -0.05,
+      "aiReward": 0.05,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14002,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14003,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14004,
+      "actions": 300,
+      "playerReward": 0.3,
+      "aiReward": -0.3,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14005,
+      "actions": 300,
+      "playerReward": 0.15000000000000002,
+      "aiReward": -0.15000000000000002,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14006,
+      "actions": 300,
+      "playerReward": -0.05,
+      "aiReward": 0.05,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14007,
+      "actions": 300,
+      "playerReward": -0.05,
+      "aiReward": 0.05,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14008,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14009,
+      "actions": 300,
+      "playerReward": 0.2,
+      "aiReward": -0.2,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14010,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14011,
+      "actions": 300,
+      "playerReward": 0.15000000000000002,
+      "aiReward": -0.15000000000000002,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14012,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14013,
+      "actions": 300,
+      "playerReward": 0.15000000000000002,
+      "aiReward": -0.15000000000000002,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14014,
+      "actions": 300,
+      "playerReward": 0.15000000000000002,
+      "aiReward": -0.15000000000000002,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 1,
+        "coreDamage": 0,
+        "combatExchange": -0.05,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 1,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0.05,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14015,
+      "actions": 300,
+      "playerReward": 0.35,
+      "aiReward": -0.35,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14016,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14017,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14018,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14019,
+      "actions": 300,
+      "playerReward": 0.25,
+      "aiReward": -0.25,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14020,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14021,
+      "actions": 300,
+      "playerReward": -0.5450000000000005,
+      "aiReward": 0.5450000000000005,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14022,
+      "actions": 300,
+      "playerReward": 0.25,
+      "aiReward": -0.25,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 1,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0.05,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 1,
+        "coreDamage": 0,
+        "combatExchange": -0.05,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14023,
+      "actions": 300,
+      "playerReward": 0.25,
+      "aiReward": -0.25,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14024,
+      "actions": 300,
+      "playerReward": 0.25,
+      "aiReward": -0.25,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14025,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14026,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14027,
+      "actions": 300,
+      "playerReward": 0.3,
+      "aiReward": -0.3,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14028,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14029,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14030,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14031,
+      "actions": 300,
+      "playerReward": 0.2,
+      "aiReward": -0.2,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 1,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0.05,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 1,
+        "coreDamage": 0,
+        "combatExchange": -0.05,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14032,
+      "actions": 300,
+      "playerReward": 0.10000000000000002,
+      "aiReward": -0.10000000000000002,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14033,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14034,
+      "actions": 300,
+      "playerReward": 0.2,
+      "aiReward": -0.2,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14035,
+      "actions": 300,
+      "playerReward": 0.3,
+      "aiReward": -0.3,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 1,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0.05,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 1,
+        "coreDamage": 0,
+        "combatExchange": -0.05,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14036,
+      "actions": 300,
+      "playerReward": 0.35,
+      "aiReward": -0.35,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14037,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14038,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14039,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14040,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14041,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14042,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14043,
+      "actions": 300,
+      "playerReward": 0.25,
+      "aiReward": -0.25,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 1,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0.05,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 1,
+        "coreDamage": 0,
+        "combatExchange": -0.05,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14044,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14045,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14046,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14047,
+      "actions": 300,
+      "playerReward": 0.05,
+      "aiReward": -0.05,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14048,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14049,
+      "actions": 300,
+      "playerReward": 0.15000000000000002,
+      "aiReward": -0.15000000000000002,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14050,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14051,
+      "actions": 300,
+      "playerReward": 0.35,
+      "aiReward": -0.35,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14052,
+      "actions": 300,
+      "playerReward": 0.15000000000000002,
+      "aiReward": -0.15000000000000002,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14053,
+      "actions": 300,
+      "playerReward": 0.35,
+      "aiReward": -0.35,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14054,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14055,
+      "actions": 300,
+      "playerReward": 0.1,
+      "aiReward": -0.1,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14056,
+      "actions": 300,
+      "playerReward": 0.35,
+      "aiReward": -0.35,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 1,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0.05,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 1,
+        "coreDamage": 0,
+        "combatExchange": -0.05,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14057,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14058,
+      "actions": 300,
+      "playerReward": -0.1,
+      "aiReward": 0.1,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14059,
+      "actions": 300,
+      "playerReward": -0.5950000000000004,
+      "aiReward": 0.5950000000000004,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14060,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14061,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14062,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14063,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14064,
+      "actions": 300,
+      "playerReward": 0.3,
+      "aiReward": -0.3,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14065,
+      "actions": 300,
+      "playerReward": 0.0,
+      "aiReward": 0.0,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14066,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14067,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14068,
+      "actions": 300,
+      "playerReward": 0.39999999999999997,
+      "aiReward": -0.39999999999999997,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14069,
+      "actions": 300,
+      "playerReward": -0.5950000000000004,
+      "aiReward": 0.5950000000000004,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14070,
+      "actions": 300,
+      "playerReward": -0.5950000000000004,
+      "aiReward": 0.5950000000000004,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14071,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14072,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14073,
+      "actions": 300,
+      "playerReward": 0.1,
+      "aiReward": -0.1,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14074,
+      "actions": 300,
+      "playerReward": 0.0,
+      "aiReward": 0.0,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14075,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14076,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14077,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14078,
+      "actions": 300,
+      "playerReward": 0.15000000000000002,
+      "aiReward": -0.15000000000000002,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14079,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14080,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14081,
+      "actions": 300,
+      "playerReward": 0.15000000000000002,
+      "aiReward": -0.15000000000000002,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14082,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14083,
+      "actions": 300,
+      "playerReward": 0.15,
+      "aiReward": -0.15,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14084,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14085,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14086,
+      "actions": 300,
+      "playerReward": 0.35,
+      "aiReward": -0.35,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 1,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0.05,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 1,
+        "coreDamage": 0,
+        "combatExchange": -0.05,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14087,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14088,
+      "actions": 300,
+      "playerReward": 0.0,
+      "aiReward": 0.0,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14089,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14090,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14091,
+      "actions": 300,
+      "playerReward": 0.05,
+      "aiReward": -0.05,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 1,
+        "coreDamage": 0,
+        "combatExchange": -0.05,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 1,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0.05,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14092,
+      "actions": 300,
+      "playerReward": 0.25,
+      "aiReward": -0.25,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14093,
+      "actions": 300,
+      "playerReward": 0.04999999999999999,
+      "aiReward": -0.04999999999999999,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14094,
+      "actions": 300,
+      "playerReward": 0.15000000000000002,
+      "aiReward": -0.15000000000000002,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14095,
+      "actions": 283,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14096,
+      "actions": 300,
+      "playerReward": 0.3,
+      "aiReward": -0.3,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14097,
+      "actions": 271,
+      "playerReward": -2.6500000000000004,
+      "aiReward": 2.6500000000000004,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 50,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.025,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 50,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.025,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    },
+    {
+      "seed": 14098,
+      "actions": 300,
+      "playerReward": 0.35,
+      "aiReward": -0.35,
+      "terminalReason": "time-limit",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0,
+        "combatExchange": 0,
+        "terminal": 0
+      }
+    },
+    {
+      "seed": 14099,
+      "actions": 283,
+      "playerReward": -2.7000000000000006,
+      "aiReward": 2.7000000000000006,
+      "terminalReason": "lost",
+      "playerRewardComponents": {
+        "enemyCoreDamage": 0,
+        "ownCoreDamage": 30,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": -0.015,
+        "combatExchange": 0,
+        "terminal": -2
+      },
+      "aiRewardComponents": {
+        "enemyCoreDamage": 30,
+        "ownCoreDamage": 0,
+        "enemyCombatLoss": 0,
+        "ownCombatLoss": 0,
+        "coreDamage": 0.015,
+        "combatExchange": 0,
+        "terminal": 2
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+# Local, offline-training foundation. Install into .venv with:
+#   uv pip install --python .venv/Scripts/python.exe -r requirements-rl-foundation.txt
+# Versions verified on 2026-07-29.
+gymnasium==1.3.0
+stable-baselines3==2.9.0
+sb3-contrib==2.9.0
+torch==2.13.0
+pytest==9.1.1

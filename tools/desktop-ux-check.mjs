@@ -17,8 +17,10 @@ await evaluate(`window.__startWatchAiMatch('easy', 'hard', 1)`);
 const speedLabels = [];
 for (let i = 0; i < 5; i += 1) {
   speedLabels.push(await evaluate('window.__uiState.watchSpeed'));
-  await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: 1290, y: 28, button: 'left', buttons: 1, clickCount: 1 });
-  await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: 1290, y: 28, button: 'left', buttons: 0, clickCount: 1 });
+  // Watch controls are intentionally in the bottom spectator strip: this
+  // point is the centre of getWatchSpeedButtonRect() on a 1400×540 canvas.
+  await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: 33, y: 521, button: 'left', buttons: 1, clickCount: 1 });
+  await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: 33, y: 521, button: 'left', buttons: 0, clickCount: 1 });
 }
 if (speedLabels.join(',') !== '1,5,10,20,1') throw new Error(`Watch speed must cycle 1→5→10→20→1: ${speedLabels}`);
 await evaluate(`window.__resetMatch('medium'); window.__camera.x = 900; window.__camera.targetX = 900; window.__camera.zoom = 0.7;`);
@@ -32,6 +34,8 @@ await send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: 700, y: 200, del
 const zoomAfterWheel = await evaluate('window.__camera.zoom');
 if (!(zoomAfterWheel > zoomBefore)) throw new Error(`Desktop wheel zoom regressed: ${JSON.stringify({ zoomBefore, zoomAfterWheel })}`);
 const buttonZoomBefore = await evaluate('window.__camera.zoom');
+// This match was reset to interactive play, where the full-size zoom control
+// remains at the upper-right corner.
 await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: 1373, y: 27, button: 'left', buttons: 1, clickCount: 1 });
 await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: 1373, y: 27, button: 'left', buttons: 0, clickCount: 1 });
 const buttonZoomAfter = await evaluate('window.__camera.zoom');

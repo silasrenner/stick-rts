@@ -15,11 +15,17 @@ export function createWorld(seed = Date.now()) {
   return {
     units: [],
     projectiles: [],
-    structures: [],
+    structures: [
+      { ...createTurret('player', CONFIG.PLAYER_HOME_X + CONFIG.STARTING_TURRET_OFFSET, CONFIG.GROUND_Y), isStartingTurret: true },
+      { ...createTurret('ai', CONFIG.AI_HOME_X - CONFIG.STARTING_TURRET_OFFSET, CONFIG.GROUND_Y), isStartingTurret: true },
+    ],
     teams: {
       player: {
         gold: CONFIG.STARTING_GOLD,
-        command: 'defend',
+        goldSpent: 0,
+        losses: 0,
+                command: 'defend',
+        defendAnchor: 'inner',
         heroDeathCount: 0,
         heroCooldownTimer: 0,
         statueWarningTimer: 0,
@@ -31,7 +37,10 @@ export function createWorld(seed = Date.now()) {
       },
       ai: {
         gold: CONFIG.STARTING_GOLD,
-        command: 'defend',
+        goldSpent: 0,
+        losses: 0,
+                command: 'defend',
+        defendAnchor: 'inner',
         heroDeathCount: 0,
         heroCooldownTimer: 0,
         statueWarningTimer: 0,
@@ -83,6 +92,7 @@ export function createUnit(kind, team, x, y) {
     hp: stats.hp,
     maxHp: stats.hp,
     damage: stats.damage,
+    goldValue: isHero ? CONFIG.BASE_HERO_COST : stats.cost,
     range: stats.range,
     attackCooldown: stats.attackCooldown,
     attackTimer: 0,
@@ -110,6 +120,10 @@ export function createUnit(kind, team, x, y) {
     mineTimer: 0,
     carrying: 0,
   };
+}
+
+export function createTurret(team, x, y) {
+  return { id: nextId++, team, x, y, isStructure: true, isTurret: true, state: 'idle', hp: CONFIG.TURRET_HP, maxHp: CONFIG.TURRET_HP, range: CONFIG.TURRET_RANGE, acquireRange: CONFIG.TURRET_RANGE, damage: CONFIG.TURRET_DAMAGE, attackCooldown: CONFIG.TURRET_ATTACK_COOLDOWN, attackTimer: 0, attackAnimTimer: 0, projectileSpeed: CONFIG.TURRET_PROJECTILE_SPEED, targetId: null };
 }
 
 export function createStructure(team, x, y) {

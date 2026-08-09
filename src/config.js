@@ -2,7 +2,7 @@ export const CONFIG = {
   TICK_HZ: 60,
 
   VIEWPORT_WIDTH: 1400, // what the canvas element actually renders
-  WORLD_WIDTH: 4200, // S10: 3x viewport (was 5x/7000) — shorter reinforcement travel time, primary pacing dial
+  WORLD_WIDTH: 5000, // longer battlefield; travel and reinforcement time scale with this
   CANVAS_HEIGHT: 540,
   GROUND_Y: 440, // shared baseline for units, statues, structures, mines — leaves room below for legend/build menu
 
@@ -10,15 +10,15 @@ export const CONFIG = {
   IDLE_ANIM_HZ: 0.6,
 
   PLAYER_HOME_X: 100,
-  AI_HOME_X: 4100, // WORLD_WIDTH - 100
+  AI_HOME_X: 4900, // WORLD_WIDTH - 100
   PLAYER_FLEE_X: 40,
-  AI_FLEE_X: 4160, // WORLD_WIDTH - 40
+  AI_FLEE_X: 4960, // WORLD_WIDTH - 40
 
   EDGE_SCROLL_MARGIN: 60, // px from viewport edge that triggers camera scroll
   EDGE_SCROLL_SPEED: 900, // px/s
   CAMERA_CULL_MARGIN: 100, // px beyond the viewport edge before an entity stops being drawn
   CAMERA_ZOOM: 0.7, // S8: render-time scale only — sim stays in unscaled world px. <1 shows more battlefield at once. S10: now just the starting value — camera.zoom is runtime state.
-  CAMERA_ZOOM_MIN: 1400 / 4200, // S10: VIEWPORT_WIDTH / WORLD_WIDTH — the entire map fits the viewport at min zoom
+  CAMERA_ZOOM_MIN: 1400 / 5000, // VIEWPORT_WIDTH / WORLD_WIDTH — entire map at min zoom
   CAMERA_ZOOM_MAX: 1.4, // S10: 2x the starting zoom; tunable if it feels too tight/loose
 
   AI_SIGHT_RANGE: 260, // px; how close an AI unit must be to see an enemy for scouting purposes
@@ -37,9 +37,22 @@ export const CONFIG = {
   HERO_BUILD_TIME: 30, // independent of HERO_RESPAWN_COOLDOWN below — see sim/systems/production.js
 
   STRUCTURE_COST: 300, // S8: doubled from 150
-  STRUCTURE_CAP_BONUS: 13, // S8: raised from 6 — see BASE_UNIT_CAP
+  TURRET_COST: 600,
+  TURRET_BUILD_TIME: 15,
+  TURRET_POPULATION_COST: 8,
+  MAX_TURRETS: 3, // one free base turret plus two buildable defensive positions
+  TURRET_HP: 150,
+  TURRET_DAMAGE: 28,
+  TURRET_RANGE: 280,
+  TURRET_ATTACK_COOLDOWN: 1.8,
+  TURRET_PROJECTILE_SPEED: 320,
+  STARTING_TURRET_OFFSET: 20,
+  TURRET_SLOT_OFFSETS: [380, 900],
+  HARD_TURRET_FIRST_TIME: 5.5 * 60,
+  HARD_TURRET_SECOND_TIME: 13 * 60,
+  STRUCTURE_CAP_BONUS: 13,
   MAX_STRUCTURES: 5,
-  STRUCTURE_HP: 150,
+  STRUCTURE_HP: 200,
   STRUCTURE_DESTROY_DURATION: 0.4, // seconds a destroyed structure fades before removal
   STRUCTURE_SLOT_OFFSETS: [40, 80, 120, 160, 200], // px from homeX, toward the battlefield
 
@@ -49,12 +62,13 @@ export const CONFIG = {
   MINE_SLOTS: 4,
   MINE_CYCLE_TIME: 3, // seconds to extract one load
   GOLD_PER_TRIP: 25,
+  UNIT_KILL_REWARD_RATE: 0.10, // killer receives 10% of a defeated unit's invested value
   MINER_ARRIVE_THRESHOLD: 4, // px
 
   // S7 formation system (sim/systems/formation.js): deterministic per-unit
   // slot assignment so groups read as ranks/files, not stacked blobs.
-  DEFEND_SCREEN_OFFSET: 300, // px from homeX, toward the battlefield — past MINE_OFFSET so miners stay behind the line
-  FORMATION_SLOT_SPACING_X: 50, // px between successive columns, and between the warrior/archer lines
+  DEFEND_SCREEN_OFFSET: 380, // legacy inner-turret reference; formation uses TURRET_SLOT_OFFSETS directly
+  FORMATION_SLOT_SPACING_X: 60, // px between successive columns, and between the warrior/archer lines
   FORMATION_SLOT_SPACING_Y: 40, // px between file positions within one rank
   FORMATION_SLOTS_PER_RANK: 6, // unit count before a rank overflows into a new column
   FORMATION_Y_BAND: 200, // px of vertical spread a full rank occupies — (SLOTS_PER_RANK - 1) * SPACING_Y, fits within GROUND_Y's ~240px of headroom above the HUD
@@ -120,8 +134,8 @@ export const CONFIG = {
       projectileSpeed: 0,
     },
     warrior: {
-      cost: 125,
-      hp: 60,
+      cost: 110,
+      hp: 78,
       damage: 10,
       range: 22,
       attackCooldown: 0.5,
@@ -131,11 +145,11 @@ export const CONFIG = {
       projectileSpeed: 0,
     },
     archer: {
-      cost: 250,
-      hp: 35,
-      damage: 14,
+      cost: 280,
+      hp: 42,
+      damage: 16,
       range: 220,
-      attackCooldown: 1.0,
+      attackCooldown: 1.2,
       speed: 80, // S7: bumped from 70 — still slower than warrior's 90, closes the gap a bit
       acquireRange: 300,
       threatRange: 0,

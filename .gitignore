@@ -2,3 +2,6 @@
 node_modules/
 .release-gate-chrome/
 artifacts/release-gates/*.json
+# Local runtime state and Python bytecode; never project source.
+.local/
+__pycache__/

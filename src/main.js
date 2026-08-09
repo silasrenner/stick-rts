@@ -15,6 +15,7 @@ import {
   getPlayDifficultyRects,
   getWatchSetupRects,
   getSettingsRects,
+  getLeagueHistoryRects,
   getZoomButtonRects,
   getWatchSpeedButtonRect,
   getTouchCommandRects,
@@ -24,6 +25,9 @@ import { createCamera, updateCamera, zoomAt } from './render/camera.js';
 import { bindDebugKeys } from './input/keyboard.js';
 import { bindClick, pointInRect, bindMouseMove, bindCameraGestures, bindWheel } from './input/mouse.js';
 import { createKeyState } from './input/keyState.js';
+import { buildCommanderState, applyCommanderDecision, isCommanderReplanDue, isCurrentCommanderRequest } from './commander/runtime.js';
+import { buildCompletedWatchSummary, loadOwnStrategyProfile, persistCompletedWatchSummary } from './strategy/watchLeague.js';
+import { buildLeagueHistoryView } from './strategy/historyView.js';
 
 const DEFAULT_DIFFICULTY = 'medium';
 
@@ -41,6 +45,7 @@ const uiState = {
   watchSetup: { playerDifficulty: 'hard', aiDifficulty: 'hard', seed: null },
   watchSpeed: 1,
   touchControlsEnabled: window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0,
+  leagueHistory: { status: 'idle', view: null },
 };
 
 let world = createWorld(); // starts in matchState 'menu'
@@ -49,6 +54,7 @@ const camera = createCamera();
 const keyState = createKeyState();
 let mouseX = null;
 let dragDeltaX = 0;
+let recordedLeagueWorld = null;
 
 function showMessage(text) {
   uiMessage = { text, timer: 2 };
@@ -100,11 +106,42 @@ function startWatchAiMatch(playerDifficulty, aiDifficulty, seed) {
   uiState.watchSetup.seed = resolvedSeed;
 }
 
+function startModelCommanderWatch() {
+  startWatchAiMatch('hard', 'hard', Date.now());
+  for (const team of ['player', 'ai']) {
+    world.teams[team].modelCommander = true;
+    world.teams[team].commanderPriority = [];
+  }
+  world.modelCommander = { nextRequestAt: 0, pending: false };
+  // The companion returns a team-scoped profile; failure deliberately leaves
+  // the explicit no-profile boundary in place rather than inventing advice.
+  const startedWorld = world;
+  for (const team of ['player', 'ai']) {
+    loadOwnStrategyProfile(team).then((profile) => {
+      if (world === startedWorld && profile) world.teams[team].strategyProfile = profile;
+    }).catch(() => {});
+  }
+}
+
 function backToMenu() {
   world = createWorld();
   uiState.menuScreen = 'main';
   camera.x = 0;
   camera.targetX = 0;
+}
+
+async function loadLeagueHistory() {
+  uiState.leagueHistory = { status: 'loading', view: null };
+  try {
+    const response = await fetch('/api/league');
+    if (!response.ok) throw new Error(`service ${response.status}`);
+    const view = buildLeagueHistoryView(await response.json());
+    if (!view) throw new Error('invalid league response');
+    uiState.leagueHistory = { status: 'ready', view };
+  } catch {
+    // Companion history is optional; deterministic local play remains usable.
+    uiState.leagueHistory = { status: 'unavailable', view: null };
+  }
 }
 
 function toggleHeroControl() {
@@ -176,7 +213,7 @@ function spawnStressTest() {
 // keys the same way the hero-control functions above already are.
 function setPlayerCommand(command) {
   if (isWatchAiMatch(world)) return;
-  setTeamCommand(world, 'player', command);
+  setTeamCommand(world, 'player', command, { userInitiated: true });
 }
 
 // The 'ai' team now makes its own decisions (sim/ai/behavior.js) — no
@@ -217,26 +254,15 @@ function handleMenuClick(x, y) {
         uiState.menuScreen = 'main';
         return;
       }
-      if (pointInRect(x, y, rects.reroll)) {
-        uiState.watchSetup.seed = Date.now();
-        return;
-      }
-      if (pointInRect(x, y, rects.start)) {
-        startWatchAiMatch(uiState.watchSetup.playerDifficulty, uiState.watchSetup.aiDifficulty, uiState.watchSetup.seed);
+      if (pointInRect(x, y, rects.scripted)) {
+        startWatchAiMatch('hard', 'hard', Date.now());
         uiState.menuScreen = 'main';
         return;
       }
-      for (const { difficulty, rect } of rects.playerDifficulty) {
-        if (pointInRect(x, y, rect)) {
-          uiState.watchSetup.playerDifficulty = difficulty;
-          return;
-        }
-      }
-      for (const { difficulty, rect } of rects.aiDifficulty) {
-        if (pointInRect(x, y, rect)) {
-          uiState.watchSetup.aiDifficulty = difficulty;
-          return;
-        }
+      if (pointInRect(x, y, rects.localGemma)) {
+        startModelCommanderWatch();
+        uiState.menuScreen = 'main';
+        return;
       }
       return;
     }
@@ -258,11 +284,19 @@ function handleMenuClick(x, y) {
       }
       return;
     }
+    case 'leagueHistory': {
+      if (pointInRect(x, y, getLeagueHistoryRects(canvas).back)) uiState.menuScreen = 'main';
+      return;
+    }
     default: {
       for (const { id, rect } of getMainMenuButtonRects(canvas)) {
         if (!pointInRect(x, y, rect)) continue;
         if (id === 'play') uiState.menuScreen = 'playDifficulty';
         else if (id === 'watchAi') uiState.menuScreen = 'watchSetup';
+        else if (id === 'leagueHistory') {
+          uiState.menuScreen = 'leagueHistory';
+          loadLeagueHistory();
+        }
         else if (id === 'settings') uiState.menuScreen = 'settings';
         return;
       }
@@ -323,7 +357,7 @@ canvas.addEventListener('pointercancel', releaseHeldHeroControl);
 
 bindClick(canvas, (x, y) => {
   if (world.matchState !== 'menu') {
-    const zoomButtons = getZoomButtonRects(canvas);
+    const zoomButtons = getZoomButtonRects(canvas, isWatchAiMatch(world));
     if (pointInRect(x, y, zoomButtons.in)) {
       zoomAt(camera, canvas.width / 2, 1.25);
       return;
@@ -386,6 +420,20 @@ const accumulator = createAccumulator(1000 / CONFIG.TICK_HZ);
 let lastTime = performance.now();
 let tickCount = 0;
 let fps = 60;
+// Telemetry identity deliberately lives outside the deterministic world. It
+// lets a completed Watch POST be retried safely without changing simulation
+// state or mechanics.
+const leagueMatchIds = new WeakMap();
+
+function leagueMatchIdFor(completedWorld) {
+  let matchId = leagueMatchIds.get(completedWorld);
+  if (!matchId) {
+    const random = globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    matchId = `watch-${random}`;
+    leagueMatchIds.set(completedWorld, matchId);
+  }
+  return matchId;
+}
 
 function tick(dt) {
   const input = {
@@ -396,6 +444,13 @@ function tick(dt) {
   };
 
   runTick(world, dt, input);
+  const summary = buildCompletedWatchSummary(world, leagueMatchIdFor(world));
+  if (summary && recordedLeagueWorld !== world) {
+    recordedLeagueWorld = world;
+    // Bounded retries are safe because this completed world's opaque id is
+    // idempotent at the companion store; simulation never waits on telemetry.
+    persistCompletedWatchSummary(summary).catch(() => {});
+  }
 
   if (uiMessage.timer > 0) {
     uiMessage.timer -= dt;
@@ -404,10 +459,35 @@ function tick(dt) {
   tickCount++;
 }
 
+async function requestModelCommanderDecisions() {
+  const requestedWorld = world;
+  const controller = requestedWorld.modelCommander;
+  if (!controller || controller.pending || requestedWorld.matchElapsedTime < controller.nextRequestAt
+    || !['player', 'ai'].some((team) => isCommanderReplanDue(requestedWorld, team))) return;
+  controller.pending = true;
+  // Replans are driven by plan expiry/block state, not a blind eight-second
+  // polling loop. Retain only a small simulation-time rate limit for a team
+  // whose plan reports a repeated legality block while its request is in flight.
+  controller.nextRequestAt = requestedWorld.matchElapsedTime + 4;
+  try {
+    for (const team of ['player', 'ai']) {
+      const response = await fetch('/api/commander', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ team, state: buildCommanderState(requestedWorld, team) }) });
+      if (!response.ok) throw new Error(`service ${response.status}`);
+      const decision = await response.json();
+      if (!isCurrentCommanderRequest(world, requestedWorld, controller)) return;
+      applyCommanderDecision(requestedWorld, team, decision);
+    }
+  } catch (error) {
+    if (isCurrentCommanderRequest(world, requestedWorld, controller)) uiMessage = { text: `Model Commander unavailable: ${error.message}`, timer: 3 };
+  }
+  finally { if (world.modelCommander === controller) controller.pending = false; }
+}
+
 function frame(time) {
   const deltaMs = time - lastTime;
   lastTime = time;
   accumulator.advance(deltaMs * (isWatchAiMatch(world) && world.matchState === 'playing' ? uiState.watchSpeed : 1), tick);
+  requestModelCommanderDecisions();
   updateCamera(camera, world, mouseX, deltaMs / 1000, dragDeltaX);
   dragDeltaX = 0; // consumed for this frame — only read inside updateCamera's Watch-AI branch, harmless otherwise
   render(ctx, world, camera, uiMessage, uiState);
@@ -444,6 +524,7 @@ window.__toggleFpsOverlay = toggleFpsOverlay;
 window.__fps = () => fps;
 window.__uiState = uiState;
 window.__startWatchAiMatch = startWatchAiMatch;
+window.__startModelCommanderWatch = startModelCommanderWatch;
 window.__backToMenu = backToMenu;
 window.__forceTicks = (n = CONFIG.TICK_HZ) => {
   for (let i = 0; i < n; i++) tick(1 / CONFIG.TICK_HZ);

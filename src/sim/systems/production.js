@@ -1,7 +1,7 @@
 import { CONFIG } from '../../config.js';
-import { createUnit, createStructure } from '../world.js';
+import { createUnit, createStructure, createTurret } from '../world.js';
 import { getUnitCount } from './economy.js';
-import { livingStructures } from './supply.js';
+import { livingStructures, livingTurrets } from './supply.js';
 
 // One sequential FIFO queue per team (economy.js's buyUnit/buyHero/
 // buyStructure already validated gold/cap and deducted gold at enqueue
@@ -25,6 +25,15 @@ export function updateProductionQueue(world, dt) {
 
 function materialize(world, team, item) {
   const homeX = team === 'player' ? CONFIG.PLAYER_HOME_X : CONFIG.AI_HOME_X;
+
+  if (item.action === 'turret') {
+    const slotIndex = livingTurrets(world, team).filter((turret) => !turret.isStartingTurret).length;
+    const sign = team === 'player' ? 1 : -1;
+    const x = homeX + sign * CONFIG.TURRET_SLOT_OFFSETS[slotIndex];
+    world.structures.push(createTurret(team, x, CONFIG.GROUND_Y));
+    if (slotIndex === 1) world.teams[team].defendAnchor = 'outer';
+    return;
+  }
 
   if (item.action === 'structure') {
     const slotIndex = livingStructures(world, team).length;

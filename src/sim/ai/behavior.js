@@ -1,6 +1,7 @@
 import { CONFIG } from '../../config.js';
 import { isAliveEntity } from '../world.js';
-import { buyUnit, buyStructure, buyHero, hasLivingHero } from '../systems/economy.js';
+import { buyUnit, buyStructure, buyTurret, buyHero, hasLivingHero, countQueued } from '../systems/economy.js';
+import { livingTurrets } from '../systems/supply.js';
 import { setTeamCommand } from '../systems/commands.js';
 import { updateAiMemory, isMemoryFresh } from './vision.js';
 import { DIFFICULTIES } from './difficulties.js';
@@ -30,11 +31,41 @@ export function updateAiDecisions(world, dt) {
 }
 
 function runDecision(world, team, difficulty) {
+  if (typeof world.scriptedDecisionObserver === 'function') {
+    world.scriptedDecisionObserver({
+      type: 'before',
+      baseline: world.teams[team].difficulty,
+      team,
+      simulatedSeconds: world.matchElapsedTime,
+      world,
+    });
+  }
   updateAiMemory(world, team, difficulty.globalVision === true);
 
-  attemptPurchase(world, team, pickPurchase(world, team, difficulty));
+  if (world.teams[team].modelCommander) {
+    attemptModelPurchase(world, team);
+    return;
+  }
+  const requestedProduction = pickPurchase(world, team, difficulty);
+  const purchaseResult = attemptPurchase(world, team, requestedProduction, {
+    allowCapStructureFallback: difficulty.allowCapStructureFallback !== false,
+  });
   maybeManageHero(world, team, difficulty);
-  setTeamCommand(world, team, pickCommand(world, team, difficulty));
+  const command = pickCommand(world, team, difficulty);
+  setTeamCommand(world, team, command);
+  if (typeof world.scriptedDecisionObserver === 'function') {
+    world.scriptedDecisionObserver({
+      type: 'decision',
+      baseline: world.teams[team].difficulty,
+      team,
+      simulatedSeconds: world.matchElapsedTime,
+      command,
+      production: purchaseResult.ok ? requestedProduction : 'none',
+      requestedProduction,
+      purchaseResult,
+      world,
+    });
+  }
 }
 
 // Counter-pick (if composition intel is fresh enough to trust) or the
@@ -49,8 +80,19 @@ function runDecision(world, team, difficulty) {
 // a 100g replacement — a real, reproducible Easy-beats-Hard result, not
 // just slower pacing. This is the floor that stops that spiral; it does
 // not fully replace defending the mine in the first place.
+function shouldPrioritizeTurret(world, team) {
+  const turretCount = livingTurrets(world, team).filter((turret) => !turret.isStartingTurret).length + countQueued(world, team, 'turret');
+  const unlockTime = turretCount === 0 ? CONFIG.HARD_TURRET_FIRST_TIME : CONFIG.HARD_TURRET_SECOND_TIME;
+  return turretCount < CONFIG.MAX_TURRETS - 1
+    && world.matchElapsedTime >= unlockTime
+    && getLivingMinerCount(world, team) >= 2
+    && countCombatUnits(world, team) >= 2;
+}
+
 function pickPurchase(world, team, difficulty) {
+  if (difficulty.globalVision === true && shouldPrioritizeTurret(world, team)) return 'turret';
   if (getLivingMinerCount(world, team) === 0) return 'miner';
+  if (world.teams[team].modelCommander && world.teams[team].commanderPriority?.length) return world.teams[team].commanderPriority[0];
 
   if (difficulty.useComposition && isMemoryFresh(world, team, difficulty.memoryStaleness)) {
     const counter = counterPick(world, team);
@@ -76,9 +118,39 @@ function counterPick(world, team) {
 // Buys through the same economy.js functions the player's build menu
 // uses — no AI-only purchase path. A cap block reactively buys a
 // structure instead; a gold block just waits for the next decision tick.
-function attemptPurchase(world, team, kind) {
-  const result = buyUnit(world, team, kind);
-  if (!result.ok && result.reason === 'cap') buyStructure(world, team);
+function attemptModelPurchase(world, team) {
+  const priorities = world.teams[team].commanderPriority;
+  while (priorities?.length) {
+    const result = attemptPurchase(world, team, priorities[0], { allowCapStructureFallback: false });
+    if (result.ok) {
+      // A commander priority is a short plan, not a perpetual build order.
+      // Consume a successfully queued item so subsequent decision ticks advance
+      // through the model's remaining choices instead of buying Warriors until
+      // gold/cap exhaustion.
+      priorities.shift();
+      if (world.teams[team].commanderPlan) {
+        world.teams[team].commanderPlan.status = priorities.length ? 'active' : 'executing';
+      }
+      return;
+    }
+    // A model-selected item that is merely unaffordable or capacity-blocked
+    // remains its active intent. Only a permanently illegal request (such as
+    // a maxed turret) is discarded in favor of the next model preference.
+    if (result.reason === 'gold' || result.reason === 'cap') {
+      if (world.teams[team].commanderPlan) world.teams[team].commanderPlan.status = `blocked-${result.reason}`;
+      return;
+    }
+    priorities.shift();
+  }
+}
+
+function attemptPurchase(world, team, kind, { allowCapStructureFallback = true } = {}) {
+  const result = kind === 'turret' ? buyTurret(world, team)
+    : kind === 'structure' ? buyStructure(world, team)
+      : CONFIG.HERO_STATS[kind] ? buyHero(world, team, kind)
+        : buyUnit(world, team, kind);
+  if (!result.ok && result.reason === 'cap' && allowCapStructureFallback) buyStructure(world, team);
+  return result;
 }
 
 function maybeManageHero(world, team, difficulty) {
