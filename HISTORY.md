@@ -13,16 +13,44 @@ to PLAN.md Status; now that S10 has closed, its completed narrative
 lives here properly, below.)
 
 Contents:
-1. Session status narratives (most recent first): S10, S9, S8, S7, v2
-   planning session, S6, S5. (S1–S4 narratives were compacted
-   into later entries during v1 and are not separately preserved.)
-2. Resolved/open question log as it stood at end of S9.
-3. Completed session specifications with stop conditions: v1 (S1–S6)
-   and v2 (S7–S9).
+1. Post-S10 completion record (most recent): HUD/build UI, mobile controls, Watch speed/Hard vision, turret and Watch telemetry release.
+2. Session status narratives: S10, S9, S8, S7, v2 planning session, S6, S5. (S1–S4 narratives were compacted into later entries during v1 and are not separately preserved.)
+3. Resolved/open question log as it stood at end of S9.
+4. Completed session specifications with stop conditions: v1 (S1–S6) and v2 (S7–S9).
 
 ---
 
-## 1. Session Status Narratives
+## 1. Post-S10 completion record
+
+The prior `PLAN.md` was left stale at S11 even though its HUD/build redesign and several later, owner-approved releases had already landed on `main`. This record closes that gap without treating unreviewed local work as history.
+
+### HUD, camera, and mobile controls
+
+- `8806c50` delivered the compact HUD/build layout and config-driven army glyphs; `a4b5463` stabilized zoom composition and HUD cards.
+- Mobile/touch camera and command-control work was delivered in the focused commits immediately following that work. The old temporary feature branches were later pruned after preservation/merge decisions.
+
+### Watch and Hard AI improvements
+
+- Watch speed control and Hard AI global enemy-composition awareness were verified in a browser and merged to main as `ece456d`.
+- Watch controls were subsequently moved clear of the team boards in `5cd78ad`, then included in the turret/telemetry merge.
+
+### Turret and Watch telemetry release
+
+The experimental commander/strategy/RL snapshot was intentionally not merged wholesale. Turrets and Watch presentation were extracted into a clean local review branch, browser-tested, LAN-reviewed by the owner, and merged to `main` as:
+
+```text
+c76e849 — merge: add turrets and Watch telemetry
+```
+
+That release contains one starting turret per team, two purchasable turret slots, turret production/combat/supply/formation/rendering, a Watch clock, resource differential, and Blue/Red team summaries.
+
+### Explicitly not completed
+
+The separate `agent/local-ux-regression-batch` branch has an unreviewed local archer fix (`1e704ba`) and incomplete/uncommitted pause/exit and Update Log work. It is intentionally absent from this history until it has passed owner LAN review and been merged.
+
+---
+
+## 2. Session Status Narratives
 
 **S10 complete (Camera, visibility & map).** Built per PLAN.md §7's S10
 block: `camera.zoom` promoted to runtime state (`render/camera.js`),
@@ -745,7 +773,7 @@ in §5.
 
 ---
 
-## 2. Question Log (as of end of S9)
+## 3. Question Log (as of end of S9)
 
 **Resolved in Session 0:**
 
@@ -811,7 +839,7 @@ in this plan's first draft):**
 
 ---
 
-## 3. Completed Session Specifications
+## 4. Completed Session Specifications
 
 ### v1 (S1–S6)
 
