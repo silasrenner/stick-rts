@@ -329,7 +329,7 @@ canvas.addEventListener('pointercancel', releaseHeldHeroControl);
 
 bindClick(canvas, (x, y) => {
   if (world.matchState !== 'menu') {
-    const zoomButtons = getZoomButtonRects(canvas);
+    const zoomButtons = getZoomButtonRects(canvas, isWatchAiMatch(world));
     if (pointInRect(x, y, zoomButtons.in)) {
       zoomAt(camera, canvas.width / 2, 1.25);
       return;

@@ -106,41 +106,42 @@ export function getBottomBarTop(canvas) {
 
 // Screen-space zoom controls are intentionally large enough to remain
 // discoverable on phones; pinch remains available as the direct gesture.
-export function getZoomButtonRects(canvas) {
-  const size = 34;
-  const gap = 6;
-  const x = canvas.width - size - 10;
+export function getZoomButtonRects(canvas, spectator = false) {
+  const size = spectator ? 24 : 34;
+  const gap = spectator ? 4 : 6;
+  const x = canvas.width - size - 8;
+  const y = spectator ? canvas.height - size * 2 - gap - 8 : 10;
   return {
-    in: { x, y: 10, w: size, h: size },
-    out: { x, y: 10 + size + gap, w: size, h: size },
+    in: { x, y, w: size, h: size },
+    out: { x, y: y + size + gap, w: size, h: size },
   };
 }
 
-export function drawZoomControls(ctx) {
-  const rects = getZoomButtonRects(ctx.canvas);
+export function drawZoomControls(ctx, spectator = false) {
+  const rects = getZoomButtonRects(ctx.canvas, spectator);
   for (const [action, rect] of Object.entries(rects)) {
     ctx.fillStyle = '#24242c';
     ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
     ctx.strokeStyle = '#777783';
     ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
     ctx.fillStyle = '#f0f0f4';
-    ctx.font = 'bold 24px sans-serif';
+    ctx.font = `bold ${spectator ? 18 : 24}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(action === 'in' ? '+' : '−', rect.x + rect.w / 2, rect.y + 24);
+    ctx.fillText(action === 'in' ? '+' : '−', rect.x + rect.w / 2, rect.y + rect.h * 0.75);
   }
   ctx.textAlign = 'left';
 }
 
 export function getWatchSpeedButtonRect(canvas) {
-  return { x: canvas.width - 160, y: 10, w: 112, h: 36 };
+  return { x: 8, y: canvas.height - 30, w: 50, h: 22 };
 }
 
 export function drawWatchSpeedButton(ctx, speed) {
   const rect = getWatchSpeedButtonRect(ctx.canvas);
   ctx.fillStyle = '#24242c'; ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
   ctx.strokeStyle = '#88889a'; ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
-  ctx.fillStyle = '#f0f0f4'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText(`${speed}×`, rect.x + rect.w / 2, rect.y + 24); ctx.textAlign = 'left';
+  ctx.fillStyle = '#f0f0f4'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(`${speed}×`, rect.x + rect.w / 2, rect.y + 15); ctx.textAlign = 'left';
 }
 
 export function getTouchCommandRects(canvas, world) {
