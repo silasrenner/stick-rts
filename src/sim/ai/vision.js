@@ -6,11 +6,11 @@ import { isAliveEntity } from '../world.js';
 // camera-based fog of war (PLAN.md §2.4), just driven by unit position
 // instead of camera position. If nothing is visible right now, memory is
 // left as-is (goes stale) rather than cleared.
-export function updateAiMemory(world, team) {
+export function updateAiMemory(world, team, globalVision = false) {
   const myUnits = world.units.filter((u) => u.team === team && isAliveEntity(u));
   const enemyUnits = world.units.filter((u) => u.team !== team && isAliveEntity(u));
 
-  const visibleEnemies = enemyUnits.filter((enemy) =>
+  const visibleEnemies = globalVision ? enemyUnits : enemyUnits.filter((enemy) =>
     myUnits.some((mine) => Math.abs(mine.x - enemy.x) <= CONFIG.AI_SIGHT_RANGE)
   );
   if (visibleEnemies.length === 0) return;

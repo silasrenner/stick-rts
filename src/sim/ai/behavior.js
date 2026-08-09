@@ -30,7 +30,7 @@ export function updateAiDecisions(world, dt) {
 }
 
 function runDecision(world, team, difficulty) {
-  updateAiMemory(world, team);
+  updateAiMemory(world, team, difficulty.globalVision === true);
 
   attemptPurchase(world, team, pickPurchase(world, team, difficulty));
   maybeManageHero(world, team, difficulty);
