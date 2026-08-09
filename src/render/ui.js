@@ -9,6 +9,7 @@ const BUILD_MENU_ITEMS = [
   { kind: 'warrior', action: 'unit', label: 'Warrior', costFn: () => CONFIG.UNIT_STATS.warrior.cost },
   { kind: 'archer', action: 'unit', label: 'Archer', costFn: () => CONFIG.UNIT_STATS.archer.cost },
   { kind: 'structure', action: 'structure', label: 'Structure', costFn: () => CONFIG.STRUCTURE_COST },
+  { kind: 'turret', action: 'turret', label: 'Turret', costFn: () => CONFIG.TURRET_COST },
   { kind: 'forgemaster', action: 'hero', label: 'Forgemaster', costFn: (world) => getHeroCost(world, 'player') },
   { kind: 'hawkeye', action: 'hero', label: 'Hawkeye', costFn: (world) => getHeroCost(world, 'player') },
   { kind: 'vanguard', action: 'hero', label: 'Vanguard', costFn: (world) => getHeroCost(world, 'player') },
@@ -21,6 +22,7 @@ export const PURCHASE_REASON_TEXT = {
   gold: 'Not enough gold',
   cap: 'Population cap reached',
   maxStructures: 'Max structures built',
+  maxTurrets: 'Max turrets built',
   heroAlive: 'Hero already deployed',
   heroCooldown: 'Hero respawning...',
 };
