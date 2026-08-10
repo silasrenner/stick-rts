@@ -1,4 +1,5 @@
 import { CONFIG } from '../config.js';
+import { UPDATE_LOG, UPDATE_LOG_VERSION, UPDATE_LOG_DATE } from '../updateLog.js';
 import { canAfford, getUnitCount, hasLivingOrQueuedHero, getHeroCost, countQueued } from '../sim/systems/economy.js';
 import { getCap, livingStructures } from '../sim/systems/supply.js';
 import { isAliveEntity, isWatchAiMatch } from '../sim/world.js';
@@ -142,6 +143,41 @@ export function drawWatchSpeedButton(ctx, speed) {
   ctx.strokeStyle = '#88889a'; ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
   ctx.fillStyle = '#f0f0f4'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
   ctx.fillText(`${speed}×`, rect.x + rect.w / 2, rect.y + 15); ctx.textAlign = 'left';
+}
+
+// Centered in the top safe area: avoids the player HUD at left, zoom controls
+// at right, and the Watch team boards in the upper corners.
+export function getPauseButtonRect(canvas, spectator = false) {
+  if (spectator) return { x: 64, y: canvas.height - 30, w: 88, h: 22 };
+  return { x: canvas.width / 2 - 45, y: 8, w: 90, h: 28 };
+}
+
+export function getPauseOverlayRects(canvas) {
+  return {
+    resume: { x: canvas.width / 2 - 70, y: canvas.height / 2 - 2, w: 140, h: 34 },
+    exit: { x: canvas.width / 2 - 70, y: canvas.height / 2 + 46, w: 140, h: 34 },
+  };
+}
+
+export function drawPauseButton(ctx, paused, spectator = false) {
+  drawMenuButton(ctx, getPauseButtonRect(ctx.canvas, spectator), paused ? 'Resume (P)' : 'Pause (P)', paused);
+}
+
+export function drawPauseOverlay(ctx) {
+  const rects = getPauseOverlayRects(ctx.canvas);
+  ctx.save();
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.68)';
+  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#e8e8ee';
+  ctx.font = 'bold 30px monospace';
+  ctx.fillText('Paused', ctx.canvas.width / 2, ctx.canvas.height / 2 - 48);
+  ctx.font = '13px monospace';
+  ctx.fillStyle = '#b8b8c2';
+  ctx.fillText('Simulation and both AIs are frozen.', ctx.canvas.width / 2, ctx.canvas.height / 2 - 24);
+  drawMenuButton(ctx, rects.resume, 'Resume');
+  drawMenuButton(ctx, rects.exit, 'Exit to Menu');
+  ctx.restore();
 }
 
 export function getTouchCommandRects(canvas, world) {
@@ -480,13 +516,16 @@ function drawDifficultyButtons(ctx, rects, activeDifficulty) {
 }
 
 function drawMenuButton(ctx, rect, label, active = false) {
+  ctx.save();
   ctx.fillStyle = active ? '#3a4d3a' : '#2c2c33';
   ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
   ctx.strokeStyle = active ? '#4caf50' : '#55555f';
   ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
   ctx.fillStyle = '#e8e8ee';
   ctx.font = '14px monospace';
+  ctx.textAlign = 'center';
   ctx.fillText(label, rect.x + rect.w / 2, rect.y + rect.h / 2 + 5);
+  ctx.restore();
 }
 
 export function getBackButtonRect(canvas) {
@@ -548,6 +587,7 @@ const MENU_BUTTON_GAP = 16;
 const MENU_ITEMS = [
   { id: 'play', label: 'Play' },
   { id: 'watchAi', label: 'Watch AI' },
+  { id: 'updates', label: 'Update Log' },
   { id: 'settings', label: 'Settings' },
 ];
 
@@ -652,6 +692,23 @@ function drawSettingsScreen(ctx, uiState) {
   drawMenuButton(ctx, rects.back, '< Back');
 }
 
+export function getUpdateLogBackRect(canvas) { return getBackButtonRect(canvas); }
+
+function drawUpdateLogScreen(ctx) {
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#e8e8ee';
+  ctx.font = 'bold 20px monospace';
+  ctx.fillText('Update Log', ctx.canvas.width / 2, 74);
+  ctx.font = '13px monospace';
+  ctx.fillStyle = '#8fd1e0';
+  ctx.fillText(`${UPDATE_LOG_VERSION}  •  ${UPDATE_LOG_DATE}`, ctx.canvas.width / 2, 100);
+  ctx.textAlign = 'left';
+  ctx.font = '13px monospace';
+  ctx.fillStyle = '#d0d0d8';
+  UPDATE_LOG.forEach((entry, index) => ctx.fillText(`• ${entry}`, 90, 144 + index * 34));
+  drawMenuButton(ctx, getUpdateLogBackRect(ctx.canvas), '< Back');
+}
+
 export function drawMenuScreen(ctx, uiState) {
   ctx.save();
   switch (uiState.menuScreen) {
@@ -660,6 +717,9 @@ export function drawMenuScreen(ctx, uiState) {
       break;
     case 'watchSetup':
       drawWatchAiSetupScreen(ctx, uiState);
+      break;
+    case 'updates':
+      drawUpdateLogScreen(ctx);
       break;
     case 'settings':
       drawSettingsScreen(ctx, uiState);

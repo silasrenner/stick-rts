@@ -15,6 +15,9 @@ import {
   getPlayDifficultyRects,
   getWatchSetupRects,
   getSettingsRects,
+  getUpdateLogBackRect,
+  getPauseButtonRect,
+  getPauseOverlayRects,
   getZoomButtonRects,
   getWatchSpeedButtonRect,
   getTouchCommandRects,
@@ -40,6 +43,7 @@ const uiState = {
   settings: { fpsVisible: false, defaultDifficulty: DEFAULT_DIFFICULTY },
   watchSetup: { playerDifficulty: 'hard', aiDifficulty: 'hard', seed: null },
   watchSpeed: 1,
+  paused: false,
   touchControlsEnabled: window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0,
 };
 
@@ -87,6 +91,7 @@ function resetMatch(difficulty = world.teams.ai.difficulty ?? uiState.settings.d
   world.teams.ai.difficulty = difficulty;
   uiMessage = { text: '', timer: 0 };
   uiState.watchSpeed = 1;
+  uiState.paused = false;
   camera.x = 0;
   camera.targetX = 0;
 }
@@ -99,6 +104,7 @@ function startWatchAiMatch(playerDifficulty, aiDifficulty, seed) {
   world.teams.ai.difficulty = aiDifficulty;
   uiMessage = { text: '', timer: 0 };
   uiState.watchSpeed = 1;
+  uiState.paused = false;
   camera.x = 0;
   camera.targetX = 0;
   // Captured even if "Random" was picked, so a spectator can note/reuse a
@@ -109,12 +115,13 @@ function startWatchAiMatch(playerDifficulty, aiDifficulty, seed) {
 function backToMenu() {
   world = createWorld();
   uiState.menuScreen = 'main';
+  uiState.paused = false;
   camera.x = 0;
   camera.targetX = 0;
 }
 
 function toggleHeroControl() {
-  if (isWatchAiMatch(world)) return;
+  if (uiState.paused || isWatchAiMatch(world)) return;
   const hero = world.units.find((u) => u.team === 'player' && u.isHero && u.state !== 'dying');
   if (!hero) return;
   hero.controlled = !hero.controlled;
@@ -124,13 +131,13 @@ function toggleHeroControl() {
 }
 
 function attackWithControlledHero() {
-  if (isWatchAiMatch(world)) return;
+  if (uiState.paused || isWatchAiMatch(world)) return;
   const hero = world.units.find((u) => u.team === 'player' && u.isHero && u.controlled);
   if (hero) attemptHeroAttack(world, hero);
 }
 
 function specialWithControlledHero() {
-  if (isWatchAiMatch(world)) return;
+  if (uiState.paused || isWatchAiMatch(world)) return;
   const hero = world.units.find((u) => u.team === 'player' && u.isHero && u.controlled);
   if (hero) activateSpecial(world, hero);
 }
@@ -139,7 +146,12 @@ function toggleFpsOverlay() {
   uiState.settings.fpsVisible = !uiState.settings.fpsVisible;
 }
 
-// Debug-only stress scenario for the brief's "100 units @ 60fps" stress
+function togglePause() {
+  if (world.matchState !== 'playing') return;
+  uiState.paused = !uiState.paused;
+}
+
+// Debug-only stress scenario
 // target (S8 — replaces the v1 "~40 units" criterion; spawns 100
 // regardless of the final cap, so the engine has proven headroom above
 // it). Spawns units directly (bypassing gold/cap, same as the rest of
@@ -181,7 +193,7 @@ function spawnStressTest() {
 // Watch AI has no player-controlled side — gate the player's own command
 // keys the same way the hero-control functions above already are.
 function setPlayerCommand(command) {
-  if (isWatchAiMatch(world)) return;
+  if (uiState.paused || isWatchAiMatch(world)) return;
   setTeamCommand(world, 'player', command, { userInitiated: true });
 }
 
@@ -198,6 +210,7 @@ bindDebugKeys({
   k: () => specialWithControlledHero(),
   f: () => toggleFpsOverlay(),
   s: () => spawnStressTest(),
+  p: () => togglePause(),
 });
 
 function handleMenuClick(x, y) {
@@ -246,6 +259,10 @@ function handleMenuClick(x, y) {
       }
       return;
     }
+    case 'updates': {
+      if (pointInRect(x, y, getUpdateLogBackRect(canvas))) uiState.menuScreen = 'main';
+      return;
+    }
     case 'settings': {
       const rects = getSettingsRects(canvas);
       if (pointInRect(x, y, rects.back)) {
@@ -269,6 +286,7 @@ function handleMenuClick(x, y) {
         if (!pointInRect(x, y, rect)) continue;
         if (id === 'play') uiState.menuScreen = 'playDifficulty';
         else if (id === 'watchAi') uiState.menuScreen = 'watchSetup';
+        else if (id === 'updates') uiState.menuScreen = 'updates';
         else if (id === 'settings') uiState.menuScreen = 'settings';
         return;
       }
@@ -328,6 +346,18 @@ canvas.addEventListener('pointerup', releaseHeldHeroControl);
 canvas.addEventListener('pointercancel', releaseHeldHeroControl);
 
 bindClick(canvas, (x, y) => {
+  if (world.matchState === 'playing') {
+    if (pointInRect(x, y, getPauseButtonRect(canvas, isWatchAiMatch(world)))) {
+      togglePause();
+      return;
+    }
+    if (uiState.paused) {
+      const rects = getPauseOverlayRects(canvas);
+      if (pointInRect(x, y, rects.resume)) togglePause();
+      else if (pointInRect(x, y, rects.exit)) backToMenu();
+      return;
+    }
+  }
   if (world.matchState !== 'menu') {
     const zoomButtons = getZoomButtonRects(canvas, isWatchAiMatch(world));
     if (pointInRect(x, y, zoomButtons.in)) {
@@ -414,7 +444,9 @@ function tick(dt) {
 function frame(time) {
   const deltaMs = time - lastTime;
   lastTime = time;
-  accumulator.advance(deltaMs * (isWatchAiMatch(world) && world.matchState === 'playing' ? uiState.watchSpeed : 1), tick);
+  if (!uiState.paused) {
+    accumulator.advance(deltaMs * (isWatchAiMatch(world) && world.matchState === 'playing' ? uiState.watchSpeed : 1), tick);
+  }
   updateCamera(camera, world, mouseX, deltaMs / 1000, dragDeltaX);
   dragDeltaX = 0; // consumed for this frame — only read inside updateCamera's Watch-AI branch, harmless otherwise
   render(ctx, world, camera, uiMessage, uiState);
@@ -448,12 +480,15 @@ window.__heroAttack = attackWithControlledHero;
 window.__heroSpecial = specialWithControlledHero;
 window.__spawnStressTest = spawnStressTest;
 window.__toggleFpsOverlay = toggleFpsOverlay;
+window.__togglePause = togglePause;
 window.__fps = () => fps;
 window.__uiState = uiState;
 window.__startWatchAiMatch = startWatchAiMatch;
 window.__backToMenu = backToMenu;
 window.__forceTicks = (n = CONFIG.TICK_HZ) => {
-  for (let i = 0; i < n; i++) tick(1 / CONFIG.TICK_HZ);
+  if (!uiState.paused) {
+    for (let i = 0; i < n; i++) tick(1 / CONFIG.TICK_HZ);
+  }
   updateCamera(camera, world, mouseX, n / CONFIG.TICK_HZ, dragDeltaX);
   dragDeltaX = 0;
   render(ctx, world, camera, uiMessage, uiState);

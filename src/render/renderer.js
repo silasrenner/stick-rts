@@ -2,7 +2,7 @@ import { CONFIG } from '../config.js';
 import { isWatchAiMatch } from '../sim/world.js';
 import { drawStickFigure } from './stickFigure.js';
 import { drawStatue, drawStructure, drawTurret, drawMine, drawHealthBar } from './structures.js';
-import { drawHUD, drawBuildMenu, drawWinLoseOverlay, drawMenuScreen, getBottomBarTop, drawZoomControls, drawTouchCommandControls, drawWatchSpeedButton } from './ui.js';
+import { drawHUD, drawBuildMenu, drawWinLoseOverlay, drawMenuScreen, getBottomBarTop, drawZoomControls, drawTouchCommandControls, drawWatchSpeedButton, drawPauseButton, drawPauseOverlay } from './ui.js';
 import { drawParallax } from './parallax.js';
 import { drawWatchTelemetryOverlay } from './watchTelemetryOverlay.js';
 
@@ -84,6 +84,8 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   if (uiState.touchControlsEnabled && !isWatchAiMatch(world) && world.matchState === 'playing') drawTouchCommandControls(ctx, world);
   drawBuildMenu(ctx, world);
   drawWinLoseOverlay(ctx, world);
+  if (world.matchState === 'playing') drawPauseButton(ctx, uiState.paused, isWatchAiMatch(world));
+  if (uiState.paused) drawPauseOverlay(ctx);
 }
 
 function projectilePosition(projectile) {
