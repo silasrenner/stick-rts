@@ -13,14 +13,42 @@ to PLAN.md Status; now that S10 has closed, its completed narrative
 lives here properly, below.)
 
 Contents:
-1. Post-S10 completion record (most recent): HUD/build UI, mobile controls, Watch speed/Hard vision, turret and Watch telemetry release.
-2. Session status narratives: S10, S9, S8, S7, v2 planning session, S6, S5. (S1–S4 narratives were compacted into later entries during v1 and are not separately preserved.)
-3. Resolved/open question log as it stood at end of S9.
-4. Completed session specifications with stop conditions: v1 (S1–S6) and v2 (S7–S9).
+1. Approved UX release (most recent): archer formation, pause/resume, and Update Log.
+2. Post-S10 completion record: HUD/build UI, mobile controls, Watch speed/Hard vision, turret and Watch telemetry release.
+3. Session status narratives: S10, S9, S8, S7, v2 planning session, S6, S5. (S1–S4 narratives were compacted into later entries during v1 and are not separately preserved.)
+4. Resolved/open question log as it stood at end of S9.
+5. Completed session specifications with stop conditions: v1 (S1–S6) and v2 (S7–S9).
 
 ---
 
-## 1. Post-S10 completion record
+## 1. Approved UX release — 2026-08-10
+
+After local review and owner approval, the focused UX work was integrated into
+`main` without bringing in the commander/RL experiment or visual-pipeline work.
+
+```text
+5510579 — fix: advance newly spawned archers to formation
+4060cc9 — feat: add local pause and update log review
+18fb768 — docs: record hard AI headless analysis
+```
+
+- **Archer formation:** newly spawned, unescorted defending archers now travel
+  from home toward their mine-side formation slot. `node
+  tools/archer-spawn-formation-check.mjs` passed for both player and AI teams.
+- **Pause / Resume:** Player-vs-AI and Watch AI expose an on-screen pause control,
+  a pause overlay, and the `P` shortcut. The focused CDP browser check confirmed
+  that pause freezes tick count, gold, and elapsed match time, while Resume
+  advances the same world.
+- **Update Log:** the landing menu now opens a curated player-facing Update Log
+  and returns correctly through its Back action. The same CDP check exercised
+  that navigation and the Watch-AI pause-button placement.
+- **Hard AI analysis:** the local headless analysis was retained as
+  `docs/analysis/hard-vs-hard-100-games-2026-08-09.md`; it is analysis only and
+  does not change runtime strategy or balance behavior.
+
+---
+
+## 2. Post-S10 completion record
 
 The prior `PLAN.md` was left stale at S11 even though its HUD/build redesign and several later, owner-approved releases had already landed on `main`. This record closes that gap without treating unreviewed local work as history.
 
@@ -44,13 +72,13 @@ c76e849 — merge: add turrets and Watch telemetry
 
 That release contains one starting turret per team, two purchasable turret slots, turret production/combat/supply/formation/rendering, a Watch clock, resource differential, and Blue/Red team summaries.
 
-### Explicitly not completed
+### Historical note
 
-The separate `agent/local-ux-regression-batch` branch has an unreviewed local archer fix (`1e704ba`) and incomplete/uncommitted pause/exit and Update Log work. It is intentionally absent from this history until it has passed owner LAN review and been merged.
+The UX work was initially held in `agent/local-ux-regression-batch` pending local review. Its focused archer fix was integrated as `5510579`; the reviewed pause/resume and Update Log work followed through the focused local-view commit `4060cc9`. The branch/worktree history was preserved during promotion; no commander/RL or art-pipeline changes were merged as part of this release.
 
 ---
 
-## 2. Session Status Narratives
+## 3. Session Status Narratives
 
 **S10 complete (Camera, visibility & map).** Built per PLAN.md §7's S10
 block: `camera.zoom` promoted to runtime state (`render/camera.js`),
@@ -773,7 +801,7 @@ in §5.
 
 ---
 
-## 3. Question Log (as of end of S9)
+## 4. Question Log (as of end of S9)
 
 **Resolved in Session 0:**
 
@@ -839,7 +867,7 @@ in this plan's first draft):**
 
 ---
 
-## 4. Completed Session Specifications
+## 5. Completed Session Specifications
 
 ### v1 (S1–S6)
 
