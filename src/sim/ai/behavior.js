@@ -1,6 +1,6 @@
 import { CONFIG } from '../../config.js';
 import { isAliveEntity } from '../world.js';
-import { buyUnit, buyStructure, buyHero, hasLivingHero } from '../systems/economy.js';
+import { buyUnit, buyStructure, buyTurret, buyHero, hasLivingHero } from '../systems/economy.js';
 import { setTeamCommand } from '../systems/commands.js';
 import { updateAiMemory, isMemoryFresh } from './vision.js';
 import { DIFFICULTIES } from './difficulties.js';
@@ -33,6 +33,7 @@ function runDecision(world, team, difficulty) {
   updateAiMemory(world, team, difficulty.globalVision === true);
 
   attemptPurchase(world, team, pickPurchase(world, team, difficulty));
+  maybeBuyTurret(world, team, difficulty);
   maybeManageHero(world, team, difficulty);
   setTeamCommand(world, team, pickCommand(world, team, difficulty));
 }
@@ -79,6 +80,13 @@ function counterPick(world, team) {
 function attemptPurchase(world, team, kind) {
   const result = buyUnit(world, team, kind);
   if (!result.ok && result.reason === 'cap') buyStructure(world, team);
+}
+
+function maybeBuyTurret(world, team, difficulty) {
+  const buildTimes = difficulty.turretBuildTimes;
+  if (!buildTimes) return;
+  const turretIndex = world.structures.filter((entity) => entity.team === team && entity.isTurret && !entity.isStartingTurret).length;
+  if (world.matchElapsedTime >= buildTimes[turretIndex]) buyTurret(world, team);
 }
 
 function maybeManageHero(world, team, difficulty) {

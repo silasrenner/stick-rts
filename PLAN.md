@@ -49,9 +49,33 @@ agent/visual-proof                      — separate art-pipeline work
 - UI is screen-space and must be camera-zoom independent.
 - Simulation randomness remains confined to `src/sim/rng.js`; `Math.random` is banned in `src/`.
 
+## Active local-review batch — Hard queue, income, and turret tuning
+
+**Branch:** `agent/local-hard-queue-tuning` from clean `main` / `f39ed17`.
+
+### Owner-approved scope
+
+1. Fix the active-player build-menu Turret glyph so it is a turret rather than a stick person.
+2. Cap the shared FIFO production queue at **five queued items** for both teams. This applies to units, heroes, structures, and turrets: it limits paid future work, not living population. Rejected player purchases must show an accurate queue-full reason; scripted AIs wait and reconsider on their next decision.
+3. Reduce baseline `GOLD_PER_TRIP` from 25 to **23** (an 8% reduction), leaving mine travel, slots, cycle time, costs, and the Forgemaster multiplier unchanged.
+4. Make scripted Hard buy its two buildable defensive turrets through the normal economy path at the existing configured timing thresholds, without changing turret cost, slots, combat stats, or placement.
+
+### Exclusions
+
+- No map-length change, unit/hero/turret combat-stat rebalance, build-cycle redesign, counter-pick/hero policy tuning, model/RL work, or remote push.
+- The owner’s later strategic-AI idea is intentionally deferred until this measured local batch is reviewed.
+
+### Evidence gates before owner review
+
+- **Implemented locally, uncommitted:** dedicated Turret glyph; five-item all-kind FIFO queue cap with `queueFull` failure; `GOLD_PER_TRIP` 25 → 23; Hard's configured 5.5- and 13-minute turret schedule through `buyTurret`; player-facing `Queue full` / `Production queue is full` copy.
+- **Automated evidence completed:** `node tools/turret-glyph-check.mjs`, `node tools/production-queue-cap-check.mjs`, `node tools/turret-sim-check.mjs`, `node tools/hard-vision-check.mjs`, `node tools/defend-anchor-check.mjs`, and `node tools/balance-check.mjs` passed on this branch.
+- **LAN evidence completed:** the exact worktree is served at `http://192.168.0.83:8812`; an HTTP check confirmed both the project index and `GOLD_PER_TRIP: 23`. Older competing port-8811 game servers were terminated.
+- **Still required:** owner browser review of the visible Turret glyph and queue-full feedback, plus a Watch Hard-vs-Hard observation confirming scheduled turret construction in live play.
+- No push; owner reviews LAN result before any integration discussion.
+
 ## Parked
 
-- AI balance/re-tune after the shortened-map finding; do not mix it into the UX batch.
+- Broader scripted Hard strategic posture / retreat / siege tuning after this isolated queue-income-turret baseline is measured and locally reviewed.
 - Owner map-length playtest.
 - Sunmeadow art remains in `agent/visual-proof`; no runtime integration without explicit owner approval.
 - Repository cleanup follows `docs/retention-cleanup-manifest.md`; no automatic tracked-file deletion.

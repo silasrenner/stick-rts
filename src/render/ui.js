@@ -20,6 +20,7 @@ const BUILD_MENU_ITEMS = [
 // persistent disabled-reason label under each build-menu button and for
 // main.js's showMessage() feedback after an actual failed click.
 export const PURCHASE_REASON_TEXT = {
+  queueFull: 'Production queue is full',
   gold: 'Not enough gold',
   cap: 'Population cap reached',
   maxStructures: 'Max structures built',
@@ -32,6 +33,7 @@ export const PURCHASE_REASON_TEXT = {
 // type size. The full reason remains available through PURCHASE_REASON_TEXT
 // for click feedback; these are the compact, persistent status labels.
 const BUTTON_REASON_TEXT = {
+  queueFull: 'Queue full',
   gold: 'Need more gold',
   cap: 'Population full',
   maxStructures: 'Structures full',
@@ -77,8 +79,30 @@ function drawStructureGlyph(ctx, x, feetY, size = 14) {
   ctx.restore();
 }
 
+function drawTurretGlyph(ctx, x, feetY, size = 14) {
+  ctx.save();
+  ctx.fillStyle = '#2c2c33';
+  ctx.strokeStyle = TEAM_COLORS.player;
+  ctx.lineWidth = 1.5;
+  ctx.fillRect(x - size / 2, feetY - size * 0.55, size, size * 0.55);
+  ctx.strokeRect(x - size / 2, feetY - size * 0.55, size, size * 0.55);
+  ctx.beginPath();
+  ctx.moveTo(x, feetY - size * 0.55);
+  ctx.lineTo(x + size * 0.8, feetY - size);
+  ctx.stroke();
+  ctx.restore();
+}
+
+export function getBuildGlyphVariant(button) {
+  if (button.action === 'structure') return 'structure';
+  if (button.action === 'turret') return 'turret';
+  return 'unit';
+}
+
 function drawKindGlyph(ctx, x, feetY, button) {
-  if (button.action === 'structure') drawStructureGlyph(ctx, x, feetY);
+  const variant = getBuildGlyphVariant(button);
+  if (variant === 'structure') drawStructureGlyph(ctx, x, feetY);
+  else if (variant === 'turret') drawTurretGlyph(ctx, x, feetY);
   else drawUnitGlyph(ctx, x, feetY, button.kind, { isHero: button.action === 'hero', scale: CONFIG.BUILD_BUTTON_ICON_SCALE });
 }
 

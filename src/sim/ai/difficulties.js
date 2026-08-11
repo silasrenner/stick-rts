@@ -1,3 +1,5 @@
+import { CONFIG } from '../../config.js';
+
 // One shared behavior tree (behavior.js), three parameter sets — no
 // per-difficulty code branches, only data. Starting-point numbers from S5,
 // re-tuned in S8 for the production queue (see below); otherwise tunable
@@ -48,5 +50,6 @@ export const DIFFICULTIES = {
     heroKind: 'auto',
     defendMineThreshold: 400,
     globalVision: true,
+    turretBuildTimes: [CONFIG.HARD_TURRET_FIRST_TIME, CONFIG.HARD_TURRET_SECOND_TIME],
   },
 };

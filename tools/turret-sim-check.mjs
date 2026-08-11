@@ -28,9 +28,11 @@ const third = buyTurret(world, 'player');
 if (third.ok || third.reason !== 'maxTurrets') throw new Error(`Third turret must be rejected: ${JSON.stringify(third)}`);
 
 world.teams.player.gold = 2_000;
+updateProductionQueue(world, CONFIG.TURRET_BUILD_TIME);
 for (let i = 0; i < 12; i += 1) {
   const purchase = buyUnit(world, 'player', 'miner');
   if (!purchase.ok) throw new Error(`Expected remaining cap to accept miner ${i + 1}: ${JSON.stringify(purchase)}`);
+  updateProductionQueue(world, CONFIG.MINER_BUILD_TIME);
 }
 const capped = buyUnit(world, 'player', 'miner');
 if (capped.ok || capped.reason !== 'cap') throw new Error(`Turrets must consume ${CONFIG.TURRET_POPULATION_COST} cap slots each: ${JSON.stringify(capped)}`);

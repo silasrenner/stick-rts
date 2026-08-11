@@ -35,6 +35,7 @@ export const CONFIG = {
   ARCHER_BUILD_TIME: 12,
   STRUCTURE_BUILD_TIME: 20,
   HERO_BUILD_TIME: 30, // independent of HERO_RESPAWN_COOLDOWN below — see sim/systems/production.js
+  PRODUCTION_QUEUE_LIMIT: 5, // paid FIFO items per team; applies to all production kinds
 
   STRUCTURE_COST: 300, // S8: doubled from 150
   TURRET_COST: 600,
@@ -61,7 +62,7 @@ export const CONFIG = {
   MINE_OFFSET: 240, // px from homeX, toward the battlefield, past the last structure slot
   MINE_SLOTS: 4,
   MINE_CYCLE_TIME: 3, // seconds to extract one load
-  GOLD_PER_TRIP: 25,
+  GOLD_PER_TRIP: 23,
   UNIT_KILL_REWARD_RATE: 0.10, // killer receives 10% of a defeated unit's invested value
   MINER_ARRIVE_THRESHOLD: 4, // px
 

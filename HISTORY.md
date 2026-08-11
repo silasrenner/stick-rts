@@ -13,15 +13,26 @@ to PLAN.md Status; now that S10 has closed, its completed narrative
 lives here properly, below.)
 
 Contents:
-1. Approved UX release (most recent): archer formation, pause/resume, and Update Log.
-2. Post-S10 completion record: HUD/build UI, mobile controls, Watch speed/Hard vision, turret and Watch telemetry release.
-3. Session status narratives: S10, S9, S8, S7, v2 planning session, S6, S5. (S1–S4 narratives were compacted into later entries during v1 and are not separately preserved.)
-4. Resolved/open question log as it stood at end of S9.
-5. Completed session specifications with stop conditions: v1 (S1–S6) and v2 (S7–S9).
+1. History boundary note (2026-08-11): the local Hard queue/income/turret batch remains unreviewed and uncommitted in `PLAN.md`; it has no completion record here yet.
+2. Approved UX release (most recent completed release): archer formation, pause/resume, and Update Log.
+3. Post-S10 completion record: HUD/build UI, mobile controls, Watch speed/Hard vision, turret and Watch telemetry release.
+4. Session status narratives: S10, S9, S8, S7, v2 planning session, S6, S5. (S1–S4 narratives were compacted into later entries during v1 and are not separately preserved.)
+5. Resolved/open question log as it stood at end of S9.
+6. Completed session specifications with stop conditions: v1 (S1–S6) and v2 (S7–S9).
 
 ---
 
-## 1. Approved UX release — 2026-08-10
+## 1. History boundary note — 2026-08-11
+
+The owner is reviewing a local-only batch on `agent/local-hard-queue-tuning`.
+It is intentionally uncommitted and unpushed, so its implementation and evidence
+status is recorded in `PLAN.md`, not as a completed release here. The batch must
+not be characterized as merged history until owner review, commit, promotion, and
+remote synchronization have all occurred.
+
+---
+
+## 2. Approved UX release — 2026-08-10
 
 After local review and owner approval, the focused UX work was integrated into
 `main` without bringing in the commander/RL experiment or visual-pipeline work.
