@@ -32,8 +32,12 @@ export function updateAiDecisions(world, dt) {
 function runDecision(world, team, difficulty) {
   updateAiMemory(world, team, difficulty.globalVision === true);
 
-  attemptPurchase(world, team, pickPurchase(world, team, difficulty));
+  // A due configured turret gets first use of any legal queue slot. It still
+  // buys through buyTurret(), so gold, cap, max-turret, and queue rules all
+  // apply normally; a failed turret attempt simply leaves this decision free
+  // to consider the ordinary unit purchase below.
   maybeBuyTurret(world, team, difficulty);
+  attemptPurchase(world, team, pickPurchase(world, team, difficulty));
   maybeManageHero(world, team, difficulty);
   setTeamCommand(world, team, pickCommand(world, team, difficulty));
 }
@@ -85,7 +89,9 @@ function attemptPurchase(world, team, kind) {
 function maybeBuyTurret(world, team, difficulty) {
   const buildTimes = difficulty.turretBuildTimes;
   if (!buildTimes) return;
-  const turretIndex = world.structures.filter((entity) => entity.team === team && entity.isTurret && !entity.isStartingTurret).length;
+  const turretIndex =
+    world.structures.filter((entity) => entity.team === team && entity.isTurret && !entity.isStartingTurret).length +
+    world.teams[team].productionQueue.filter((item) => item.action === 'turret').length;
   if (world.matchElapsedTime >= buildTimes[turretIndex]) buyTurret(world, team);
 }
 
