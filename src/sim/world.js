@@ -32,6 +32,7 @@ export function createWorld(seed = Date.now()) {
         difficulty: null, // null = human-controlled; the AI behavior tree skips any team with no difficulty set
         decisionTimer: 0,
         buildIndex: 0,
+        recovering: false, // Hard uses this after a committed combat force is wiped.
         productionQueue: [], // S8: sequential FIFO — see sim/systems/production.js
         rng: playerRng,
       },
@@ -47,6 +48,7 @@ export function createWorld(seed = Date.now()) {
         difficulty: null,
         decisionTimer: 0,
         buildIndex: 0,
+        recovering: false,
         productionQueue: [],
         rng: aiRng,
       },

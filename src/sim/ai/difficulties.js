@@ -45,7 +45,7 @@ export const DIFFICULTIES = {
     useComposition: true,
     memoryStaleness: 6,
     retreatThreshold: 0.85,
-    minArmyToAttack: 2,
+    minArmyToAttack: 5,
     heroPurchaseDelay: 20,
     heroKind: 'auto',
     defendMineThreshold: 400,

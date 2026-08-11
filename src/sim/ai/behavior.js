@@ -116,6 +116,18 @@ function pickHeroCounter(world, team) {
 }
 
 function pickCommand(world, team, difficulty) {
+  const teamState = world.teams[team];
+  const combatUnits = countCombatUnits(world, team);
+
+  // A team that had committed to attack and loses its entire combat force
+  // must rebuild under Defend. It cannot resume attacking until the same
+  // meaningful-army threshold is restored.
+  if (teamState.command === 'attack' && combatUnits === 0) teamState.recovering = true;
+  if (teamState.recovering) {
+    if (combatUnits < difficulty.minArmyToAttack) return 'defend';
+    teamState.recovering = false;
+  }
+
   if (isEnemyNearHome(world, team, difficulty.defendMineThreshold)) return 'defend';
 
   if (difficulty.retreatThreshold > 0) {
@@ -124,7 +136,7 @@ function pickCommand(world, team, difficulty) {
     if (enemyPower > 0 && myPower < enemyPower * difficulty.retreatThreshold) return 'defend';
   }
 
-  return countCombatUnits(world, team) >= difficulty.minArmyToAttack ? 'attack' : 'defend';
+  return combatUnits >= difficulty.minArmyToAttack ? 'attack' : 'defend';
 }
 
 // Vision-gated, not omniscient: an enemy only counts as "near home" if
