@@ -149,8 +149,8 @@ export const CONFIG = {
       cost: 280,
       hp: 42,
       damage: 16,
-      range: 220,
-      attackCooldown: 1.2,
+      range: 260,
+      attackCooldown: 1.5,
       speed: 80, // S7: bumped from 70 — still slower than warrior's 90, closes the gap a bit
       acquireRange: 300,
       threatRange: 0,
