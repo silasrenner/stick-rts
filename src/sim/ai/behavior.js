@@ -1,9 +1,14 @@
 import { CONFIG } from '../../config.js';
 import { isAliveEntity } from '../world.js';
-import { buyUnit, buyStructure, buyTurret, buyHero, hasLivingHero } from '../systems/economy.js';
+import { buyUnit, buyStructure, buyTurret, buyHero, getPurchaseFeasibility, hasLivingHero } from '../systems/economy.js';
 import { setTeamCommand } from '../systems/commands.js';
 import { updateAiMemory, isMemoryFresh } from './vision.js';
 import { DIFFICULTIES } from './difficulties.js';
+import { buildAiAssessment } from './assessment.js';
+import { createPurchaseCandidate, createPurchaseCandidates } from './actions.js';
+import { createDecisionRecord } from './decision-log.js';
+import { selectStrategicGoal } from './goals.js';
+import { selectFeasibleUnitPurchase } from './unit-utility.js';
 
 // Ticks every team's decision timer; when it elapses, that team's
 // behavior tree runs once. A team with no difficulty set (null) is
@@ -32,40 +37,108 @@ export function updateAiDecisions(world, dt) {
 function runDecision(world, team, difficulty) {
   updateAiMemory(world, team, difficulty.globalVision === true);
 
-  // A due configured turret gets first use of any legal queue slot. It still
-  // buys through buyTurret(), so gold, cap, max-turret, and queue rules all
-  // apply normally; a failed turret attempt simply leaves this decision free
-  // to consider the ordinary unit purchase below.
-  maybeBuyTurret(world, team, difficulty);
-  attemptPurchase(world, team, pickPurchase(world, team, difficulty));
-  maybeManageHero(world, team, difficulty);
-  setTeamCommand(world, team, pickCommand(world, team, difficulty));
+  // Phase 1 observability is intentionally read-only until each existing
+  // purchase/command step executes. It records the legacy decision path;
+  // it does not rank candidates or choose a fallback.
+  const assessment = buildAiAssessment(world, team, difficulty);
+  const goal = selectStrategicGoal(assessment, difficulty);
+  world.teams[team].strategicGoal = goal;
+
+  // Turrets retain their existing scheduled side path and priority. Unit
+  // feasibility is assessed after that attempt so utility never scores a
+  // queue slot the turret just consumed.
+  const turretAttempt = maybeBuyTurret(world, team, difficulty);
+  const candidateStates = createPurchaseCandidates().map((candidate) => ({
+    candidate,
+    feasibility: getPurchaseFeasibility(world, team, candidate),
+  }));
+  const unitCandidateStates = candidateStates.filter(({ candidate }) => candidate.action === 'unit');
+  const purchase = pickPurchase(world, team, difficulty, goal, unitCandidateStates);
+  const recordedCandidates = candidateStates.map((candidateState) =>
+    purchase.candidateStates?.find(({ candidate }) => candidate.kind === candidateState.candidate.kind)
+    ?? candidateState,
+  );
+
+  const selection = attemptPurchase(world, team, purchase);
+  applyBuildCycleProgression(world, team, selection);
+  const heroAttempt = maybeManageHero(world, team, difficulty);
+  const command = pickCommand(world, team, difficulty, assessment);
+  setTeamCommand(world, team, command);
+
+  world.teams[team].lastAiDecision = createDecisionRecord({
+    assessment,
+    goal,
+    candidates: recordedCandidates,
+    selection,
+    turretAttempt,
+    heroAttempt,
+    command,
+  });
 }
 
-// Counter-pick (if composition intel is fresh enough to trust) or the
-// next item in the difficulty's fixed build cycle — same cycling logic
-// for all three difficulties, only the array contents differ.
-//
-// S8 economic-survival safeguard: with zero living miners, always buy a
-// miner next regardless of buildCycle position or composition counter-
-// pick, overriding both. Verified live (see PLAN.md): under the S8
-// production queue, a single early attacker that kills off an AI's last
-// miner used to leave it permanently at 0 gold with no way to ever afford
-// a 100g replacement — a real, reproducible Easy-beats-Hard result, not
-// just slower pacing. This is the floor that stops that spiral; it does
-// not fully replace defending the mine in the first place.
-function pickPurchase(world, team, difficulty) {
-  if (getLivingMinerCount(world, team) === 0) return 'miner';
-
-  if (difficulty.useComposition && isMemoryFresh(world, team, difficulty.memoryStaleness)) {
-    const counter = counterPick(world, team);
-    if (counter) return counter;
+// Phase 3 preserves the zero-miner emergency, but all other Hard unit
+// purchases select among feasible candidates. The existing counter and cycle
+// remain inputs, not hard overrides.
+function pickPurchase(world, team, difficulty, goal, candidateStates) {
+  if (getLivingMinerCount(world, team) === 0) {
+    return {
+      source: 'no-miner',
+      candidate: createPurchaseCandidate('unit', 'miner'),
+      feasibility: candidateStates.find(({ candidate }) => candidate.kind === 'miner')?.feasibility ?? null,
+      utility: null,
+      tieBreak: null,
+      candidateStates: null,
+    };
   }
 
   const teamState = world.teams[team];
-  const kind = difficulty.buildCycle[teamState.buildIndex % difficulty.buildCycle.length];
-  teamState.buildIndex += 1;
-  return kind;
+  const buildIndexBefore = teamState.buildIndex;
+  const counterKind = getCounterPick(world, team, difficulty);
+  const buildCycleKind = difficulty.buildCycle[buildIndexBefore % difficulty.buildCycle.length];
+
+  // Easy and Medium retain their legacy purchase policy until separately
+  // migrated. Hard is the bounded Phase 3 utility proof.
+  if (!difficulty.unitUtilityWeights) {
+    const kind = counterKind ?? buildCycleKind;
+    if (!counterKind) teamState.buildIndex += 1;
+    const candidate = createPurchaseCandidate('unit', kind);
+    return {
+      source: counterKind ? 'counter-pick' : 'build-cycle',
+      candidate,
+      feasibility: candidateStates.find(({ candidate: stateCandidate }) => stateCandidate.kind === kind)?.feasibility ?? null,
+      utility: null,
+      tieBreak: null,
+      candidateStates: null,
+    };
+  }
+
+  const utilityDecision = selectFeasibleUnitPurchase({
+    goal,
+    difficulty: world.teams[team].difficulty,
+    candidateStates,
+    counterKind,
+    buildCycleKind,
+  });
+
+  // Phase 3 build-cycle progression is applied only after a successful normal
+  // unit commitment. Counter presence remains a scoring input, not a reason to
+  // consume or freeze production preference on an uncommitted decision.
+  return {
+    source: 'unit-utility',
+    candidate: utilityDecision.selected?.candidate ?? null,
+    feasibility: utilityDecision.selected?.feasibility ?? null,
+    utility: utilityDecision.selected?.utility ?? null,
+    tieBreak: utilityDecision.tieBreak,
+    counterKind,
+    buildIndexBefore,
+    buildCycleKind,
+    candidateStates: utilityDecision.candidateStates,
+  };
+}
+
+function getCounterPick(world, team, difficulty) {
+  if (!difficulty.useComposition || !isMemoryFresh(world, team, difficulty.memoryStaleness)) return null;
+  return counterPick(world, team);
 }
 
 function counterPick(world, team) {
@@ -78,31 +151,99 @@ function counterPick(world, team) {
   return null; // balanced or unknown — fall back to the build cycle
 }
 
-// Buys through the same economy.js functions the player's build menu
-// uses — no AI-only purchase path. A cap block reactively buys a
-// structure instead; a gold block just waits for the next decision tick.
-function attemptPurchase(world, team, kind) {
-  const result = buyUnit(world, team, kind);
-  if (!result.ok && result.reason === 'cap') buyStructure(world, team);
+// Executes only through the normal economy APIs. If utility excluded every
+// unit because each is cap-blocked, retain the existing deterministic
+// population-expansion response outside unit scoring.
+function attemptPurchase(world, team, purchase) {
+  if (!purchase.candidate) {
+    const allCapBlocked = purchase.candidateStates?.length > 0
+      && purchase.candidateStates.every(({ feasibility }) => feasibility.reason === 'cap');
+    const fallbackCandidate = allCapBlocked ? createPurchaseCandidate('structure') : null;
+    const fallbackFeasibility = fallbackCandidate ? getPurchaseFeasibility(world, team, fallbackCandidate) : null;
+    const fallback = fallbackCandidate ? {
+      candidate: fallbackCandidate,
+      feasibility: fallbackFeasibility,
+      result: buyStructure(world, team),
+    } : null;
+    return {
+      source: purchase.source,
+      candidate: null,
+      feasibility: null,
+      utility: null,
+      tieBreak: purchase.tieBreak,
+      counterKind: purchase.counterKind ?? null,
+      buildIndexBefore: purchase.buildIndexBefore ?? null,
+      buildCycleKind: purchase.buildCycleKind ?? null,
+      result: null,
+      fallback,
+    };
+  }
+
+  const candidate = purchase.candidate;
+  const feasibility = purchase.feasibility ?? getPurchaseFeasibility(world, team, candidate);
+  const result = buyUnit(world, team, candidate.kind);
+  let fallback = null;
+  if (!result.ok && result.reason === 'cap') {
+    const fallbackCandidate = createPurchaseCandidate('structure');
+    const fallbackFeasibility = getPurchaseFeasibility(world, team, fallbackCandidate);
+    fallback = {
+      candidate: fallbackCandidate,
+      feasibility: fallbackFeasibility,
+      result: buyStructure(world, team),
+    };
+  }
+  return {
+    source: purchase.source,
+    candidate,
+    feasibility,
+    utility: purchase.utility,
+    tieBreak: purchase.tieBreak,
+    counterKind: purchase.counterKind ?? null,
+    buildIndexBefore: purchase.buildIndexBefore ?? null,
+    buildCycleKind: purchase.buildCycleKind ?? null,
+    result,
+    fallback,
+  };
+}
+
+export function applyBuildCycleProgression(world, team, selection) {
+  if (selection.source !== 'unit-utility') return;
+
+  const teamState = world.teams[team];
+  const committedNormalUnit = selection.candidate?.action === 'unit' && selection.result?.ok === true;
+  const didBuildIndexAdvance = committedNormalUnit;
+  if (didBuildIndexAdvance) teamState.buildIndex += 1;
+
+  selection.didBuildIndexAdvance = didBuildIndexAdvance;
+  selection.buildIndexAfter = teamState.buildIndex;
+  selection.buildIndexReason = didBuildIndexAdvance
+    ? 'successful-normal-unit-commit'
+    : 'no-normal-unit-commit';
 }
 
 function maybeBuyTurret(world, team, difficulty) {
   const buildTimes = difficulty.turretBuildTimes;
-  if (!buildTimes) return;
+  if (!buildTimes) return null;
   const turretIndex =
     world.structures.filter((entity) => entity.team === team && entity.isTurret && !entity.isStartingTurret).length +
     world.teams[team].productionQueue.filter((item) => item.action === 'turret').length;
-  if (world.matchElapsedTime >= buildTimes[turretIndex]) buyTurret(world, team);
+  if (world.matchElapsedTime < buildTimes[turretIndex]) return null;
+
+  const candidate = createPurchaseCandidate('turret');
+  const feasibility = getPurchaseFeasibility(world, team, candidate);
+  return { candidate, feasibility, result: buyTurret(world, team) };
 }
 
 function maybeManageHero(world, team, difficulty) {
-  if (hasLivingHero(world, team)) return;
+  if (hasLivingHero(world, team)) return null;
   const teamState = world.teams[team];
-  if (teamState.heroCooldownTimer > 0) return;
-  if (world.matchElapsedTime < difficulty.heroPurchaseDelay) return;
+  if (teamState.heroCooldownTimer > 0) return null;
+  if (world.matchElapsedTime < difficulty.heroPurchaseDelay) return null;
 
   const kind = difficulty.heroKind === 'auto' ? pickHeroCounter(world, team) : difficulty.heroKind;
-  buyHero(world, team, kind);
+  const candidate = createPurchaseCandidate('hero', kind);
+  const feasibility = getPurchaseFeasibility(world, team, candidate);
+  return { candidate, feasibility, result: buyHero(world, team, kind) };
 }
 
 function pickHeroCounter(world, team) {
@@ -115,9 +256,9 @@ function pickHeroCounter(world, team) {
   return 'vanguard';
 }
 
-function pickCommand(world, team, difficulty) {
+function pickCommand(world, team, difficulty, assessment) {
   const teamState = world.teams[team];
-  const combatUnits = countCombatUnits(world, team);
+  const combatUnits = assessment.combatUnits;
 
   // A team that had committed to attack and loses its entire combat force
   // must rebuild under Defend. It cannot resume attacking until the same
@@ -128,59 +269,12 @@ function pickCommand(world, team, difficulty) {
     teamState.recovering = false;
   }
 
-  if (isEnemyNearHome(world, team, difficulty.defendMineThreshold)) return 'defend';
-
-  if (difficulty.retreatThreshold > 0) {
-    const myPower = armyPower(world, team);
-    const enemyPower = estimateEnemyPower(world, team);
-    if (enemyPower > 0 && myPower < enemyPower * difficulty.retreatThreshold) return 'defend';
-  }
+  if (assessment.defense.enemyNearHome) return 'defend';
+  if (assessment.defense.underpowered) return 'defend';
 
   return combatUnits >= difficulty.minArmyToAttack ? 'attack' : 'defend';
 }
 
-// Vision-gated, not omniscient: an enemy only counts as "near home" if
-// some AI unit is also currently close enough to see it (mirrors
-// updateAiMemory's visibility rule rather than a free map-wide check).
-function isEnemyNearHome(world, team, threshold) {
-  if (!Number.isFinite(threshold)) return false;
-  const homeX = team === 'player' ? CONFIG.PLAYER_HOME_X : CONFIG.AI_HOME_X;
-  const myUnits = world.units.filter((u) => u.team === team && isAliveEntity(u));
-
-  return world.units.some(
-    (enemy) =>
-      enemy.team !== team &&
-      isAliveEntity(enemy) &&
-      Math.abs(enemy.x - homeX) <= threshold &&
-      myUnits.some((mine) => Math.abs(mine.x - enemy.x) <= CONFIG.AI_SIGHT_RANGE)
-  );
-}
-
-function countCombatUnits(world, team) {
-  return world.units.filter((u) => u.team === team && !u.isMiner && isAliveEntity(u)).length;
-}
-
 function getLivingMinerCount(world, team) {
   return world.units.filter((u) => u.team === team && u.isMiner && isAliveEntity(u)).length;
-}
-
-function armyPower(world, team) {
-  return world.units
-    .filter((u) => u.team === team && !u.isMiner && isAliveEntity(u))
-    .reduce((sum, u) => sum + u.maxHp + u.damage * 5, 0);
-}
-
-// Rough estimate from scouted composition counts (not live HP — the
-// point is this is working off intel, not ground truth).
-function estimateEnemyPower(world, team) {
-  const composition = world.aiMemory[team]?.composition;
-  if (!composition) return 0;
-
-  let power = 0;
-  for (const [kind, count] of Object.entries(composition)) {
-    const stats = CONFIG.UNIT_STATS[kind] ?? CONFIG.HERO_STATS[kind];
-    if (!stats) continue;
-    power += (stats.hp + stats.damage * 5) * count;
-  }
-  return power;
 }
