@@ -1,13 +1,19 @@
 # HISTORY.md — Stick RTS release ledger
 
-This is a compact index, not default session context. Start with `PLAN.md`; read this file only to identify the relevant release or investigation. Detailed completed-session narratives and original v1/v2 specifications are preserved verbatim in [`docs/archive/session-history-legacy.md`](docs/archive/session-history-legacy.md). Search that archive by commit, session label, subsystem, or tool name instead of loading it wholesale.
+This is a compact index, not default session context. Start with `PLAN.md`; read this file only to identify the relevant release or investigation. Detailed completed-session narratives and original v1/v2 specifications are preserved in [`docs/archive/session-history-legacy.md`](docs/archive/session-history-legacy.md). Search that archive by commit, session label, subsystem, or tool name instead of loading it wholesale.
 
 ## Current boundary
 
-- `main` is clean with a local documentation checkpoint one commit ahead of `origin/main`; it has not been pushed.
-- The latest synchronized product release is `bae1545` (2026-08-10).
-- No uncommitted local Hard queue/income/turret batch remains. The prior wording that characterized it as unreviewed or uncommitted is superseded by the merged commit below.
-- Active scope and any future dirty-worktree warning belong in `PLAN.md`, never here.
+- The active work is local and uncommitted in `agent/hard-ai-liveness-regression`; it is not a release and has not been merged or pushed.
+- `PLAN.md` is the authoritative current-state and recovery handoff.
+- The original `main` checkout remains the baseline for the active AI worktree.
+- Detailed durable analysis of the local Hard AI work is in [`docs/analysis/hard-ai-feasible-production-build-cycle-2026-08-16.md`](docs/analysis/hard-ai-feasible-production-build-cycle-2026-08-16.md).
+
+## Local work ledger — pending owner review
+
+| Revision | Date | Scope | Durable evidence / notes |
+|---|---|---|---|
+| `local / uncommitted` | 2026-08-16 | Hard AI Phase 0–3: infeasible-counter liveness regression, read-only assessment/feasibility/logging, explicit goals, feasible V0 normal-unit utility; follow-up build-cycle state-progression correction | Focused checks include `hard-ai-infeasible-counter-check`, `ai-observability-check`, `ai-goal-selection-check`, `hard-ai-unit-utility-check`, and `hard-ai-build-cycle-progression-check`. Repeated deterministic headless and Hard-vs-Hard seed 505 evidence passed. Owner-facing summary: `docs/analysis/hard-ai-build-cycle-correction-validation-summary-2026-08-16.txt`. No merge/push authorization. |
 
 ## Release ledger
 
@@ -25,7 +31,8 @@ This is a compact index, not default session context. Start with `PLAN.md`; read
 | Need | Read / search |
 |---|---|
 | Current scope, recovery state, worktree warnings | `PLAN.md` |
-| Hard-vs-Hard outcomes and headless methodology | `docs/analysis/hard-vs-hard-100-games-2026-08-09.md`, then legacy archive if needed |
+| Local Phase 0–3 Hard utility and build-cycle correction | `docs/analysis/hard-ai-feasible-production-build-cycle-2026-08-16.md` |
+| Hard-vs-Hard outcomes and earlier headless methodology | `docs/analysis/hard-vs-hard-100-games-2026-08-09.md`, then legacy archive if needed |
 | Detailed S5–S10 investigations, browser-cache lessons, balance findings | `docs/archive/session-history-legacy.md` |
 | Original v1/v2 session specifications and stop conditions | `docs/archive/session-history-legacy.md` |
 | File-retention decisions | `docs/retention-cleanup-manifest.md` |
@@ -33,5 +40,6 @@ This is a compact index, not default session context. Start with `PLAN.md`; read
 ## Archive policy
 
 - Preserve detailed narratives for reproducibility; do not delete or routinely inject them as context.
-- When a new release is completed, add one concise ledger row here and update `PLAN.md` only with the current state.
-- Move only durable, cross-session findings into focused `docs/analysis/` documents. Keep per-session narration in the archive.
+- When a new release is completed, add one concise release-ledger row here and update `PLAN.md` only with the current state.
+- Track owner-reviewed but uncommitted local work in the local-work ledger until it becomes a commit/release or is discarded.
+- Move durable cross-session findings into focused `docs/analysis/` documents. Keep per-session narration in the archive.

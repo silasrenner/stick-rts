@@ -51,5 +51,11 @@ export const DIFFICULTIES = {
     defendMineThreshold: 400,
     globalVision: true,
     turretBuildTimes: [CONFIG.HARD_TURRET_FIRST_TIME, CONFIG.HARD_TURRET_SECOND_TIME],
+    unitUtilityWeights: {
+      recover: { recoveryProgress: 1.00, combatEfficiency: 0.75, counterValue: 0.25, buildCycleBias: 0.10 },
+      buildArmy: { recoveryProgress: 0, combatEfficiency: 0, counterValue: 1.00, buildCycleBias: 0.25 },
+      defend: { recoveryProgress: 0, combatEfficiency: 0, counterValue: 1.00, buildCycleBias: 0.25 },
+      attack: { recoveryProgress: 0, combatEfficiency: 0, counterValue: 1.00, buildCycleBias: 0.25 },
+    },
   },
 };

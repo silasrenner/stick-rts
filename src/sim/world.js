@@ -33,6 +33,8 @@ export function createWorld(seed = Date.now()) {
         decisionTimer: 0,
         buildIndex: 0,
         recovering: false, // Hard uses this after a committed combat force is wiped.
+        strategicGoal: null, // Latest explicit AI intent; command remains a separate simulation posture.
+        lastAiDecision: null, // Latest bounded explanation record; never participates in simulation rules.
         productionQueue: [], // S8: sequential FIFO — see sim/systems/production.js
         rng: playerRng,
       },
@@ -49,6 +51,8 @@ export function createWorld(seed = Date.now()) {
         decisionTimer: 0,
         buildIndex: 0,
         recovering: false,
+        strategicGoal: null,
+        lastAiDecision: null,
         productionQueue: [],
         rng: aiRng,
       },

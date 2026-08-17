@@ -1,0 +1,217 @@
+Stick RTS — Hard AI build-cycle state-progression correction
+Validation summary — 2026-08-16
+
+STATUS
+======
+
+The narrow build-cycle correction is present and validated in the local worktree:
+
+  C:\Users\simcr\projects\stick-rts-hard-ai-liveness-regression
+  branch: agent/hard-ai-liveness-regression
+
+It remains local, uncommitted, unmerged, and unpushed. The separate main checkout is untouched.
+
+No additional project edits, balance changes, utility-weight changes, new heuristics, goal redesign, or utility-system expansion were made during this validation pass.
+
+
+EXACT PROGRESSION RULE
+======================
+
+For Hard's unit-utility path, buildIndex advances exactly once if and only if:
+
+  1. a selected candidate is a normal unit; and
+  2. authoritative buyUnit() execution returns { ok: true }.
+
+Conceptually:
+
+  decision
+  -> inspect build-cycle preference
+  -> evaluate feasibility / utility
+  -> select normal unit
+  -> buyUnit() succeeds
+  -> increment buildIndex once
+
+It does not advance merely because:
+
+  - a decision timer fires;
+  - all normal candidates are infeasible;
+  - gold is insufficient;
+  - the production queue is unavailable;
+  - no normal unit is selected;
+  - execution fails after feasibility inspection;
+  - a non-unit fallback occurs.
+
+The bounded latest-decision record exposes:
+
+  buildIndexBefore
+  buildCycleKind
+  selected candidate
+  purchase result
+  didBuildIndexAdvance
+  buildIndexAfter
+  buildIndexReason
+
+Reasons are:
+
+  successful-normal-unit-commit
+  no-normal-unit-commit
+
+
+IMPLEMENTATION / COVERAGE
+=========================
+
+Relevant files:
+
+  src/sim/ai/behavior.js
+    - applyBuildCycleProgression() advances only after a successful normal-unit commit.
+
+  src/sim/ai/decision-log.js
+    - records bounded build-cycle state before/after and advance/hold reason.
+
+  tools/hard-ai-build-cycle-progression-check.mjs
+    - deterministic regression coverage for the four required boundaries.
+
+  docs/analysis/hard-ai-feasible-production-build-cycle-2026-08-16.md
+    - durable architectural and diagnostic record.
+
+
+REPRESENTATIVE DECISION TRACES
+==============================
+
+No feasible normal unit:
+
+  buildIndexBefore: 3
+  buildCycleKind: archer
+  candidate: null
+  purchase result: null
+  didBuildIndexAdvance: false
+  buildIndexAfter: 3
+  reason: no-normal-unit-commit
+
+Successful cycle-driven warrior:
+
+  buildIndexBefore: 0
+  buildCycleKind: warrior
+  selected candidate: warrior
+  purchase result: ok
+  didBuildIndexAdvance: true
+  buildIndexAfter: 1
+  reason: successful-normal-unit-commit
+
+Infeasible archer counter with feasible miner fallback:
+
+  counterKind: archer
+  buildIndexBefore: 1
+  buildCycleKind: miner
+  selected candidate: miner
+  purchase result: ok
+  didBuildIndexAdvance: true
+  buildIndexAfter: 2
+  reason: successful-normal-unit-commit
+
+The infeasible counter is recorded and excluded from feasible utility selection. It does not pin the cycle: a feasible normal fallback that commits successfully advances the cycle once.
+
+Failed authoritative execution:
+
+  selected candidate: warrior
+  inspected feasibility: feasible
+  purchase result: queue failure
+  buildIndex before / after: 9 / 9
+  didBuildIndexAdvance: false
+  reason: no-normal-unit-commit
+
+
+VALIDATION RESULTS
+==================
+
+Passed:
+
+  git diff --check
+  node tools/hard-ai-build-cycle-progression-check.mjs
+  node tools/hard-ai-unit-utility-check.mjs
+  node tools/hard-ai-infeasible-counter-check.mjs
+  node tools/ai-goal-selection-check.mjs
+  node tools/ai-observability-check.mjs
+  node tools/hard-army-recovery-check.mjs
+  node tools/hard-turret-schedule-check.mjs
+  node tools/hard-vision-check.mjs
+  node tools/production-queue-cap-check.mjs
+  node tools/turret-sim-check.mjs
+  node tools/defend-anchor-check.mjs
+  node tools/defense-spacing-check.mjs
+  node tools/archer-range-cadence-check.mjs
+
+The already documented stale balance check still fails with:
+
+  Archer cooldown failed
+
+It fails equivalently in both this worktree and untouched main, so it is baseline-equivalent and unrelated to this correction.
+
+
+DETERMINISM
+===========
+
+Two repeated full diagnostic passes were byte-identical.
+
+  SHA-256:
+  dcddca46ff156888f89aa6d849e1394d09a601c3c2972d3185c72f6b94571e14
+
+Two independent Hard-vs-Hard seed-505 headless runs over 120 simulated seconds were also byte-identical.
+
+
+HARD-VS-HARD DIAGNOSTIC
+=======================
+
+Ran 120 simulated seconds for seeds:
+
+  101, 202, 303, 404, 505, 606
+
+Each seed ran normally and with player/AI per-team RNG streams swapped.
+
+Aggregate:
+
+  successful normal-unit commitments:        288
+  uncommitted normal decisions:             2,448
+  uncommitted decisions advancing buildIndex:   0
+  successful commitments held without advance:  0
+
+Previously divergent seeds at 120 seconds:
+
+  Seed 505, normal:
+    player: 9 miners, 4 warriors
+    AI:     10 miners, 3 warriors
+    both buildIndex values: 12
+
+  Seed 505, RNG streams swapped:
+    player: 10 miners, 3 warriors
+    AI:     9 miners, 4 warriors
+    both buildIndex values: 12
+
+  Seed 606, normal and RNG-stream swapped:
+    player: 10 miners, 3 warriors
+    AI:     10 miners, 3 warriors
+    both buildIndex values: 12
+
+A similar minor one-unit reversal remains in seed 404. These are legitimate queue/gold timing differences, not no-purchase cycle drift.
+
+First temporary buildIndex differences now occur only after real normal-unit commits:
+
+  Seed 505: about 28.017 seconds
+  Seed 606: about 41.7 seconds
+
+First live-unit composition differences occur later, when the queue completes production:
+
+  Seed 505: about 38.0 seconds
+  Seed 606: about 46.7 seconds
+
+
+CONCLUSION / STOP BOUNDARY
+==========================
+
+The correction removes the demonstrated timing artifact: decision jitter no longer consumes build-cycle positions while normal production is impossible or uncommitted.
+
+The prior miner-heavy runaway was not reproduced in the diagnostic window. In particular, the earlier 15 miners / 0 warriors versus 10 miners / 4 warriors collapse did not recur.
+
+RNG-stream swapping can still reverse minor one-unit timing differences such as 9 miners / 4 warriors versus 10 miners / 3 warriors. It no longer produces divergent build-cycle state through no-op decision timing.
+
+The remaining recurring strategic limitation is that Build Army has no explicit immediate combat-deficit / combat-urgency purchase value. That is a separately scoped possible next phase only. It was not implemented here.
