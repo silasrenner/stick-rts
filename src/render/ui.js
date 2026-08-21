@@ -14,6 +14,7 @@ const BUILD_MENU_ITEMS = [
   { kind: 'forgemaster', action: 'hero', label: 'Forgemaster', costFn: (world) => getHeroCost(world, 'player') },
   { kind: 'hawkeye', action: 'hero', label: 'Hawkeye', costFn: (world) => getHeroCost(world, 'player') },
   { kind: 'vanguard', action: 'hero', label: 'Vanguard', costFn: (world) => getHeroCost(world, 'player') },
+  { kind: 'raven', action: 'raven', label: 'Raven', costFn: () => CONFIG.RAVEN.cost },
 ];
 
 // Single source of truth for why a purchase failed — used both for the
@@ -27,6 +28,8 @@ export const PURCHASE_REASON_TEXT = {
   maxTurrets: 'Max turrets built',
   heroAlive: 'Hero already deployed',
   heroCooldown: 'Hero respawning...',
+  ravenActive: 'Raven already active',
+  ravenCooldown: 'Raven recharging...',
 };
 
 // Button-local state labels must fit beside the glyph at the smallest useful
@@ -39,6 +42,8 @@ const BUTTON_REASON_TEXT = {
   maxStructures: 'Structures full',
   heroAlive: 'Hero deployed',
   heroCooldown: 'Hero respawning',
+  ravenActive: 'Raven active',
+  ravenCooldown: 'Raven cooling',
 };
 
 // unit.x/unit.y is normally a world position; here we treat (x, feetY) as
@@ -96,13 +101,27 @@ function drawTurretGlyph(ctx, x, feetY, size = 14) {
 export function getBuildGlyphVariant(button) {
   if (button.action === 'structure') return 'structure';
   if (button.action === 'turret') return 'turret';
+  if (button.action === 'raven') return 'raven';
   return 'unit';
+}
+
+function drawRavenGlyph(ctx, x, y, size = 14) {
+  ctx.save();
+  ctx.strokeStyle = TEAM_COLORS.player;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x - size, y - size * 0.35);
+  ctx.quadraticCurveTo(x, y - size, x + size, y - size * 0.35);
+  ctx.quadraticCurveTo(x, y - size * 0.1, x - size, y - size * 0.35);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawKindGlyph(ctx, x, feetY, button) {
   const variant = getBuildGlyphVariant(button);
   if (variant === 'structure') drawStructureGlyph(ctx, x, feetY);
   else if (variant === 'turret') drawTurretGlyph(ctx, x, feetY);
+  else if (variant === 'raven') drawRavenGlyph(ctx, x, feetY);
   else drawUnitGlyph(ctx, x, feetY, button.kind, { isHero: button.action === 'hero', scale: CONFIG.BUILD_BUTTON_ICON_SCALE });
 }
 
@@ -159,6 +178,33 @@ export function drawZoomControls(ctx, spectator = false) {
 
 export function getWatchSpeedButtonRect(canvas) {
   return { x: 8, y: canvas.height - 30, w: 50, h: 22 };
+}
+
+export function getSpectatorViewRects(canvas) {
+  const y = canvas.height - 30;
+  const startX = 160;
+  const width = 52;
+  const gap = 4;
+  return ['full', 'left', 'right'].map((view, index) => ({
+    view,
+    label: view[0].toUpperCase() + view.slice(1),
+    rect: { x: startX + index * (width + gap), y, w: width, h: 22 },
+  }));
+}
+
+export function drawSpectatorViewSelector(ctx, selectedView) {
+  for (const { view, label, rect } of getSpectatorViewRects(ctx.canvas)) {
+    const selected = view === selectedView;
+    ctx.fillStyle = selected ? '#3c5265' : '#24242c';
+    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    ctx.strokeStyle = selected ? '#8fd1e0' : '#88889a';
+    ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+    ctx.fillStyle = '#f0f0f4';
+    ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, rect.x + rect.w / 2, rect.y + 15);
+  }
+  ctx.textAlign = 'left';
 }
 
 export function drawWatchSpeedButton(ctx, speed) {
@@ -267,6 +313,12 @@ export function getBuildButtonDisabledReason(world, button) {
     if (livingStructures(world, 'player').length + countQueued(world, 'player', 'structure') >= CONFIG.MAX_STRUCTURES) {
       return 'maxStructures';
     }
+    if (!canAfford(world, 'player', cost)) return 'gold';
+    return null;
+  }
+  if (button.action === 'raven') {
+    if (world.ravens.some((raven) => raven.team === 'player')) return 'ravenActive';
+    if (world.teams.player.ravenCooldownTimer > 0) return 'ravenCooldown';
     if (!canAfford(world, 'player', cost)) return 'gold';
     return null;
   }

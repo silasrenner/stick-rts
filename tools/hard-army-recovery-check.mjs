@@ -1,4 +1,5 @@
 import { CONFIG } from '../src/config.js';
+import { DIFFICULTIES } from '../src/sim/ai/difficulties.js';
 import { createUnit, createWorld } from '../src/sim/world.js';
 import { updateAiDecisions } from '../src/sim/ai/behavior.js';
 
@@ -27,10 +28,10 @@ if (state.command !== 'defend') {
   throw new Error(`Hard must defend with only two combat units; got ${state.command}`);
 }
 
-addWarriors(3);
+addWarriors(DIFFICULTIES.hard.attackLaunchCombatUnits - 2);
 decide();
 if (state.command !== 'attack') {
-  throw new Error(`Hard must commit only after assembling its meaningful five-unit army; got ${state.command}`);
+  throw new Error(`Hard must commit only after assembling its configured launch army; got ${state.command}`);
 }
 
 for (const unit of world.units) {
@@ -41,7 +42,7 @@ if (state.recovering !== true || state.command !== 'defend') {
   throw new Error(`Hard must enter defended recovery after its committed army is wiped; got ${JSON.stringify({ recovering: state.recovering, command: state.command })}`);
 }
 
-addWarriors(4);
+addWarriors(DIFFICULTIES.hard.attackLaunchCombatUnits - 1);
 decide();
 if (state.recovering !== true || state.command !== 'defend') {
   throw new Error(`Hard must stay in recovery until its army is rebuilt; got ${JSON.stringify({ recovering: state.recovering, command: state.command })}`);
@@ -50,7 +51,7 @@ if (state.recovering !== true || state.command !== 'defend') {
 addWarriors(1);
 decide();
 if (state.recovering !== false || state.command !== 'attack') {
-  throw new Error(`Hard must leave recovery and attack only with a rebuilt meaningful army; got ${JSON.stringify({ recovering: state.recovering, command: state.command })}`);
+  throw new Error(`Hard must leave recovery and attack only with a rebuilt configured launch army; got ${JSON.stringify({ recovering: state.recovering, command: state.command })}`);
 }
 
-console.log('PASS — Hard holds a meaningful army threshold and defends through wipe recovery until rebuilt.');
+console.log('PASS — Hard holds its configured launch threshold and defends through wipe recovery until rebuilt.');

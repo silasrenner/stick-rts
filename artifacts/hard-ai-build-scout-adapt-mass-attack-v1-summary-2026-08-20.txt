@@ -1,0 +1,62 @@
+Hard AI Build → Scout → Adapt → Mass → Attack V1 — local work summary
+Date: 2026-08-20
+Worktree: C:\Users\simcr\projects\stick-rts-team-vision-spectator
+Branch: agent/team-vision-spectator
+Status: local only; uncommitted, unmerged, unpushed.
+
+WHAT CHANGED
+- src/sim/ai/difficulties.js
+  - Hard attackLaunchCombatUnits: 8 -> 24.
+  - Hard attackSustainCombatUnits: 5 -> 12. This is the smallest V1 adjustment that avoids treating a 5-unit remnant as ordinary sustain after a 24-unit launch; the existing forward-frontline exception is unchanged.
+  - Added configurable Build Army Raven timing: triangular peak .55, halfWidth .35, minimum multiplier .20; utilityScale 2.50.
+- src/sim/ai/assessment.js
+  - Added attackLaunchCombatUnits and authoritative armyBuildProgress to the bounded assessment:
+      clamp(friendlyCombatUnits / attackLaunchCombatUnits, 0, 1)
+    Therefore 0 -> 0, 12/24 -> .5, and 24/24 -> 1.
+- src/sim/ai/scouting.js
+  - Raven utility now multiplies its existing information need, goal weight, and protected-reserve affordability by the Build Army timing multiplier only under Build Army.
+  - Raven remains optional and no new goal/state exists.
+- src/sim/ai/unit-utility.js and decision-log.js
+  - Existing counter-value contribution during Build Army now smoothly grows from 25% at progress 0 to 100% at progress 1. It still requires real current/remembered composition through the existing counter path; hidden enemy composition remains irrelevant.
+  - Bounded records show counter contribution, armyBuildProgress, scouting timing, affordability, Raven utility/selection, information state, and current known composition.
+- Focused V1 check: tools/hard-ai-build-scout-adapt-check.mjs.
+- Cohort trace harness: artifacts/hard-build-scout-adapt-diagnostic.mjs and artifacts/hard-build-scout-adapt-diagnostic/seed-*.json.
+
+FOCUSED CONTRACTS
+Passed RED -> GREEN V1 coverage for:
+- 23 cannot launch and 24 can launch even with stale information and cooldown-blocked Raven.
+- Build-progress endpoints 0, .5, and 1.
+- Early timing below middle timing; healthy stale mid-build Raven can be selected; fresh observation suppresses Raven.
+- Raven is isolated from normal buildIndex progression.
+- Observed warrior-heavy composition yields the existing archer counter; hidden composition does not.
+- Existing attack sustain/frontline exception, recovery, goal, unit utility, Raven, vision/memory, queue/cap, economy, turret, defense, and formation checks pass.
+
+REPRESENTATIVE OBSERVE -> ADAPT EVIDENCE (seed 701, AI rebuild cycle)
+At 488.333s: Build Army, 11 combat (progress .458), 10 miners, 9 warriors / 1 archer / 1 hero, 1881g, stale/unknown composition, no counter preference. Raven selected: utility 1.976, timing .790, affordability 1.
+At 498.917s Raven reveal: 12 combat (progress .5); known enemy composition { miner: 7, warrior: 8, archer: 3 }; scoutingNeed fell to 0; existing counter preference became archer.
+At 508.450s: next normal purchase was archer under Build Army at progress .542.
+The following decisions revert to normal warrior purchases after the short current observation changes/ages; no fixed composition script was added.
+
+COHORT / BATTLE-SHAPE OBSERVATION
+Ran deterministic Hard-vs-Hard seeds 701-705 and broader 706-710, capped at 3000 seconds.
+- Outcomes: 5 player wins, 5 AI wins, 0 unresolved.
+- Every first attack was exactly 24 combat units (20 launches across 10 matches).
+- All 20 sides achieved a first major combat contact, mean 18.66 seconds after launch.
+- 10/20 sides registered first enemy structural damage, mean 947.35 seconds after first launch.
+- Mean match duration: 1337.79s (min 677.733s, max 2502.05s).
+- There were 144 autonomous Raven purchases and 65 Attack command entries across the cohort; combat production continues while Attack is active.
+- This is observability, not a liveness proof or a seed-tuned result.
+
+IMPORTANT LIMIT
+The initial opening 24-unit waves in these samples usually reached launch before a Raven could affordably win during initial Build Army: the existing protected-combat reserve scales with the 24-unit shortfall, and initial economies did not create enough surplus. Mid-build/rebuild Raven -> reveal -> archer adaptation is demonstrated above and in raw traces, but the desired first-cycle Build -> Scout -> Adapt -> Mass sequence was not demonstrated autonomously in seeds 701-710. This is a genuine economic/opportunity-cost finding, not a reason to silently weaken reserve policy in this pass.
+
+BATTLE SHAPE
+24-unit opening waves produce actual mass contact instead of 8-unit launches. Approach losses and fragmentation still occur: in seed 701 the first contact was about 12-25 seconds after launch, and structure damage remained delayed or absent on several sides. The traces show reinforcement during Attack and some later structure damage, but they also expose continued defender/throughput/formation-concentration questions. No targeting, formation, or combat change was made.
+
+KNOWN BASELINE-EQUIVALENT ITEMS
+- tools/balance-check.mjs: Archer cooldown failed.
+- tools/starting-turret-check.mjs: Starting turret must not consume player population.
+- The requested headless invariant command name does not exist in this worktree (tools/headless-invariants-check.mjs); its preceding queue/turret/defense checks passed. No gameplay failure is inferred from the missing tool.
+
+RECOMMENDED NEXT STEP
+Review the LAN replay first. If the owner wants the opening force to reliably scout before the first 24-unit launch, approve a narrowly scoped protected-reserve/economy opportunity-cost study with a predeclared cohort. Do not introduce a Scout goal or scripted Raven trigger.

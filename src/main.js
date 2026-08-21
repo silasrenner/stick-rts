@@ -3,7 +3,7 @@ import { createWorld, createUnit, isWatchAiMatch } from './sim/world.js';
 import { createAccumulator } from './sim/loop.js';
 import { runTick } from './sim/tick.js';
 import { setTeamCommand } from './sim/systems/commands.js';
-import { buyUnit, buyStructure, buyTurret, buyHero } from './sim/systems/economy.js';
+import { buyUnit, buyStructure, buyTurret, buyHero, buyRaven } from './sim/systems/economy.js';
 import { attemptHeroAttack, activateSpecial } from './sim/systems/heroes.js';
 import { render } from './render/renderer.js';
 import {
@@ -20,6 +20,7 @@ import {
   getPauseOverlayRects,
   getZoomButtonRects,
   getWatchSpeedButtonRect,
+  getSpectatorViewRects,
   getTouchCommandRects,
   PURCHASE_REASON_TEXT,
 } from './render/ui.js';
@@ -43,6 +44,7 @@ const uiState = {
   settings: { fpsVisible: false, defaultDifficulty: DEFAULT_DIFFICULTY },
   watchSetup: { playerDifficulty: 'hard', aiDifficulty: 'hard', seed: null },
   watchSpeed: 1,
+  spectatorView: 'full', // render-only Watch AI perspective; never part of world.
   paused: false,
   touchControlsEnabled: window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0,
 };
@@ -82,6 +84,12 @@ function attemptBuyHero(team, kind) {
   return result;
 }
 
+function attemptBuyRaven(team) {
+  const result = buyRaven(world, team);
+  if (!result.ok && team === 'player') showMessage(PURCHASE_REASON_TEXT[result.reason]);
+  return result;
+}
+
 // Default keeps Rematch on the just-ended match's own difficulty (unchanged
 // v1 behavior); only falls back to the Settings default if that's somehow
 // unset. Play's difficulty-select screen always passes an explicit arg.
@@ -91,6 +99,7 @@ function resetMatch(difficulty = world.teams.ai.difficulty ?? uiState.settings.d
   world.teams.ai.difficulty = difficulty;
   uiMessage = { text: '', timer: 0 };
   uiState.watchSpeed = 1;
+  uiState.spectatorView = 'full';
   uiState.paused = false;
   camera.x = 0;
   camera.targetX = 0;
@@ -104,6 +113,7 @@ function startWatchAiMatch(playerDifficulty, aiDifficulty, seed) {
   world.teams.ai.difficulty = aiDifficulty;
   uiMessage = { text: '', timer: 0 };
   uiState.watchSpeed = 1;
+  uiState.spectatorView = 'full';
   uiState.paused = false;
   camera.x = 0;
   camera.targetX = 0;
@@ -298,6 +308,13 @@ function handleMenuClick(x, y) {
 // overlay) — the build menu is hidden and player commands are suppressed,
 // so there's nothing else on screen a click could meaningfully hit.
 function handleWatchAiClick(x, y) {
+  if (world.matchState === 'playing') {
+    const selected = getSpectatorViewRects(canvas).find((control) => pointInRect(x, y, control.rect));
+    if (selected) {
+      uiState.spectatorView = selected.view;
+      return;
+    }
+  }
   if (world.matchState === 'playing' && pointInRect(x, y, getWatchSpeedButtonRect(canvas))) {
     const speeds = [1, 5, 10, 20];
     uiState.watchSpeed = speeds[(speeds.indexOf(uiState.watchSpeed) + 1) % speeds.length];
@@ -398,6 +415,7 @@ bindClick(canvas, (x, y) => {
     if (button.action === 'unit') attemptBuyUnit('player', button.kind);
     else if (button.action === 'structure') attemptBuyStructure('player');
     else if (button.action === 'turret') attemptBuyTurret('player');
+    else if (button.action === 'raven') attemptBuyRaven('player');
     else attemptBuyHero('player', button.kind);
     return;
   }
@@ -474,6 +492,7 @@ window.__resetMatch = resetMatch;
 window.__buyUnit = attemptBuyUnit;
 window.__buyStructure = attemptBuyStructure;
 window.__buyHero = attemptBuyHero;
+window.__buyRaven = attemptBuyRaven;
 window.__setCommand = (team, command) => setTeamCommand(world, team, command);
 window.__toggleHeroControl = toggleHeroControl;
 window.__heroAttack = attackWithControlledHero;

@@ -23,6 +23,36 @@ export const CONFIG = {
 
   AI_SIGHT_RANGE: 260, // px; how close an AI unit must be to see an enemy for scouting purposes
   AI_DECISION_JITTER: 0.125, // S9: ±12.5% seed-derived variance on each team's decisionInterval reset
+  // Assessment-only depth of the active combat front: combat units no more
+  // than this far behind their team's forward-most combat unit are frontline.
+  FRONTLINE_COMBAT_DEPTH: 420,
+
+  // Team-vision sources are simulation-query owned but presentation-only for
+  // now. They intentionally do not affect existing AI memory or combat.
+  VISION_RANGES: {
+    units: { miner: 260, warrior: 340, archer: 380 },
+    hero: 420,
+    core: 420,
+    turret: 360,
+    structure: 260,
+  },
+  SPECTATOR_FOG_ALPHA: 0.42,
+
+  // Raven is a temporary, non-combat scouting action. It deliberately does
+  // not use unit stats, population, formations, or the normal FIFO queue.
+  RAVEN: {
+    cost: 750,
+    preparationTime: 2,
+    movementSpeed: 560,
+    movingVisionRadius: 300,
+    enemyBaseRevealRadius: 800,
+    revealDuration: 10,
+    cooldown: 45,
+    flightAltitude: 250,
+    exitSpeed: 700,
+    exitDistance: 350,
+  },
+
 
   DEATH_DURATION: 0.5, // seconds a unit spends toppling before removal
   ATTACK_ANIM_DURATION: 0.18, // seconds the attack lunge pose holds

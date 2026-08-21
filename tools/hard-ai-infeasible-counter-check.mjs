@@ -15,8 +15,9 @@ state.decisionTimer = 0;
 state.gold = CONFIG.UNIT_STATS.warrior.cost;
 
 world.units.push(createUnit('miner', team, CONFIG.AI_HOME_X, CONFIG.GROUND_Y));
+world.units.push(createUnit('warrior', team, CONFIG.AI_HOME_X - 700, CONFIG.GROUND_Y));
 for (let i = 0; i < 3; i += 1) {
-  world.units.push(createUnit('warrior', 'player', CONFIG.PLAYER_HOME_X + i * 10, CONFIG.GROUND_Y));
+  world.units.push(createUnit('warrior', 'player', CONFIG.AI_HOME_X - 600 + i * 10, CONFIG.GROUND_Y));
 }
 
 updateAiDecisions(world, 1 / CONFIG.TICK_HZ);

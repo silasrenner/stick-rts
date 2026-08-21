@@ -1,0 +1,173 @@
+Stick RTS — AI team-vision perception and controlled-memory validation report
+
+Status: validation complete; promotion blocked by a deterministic Hard-vs-Hard liveness regression.
+Worktree: C:\Users\simcr\projects\stick-rts-team-vision-spectator
+Branch: agent/team-vision-spectator
+Scope boundary: local only. No Raven, tuning, commit, merge, push, or deployment.
+
+SUMMARY
+
+The AI perception/memory information boundary is validated:
+
+  authoritative world
+    -> shared simulation-owned team vision
+    -> currently visible enemies
+    -> controlled AI snapshots/memory
+    -> existing assessment, goals, utility, production, and command systems
+
+Hard no longer has a global-vision exception. Live enemy perception uses the same shared vision query as Left/Right spectator perspectives. The spectator selector remains presentation-only and does not affect AI perception.
+
+LIVE PERCEPTION AND MEMORY
+
+- Current live enemy information comes from the shared team-vision query surface.
+- A visible mobile enemy creates a copied observation containing identity/type, last observed position, HP/state, flags, and lastSeenAt.
+- When a mobile enemy leaves vision, its snapshot freezes. Hidden authoritative position, HP, state, direction, and death do not update the record.
+- Re-entering vision refreshes the snapshot.
+- Mobile memory remains valid while:
+
+    matchElapsedTime - lastSeenAt <= difficulty.memoryStaleness
+
+  Configured durations:
+    Hard:   6 simulated seconds
+    Medium: 15 simulated seconds
+    Easy:   0 simulated seconds
+
+- Expired mobile observations stop contributing to composition and estimated enemy power.
+- Observed structures/turrets persist as frozen strategic observations. Their hidden HP/state cannot leak and re-observation refreshes them.
+- Enemy base location remains known from configured match-start home coordinates, but hidden live base state is not read.
+
+ASSESSMENT / COUNTER / THREAT CHANGES
+
+- Existing counter relationships and utility architecture were not changed.
+- Enemy composition is now current visible mobile enemies plus valid remembered mobile observations.
+- Confirmed near-home threat uses currently visible enemies only; remembered positions cannot masquerade as a current contact.
+- Existing enemy-power formulas now consume the visibility/memory-derived composition instead of global authoritative enemy state.
+- Decision records expose visible and remembered composition, observations, lastSeenAt/memory age, remembered structures, known base, and derived threat/power context.
+
+VALIDATION PASSED
+
+Focused perception and AI checks passed:
+
+- AI perception/memory regression coverage
+- Hard-vision regression
+- team-vision regression
+- AI observability
+- goal selection
+- unit utility
+- build-cycle progression
+- infeasible counter selection
+- Hard army recovery
+- Hard turret schedule
+- production queue cap
+- baseline headless simulation
+- archer range/cadence and spawn formation
+- core/turret shield
+- defend anchor and defense spacing
+- turret simulation and targeting
+- match telemetry
+- pause UX
+- mobile pan
+- mobile UX
+- git diff --check
+
+The build-cycle invariant remains intact: buildIndex advances only after a successful committed normal-unit purchase.
+
+DETERMINISM
+
+The following candidate command was run twice:
+
+  node tools/headless.js --batch --player=hard --enemy=hard --trials=3 --seed=811
+
+The complete output was byte-identical across both runs. Both produced 3/3 unresolved matches at the 3,000-second cap.
+
+BROWSER SPECTATOR VALIDATION
+
+A fresh local server served this exact worktree at:
+
+  http://127.0.0.1:8814/
+
+A fresh headless Chrome CDP session exercised actual canvas controls:
+
+  Full -> Left -> Right
+
+Hard-vs-Hard, fixed seed 701, at 300 simulated seconds:
+
+  Full equals Left:  true
+  Full equals Right: true
+  Normalized snapshot bytes: 6000
+
+The snapshot included team state, unit/structure state, latest AI decisions, and visible/remembered AI memory. Globally incrementing entity IDs were excluded from the comparison.
+
+Screenshots:
+
+  artifacts/ai-perception-browser/full-seed-701-t300.png
+  artifacts/ai-perception-browser/left-seed-701-t300.png
+  artifacts/ai-perception-browser/right-seed-701-t300.png
+
+Visual review found the expected Full telemetry, Left limited telemetry/fog treatment, and no obvious rendering defect.
+
+BASELINE-EQUIVALENT FAILURES
+
+These failures occur on both the candidate and unchanged main; they are not attributed to this perception work:
+
+  node tools/balance-check.mjs
+    Archer cooldown failed
+
+  node tools/starting-turret-check.mjs
+    Starting turret must not consume player population
+
+CRITICAL FIXED-SEED BEHAVIORAL COMPARISON
+
+Hard-vs-Hard paired seeds 701–705, maximum 3,000 simulated seconds:
+
+  Candidate team-limited perception:
+    player wins: 0
+    AI wins: 0
+    unresolved: 5
+    mean duration: 3000.0 seconds
+
+  Unchanged main:
+    player wins: 2
+    AI wins: 3
+    unresolved: 0
+    mean duration: 835.6 seconds
+
+This is a material, deterministic liveness blocker.
+
+Seed-701 trace at 60 seconds:
+
+  Candidate:
+    - no current or remembered enemy contact
+    - enemy composition {}
+    - estimated enemy power 0
+    - no counter pick
+    - no underpowered signal
+
+  Baseline:
+    - omniscient global enemy composition despite no visual contact
+    - estimated enemy power 288
+    - underpowered true
+    - archer counter selection
+
+The candidate diverges naturally afterward and remains unresolved at 900 seconds; the baseline resolves seed 701 at 525.9 seconds.
+
+CONCLUSION / STOP
+
+The team-limited perception and controlled-memory contract is implemented and validated, but this branch must not be promoted yet. No Raven work should begin.
+
+A separate owner-approved decision is required before more implementation:
+
+1. Preserve this as a correct information-boundary milestone and authorize a narrowly bounded non-omniscient Hard-AI liveness/strategy study; or
+2. Quarantine/revert the perception phase pending a decision about what strategic knowledge or behavior may replace the former omniscient early counter/power signal.
+
+DURABLE DETAILS
+
+Full durable analysis:
+
+  docs/analysis/hard-ai-team-vision-perception-validation-2026-08-16.md
+
+Trace artifacts:
+
+  artifacts/ai-perception-trace-candidate-seed-701.json
+  artifacts/ai-perception-trace-baseline-seed-701.json
+  artifacts/compare-ai-perception-traces.mjs

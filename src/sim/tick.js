@@ -7,6 +7,7 @@ import { updateStructureDeaths } from './systems/supply.js';
 import { updateHeroCooldowns, updateHeroControl } from './systems/heroes.js';
 import { updateProductionQueue } from './systems/production.js';
 import { updateAiDecisions } from './ai/behavior.js';
+import { updateRavens } from './systems/raven.js';
 
 const NO_INPUT = { player: { moveLeft: false, moveRight: false } };
 
@@ -19,6 +20,9 @@ export function runTick(world, dt, input = NO_INPUT) {
 
   world.matchElapsedTime += dt;
 
+  // Update temporary vision before AI decisions so Raven visibility naturally
+  // reaches the existing current-observation/memory path on this tick.
+  updateRavens(world, dt);
   updateAiDecisions(world, dt); // no-ops for any team with no difficulty set
   updateHeroCooldowns(world, dt);
   updateHeroControl(world, input, dt);

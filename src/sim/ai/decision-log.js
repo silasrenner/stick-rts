@@ -12,10 +12,21 @@ function copyResult(result) {
 
 function copyUtility(utility) {
   return utility ? {
-    recoveryProgress: utility.recoveryProgress,
-    combatEfficiency: utility.combatEfficiency,
-    counterValue: utility.counterValue,
-    buildCycleBias: utility.buildCycleBias,
+    recoveryProgress: utility.recoveryProgress ?? null,
+    combatEfficiency: utility.combatEfficiency ?? null,
+    counterValue: utility.counterValue ?? null,
+    contextualCounterWeight: utility.contextualCounterWeight ?? null,
+    buildCycleBias: utility.buildCycleBias ?? null,
+    economicNeed: utility.economicNeed ?? null,
+    scoutingNeed: utility.scoutingNeed ?? null,
+    informationStaleness: utility.informationStaleness ?? null,
+    currentEnemyCoverage: utility.currentEnemyCoverage ?? null,
+    strategicScoutingWeight: utility.strategicScoutingWeight ?? null,
+    armyBuildProgress: utility.armyBuildProgress ?? null,
+    scoutingTimingMultiplier: utility.scoutingTimingMultiplier ?? null,
+    scoutingAffordability: utility.scoutingAffordability ?? null,
+    protectedCombatReserve: utility.protectedCombatReserve ?? null,
+    selected: utility.selected ?? false,
     weightedTotal: utility.weightedTotal,
   } : null;
 }
@@ -24,7 +35,7 @@ function copyTieBreak(tieBreak) {
   return tieBreak ? { method: tieBreak.method, contenders: [...tieBreak.contenders] } : null;
 }
 
-export function createDecisionRecord({ assessment, goal, candidates, selection, turretAttempt, heroAttempt, command }) {
+export function createDecisionRecord({ assessment, goal, candidates, selection, turretAttempt, heroAttempt, command, attackCommitment }) {
   return {
     time: assessment.time,
     observed: assessment,
@@ -63,6 +74,7 @@ export function createDecisionRecord({ assessment, goal, candidates, selection, 
       feasibility: copyFeasibility(heroAttempt.feasibility),
       result: copyResult(heroAttempt.result),
     } : null,
+    attackCommitment,
     command,
   };
 }

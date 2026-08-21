@@ -15,6 +15,9 @@ export function createWorld(seed = Date.now()) {
   return {
     units: [],
     projectiles: [],
+    // Temporary non-combat scouting assets. Ravens never enter units so they
+    // cannot affect population, combat, formations, or AI army assessment.
+    ravens: [],
     structures: [
       { ...createTurret('player', CONFIG.PLAYER_HOME_X + CONFIG.STARTING_TURRET_OFFSET, CONFIG.GROUND_Y), isStartingTurret: true },
       { ...createTurret('ai', CONFIG.AI_HOME_X - CONFIG.STARTING_TURRET_OFFSET, CONFIG.GROUND_Y), isStartingTurret: true },
@@ -36,6 +39,7 @@ export function createWorld(seed = Date.now()) {
         strategicGoal: null, // Latest explicit AI intent; command remains a separate simulation posture.
         lastAiDecision: null, // Latest bounded explanation record; never participates in simulation rules.
         productionQueue: [], // S8: sequential FIFO — see sim/systems/production.js
+        ravenCooldownTimer: 0, // Raven is a separate temporary scouting action, not queue production.
         rng: playerRng,
       },
       ai: {
@@ -54,6 +58,7 @@ export function createWorld(seed = Date.now()) {
         strategicGoal: null,
         lastAiDecision: null,
         productionQueue: [],
+        ravenCooldownTimer: 0,
         rng: aiRng,
       },
     },
@@ -67,6 +72,9 @@ export function createWorld(seed = Date.now()) {
     },
     matchState: 'menu',
     matchElapsedTime: 0,
+    // Optional temporary/non-entity sources consumed only by sim/vision.js.
+    // Empty by default; future reveals can add { team, x, y, radius, active }.
+    visionSources: [],
     aiMemory: {},
   };
 }
@@ -125,6 +133,22 @@ export function createUnit(kind, team, x, y) {
     miningState: 'toMine',
     mineTimer: 0,
     carrying: 0,
+  };
+}
+
+export function createRaven(team) {
+  const homeX = team === 'player' ? CONFIG.PLAYER_HOME_X : CONFIG.AI_HOME_X;
+  const enemyHomeX = team === 'player' ? CONFIG.AI_HOME_X : CONFIG.PLAYER_HOME_X;
+  return {
+    id: nextId++,
+    team,
+    x: homeX,
+    y: CONFIG.GROUND_Y - CONFIG.RAVEN.flightAltitude,
+    direction: team === 'player' ? 1 : -1,
+    enemyHomeX,
+    state: 'preparing',
+    preparationRemaining: CONFIG.RAVEN.preparationTime,
+    revealRemaining: 0,
   };
 }
 

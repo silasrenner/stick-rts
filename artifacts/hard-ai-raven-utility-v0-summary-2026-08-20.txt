@@ -1,0 +1,82 @@
+Hard AI Information Value + Raven Purchase Utility V0 — local work summary
+Date: 2026-08-20
+Worktree: C:\Users\simcr\projects\stick-rts-team-vision-spectator
+Branch: agent/team-vision-spectator
+Base: cf56709
+Remote status: local-only, uncommitted, unmerged, unpushed.
+
+Scope completed
+===============
+Hard AI can now autonomously buy the existing Raven V1 as an occasional candidate action. The four strategic goals remain Recover, Build Army, Defend, Attack. No Scout/Recon/Intel goal was added. Raven mechanics, cost, cooldown, flight, generic vision sources, 10-second reveal, UI, spectator model, controlled memory semantics, combat, population, FIFO queue, build cycle, attack sustain/launch, targeting, formations, and Raven balance were not changed.
+
+Files / functions changed
+=========================
+- src/sim/ai/scouting.js (new): bounded information-state assessment and Raven utility.
+- src/sim/ai/vision.js: current-contact and meaningful-observation timestamps based only on copied team-visible snapshots.
+- src/sim/ai/assessment.js: exposes bounded information-state fields.
+- src/sim/ai/difficulties.js: configuration-driven scouting weights/horizon.
+- src/sim/ai/actions.js: generic Raven candidate.
+- src/sim/ai/unit-utility.js: exports existing cheapest feasible combat-cost primitive for shared reserve calculation.
+- src/sim/ai/behavior.js: compares feasible Raven utility against unchanged best unit utility; executes buyRaven; preserves zero-miner/turret/cap behavior.
+- src/sim/ai/decision-log.js: copies bounded Raven utility explanation fields.
+- tools/hard-ai-raven-utility-check.mjs (new): focused deterministic coverage.
+- artifacts/hard-ai-raven-diagnostic.mjs (new) and artifacts/hard-ai-raven-diagnostic/: named-cohort traces.
+- artifacts/hard-ai-raven-browser-check.mjs (new) and artifacts/hard-ai-raven-browser/: autonomous browser proof/screenshots.
+- docs/analysis/hard-ai-information-value-raven-utility-v0-2026-08-20.md: full validation report.
+- PLAN.md and HISTORY.md: current local-scope handoff/ledger updates.
+
+Exact V0 information formula
+============================
+currentEnemyCoverage = 1 when the current team-visible snapshot has enemy combat or a non-base enemy structure; otherwise 0.
+
+informationStaleness = absent meaningful observation ? 1 : clamp(timeSinceMeaningfulEnemyObservation / 60, 0, 1)
+
+scoutingNeed = clamp(0.60 * informationStaleness + 0.40 * (1 - currentEnemyCoverage), 0, 1)
+
+Raw bounded inputs include current/remembered combat and structure counts, time since current contact, time since meaningful observation, and composition knowledge age. No input compares observation/memory with hidden enemy state.
+
+Exact affordability and utility formula
+=======================================
+protectedCombatReserve = cheapestCombatCost * max(existing economic reserve target, max(0, attackLaunchCombatUnits - friendlyCombatUnits))
+scoutingAffordability = clamp((gold - protectedCombatReserve) / RavenCost, 0, 1)
+ravenUtility = 2.00 * scoutingNeed * strategicScoutingWeight[currentGoal] * scoutingAffordability
+
+Goal weights: Recover 0.20, Build Army 1.00, Defend 0.50, Attack 1.00.
+
+Candidate / feasibility behavior
+================================
+Raven is a generic { action: 'raven', kind: null } candidate. Existing Raven feasibility remains normal gold / active Raven / cooldown. Infeasible Raven is unscored; it is not a negative-utility hack. Raven only wins if its utility is strictly greater than the unchanged best normal-unit utility; ties preserve the unit. Raven selection calls buyRaven, never advances buildIndex, never consumes population, and never touches the unit FIFO.
+
+Representative autonomous decision
+==================================
+Browser seed 703: Player Hard bought Raven at 464.817s under Build Army with 1778g and 7 combat units. It had no current enemy coverage, 48.0s since meaningful observation, staleness 0.80, scoutingNeed 0.88, affordability 1.00, protected reserve 330g, and Raven utility 1.76. The best warrior utility was 1.75, so Raven won deterministically.
+
+At reveal, generic vision gave current combat/structure coverage 1; staleness and scoutingNeed became 0. Diagnostic traces show stale/empty composition/power refreshing to actual visible miners, combat, and structures, and later ordinary counter-backed unit choices (e.g. archer) in recorded sequences. Raven does not directly write AI memory or select counters.
+
+Focused/regression results
+==========================
+PASS: hard-ai-raven-utility-check, Raven V1 mechanics, vision, controlled perception/memory, goals, utility, build cycle, infeasible-counter, observability, frontline/sustain, recovery, queue/cap, turret/defense, and headless invariants. Browser autonomous Raven proof passed with clean console. git diff --check passed at validation checkpoints.
+
+Known baseline-equivalent failures remain:
+- balance-check: Archer cooldown failed
+- starting-turret-check: Starting turret must not consume player population
+
+Named 701–705 observational diagnostic
+=======================================
+3,000-second cap. Raven purchases: Player 55, AI 56, total 111.
+Outcomes: Player wins 0, AI wins 1, unresolved 4; mean duration 2644.5s.
+Per seed: 701 unresolved; 702 unresolved; 703 AI win at 1222.367s; 704 unresolved; 705 unresolved.
+
+The prior cohort was 1 player / 0 AI / 4 unresolved, mean 2806.4s. This change is reported observationally only; Raven settings were not tuned to force liveness. The final 60-second stale horizon was a conservatism correction after a 15-second prototype could recover high value at every 45-second cooldown.
+
+Browser / spectator proof
+=========================
+Full/Left/Right controls were exercised by real canvas clicks. Fixed-seed autonomous-purchase snapshots were identical across all three perspectives. The automated Raven launched, flew, reached radius-800 reveal, refreshed AI observation, exited/despawned, and left its team cooldown active. Screenshots are in artifacts/hard-ai-raven-browser/.
+
+Recommended next step
+=====================
+Do not add a Scout goal. Review V0 purchase frequency and opportunity cost over a broader non-tuned cohort before considering richer coverage/confidence inputs. The known team-limited Hard-AI liveness issue remains separate.
+
+LAN server
+==========
+Exact worktree server: http://192.168.0.83:8811/

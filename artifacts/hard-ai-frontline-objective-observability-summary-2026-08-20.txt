@@ -1,0 +1,142 @@
+Hard AI frontline/objective observability pass — 2026-08-20
+========================================================
+
+Scope and stop boundary
+-----------------------
+Observation-only implementation. No goal, utility, command, launch/sustain,
+production, economy, movement, formation, targeting, combat, vision/memory, or
+Raven behavior was changed. No commit, merge, push, or deployment was made.
+
+Files changed in this pass
+--------------------------
+- src/config.js
+  - Added CONFIG.FRONTLINE_COMBAT_DEPTH = 420.
+- src/sim/ai/assessment.js
+  - Added read-only frontline and objective assessment values to
+    buildAiAssessment().
+- tools/hard-ai-frontline-assessment-check.mjs
+  - New deterministic focused coverage.
+- artifacts/hard-frontline-objective-trace.mjs
+  - New deterministic cycle trace runner.
+- artifacts/hard-frontline-objective-seed-701-ai.json
+- artifacts/hard-frontline-objective-seed-702-ai.json
+  - Representative measured traces.
+
+Exact frontline definition
+--------------------------
+For each team, inspect only living friendly non-miner combat units (warrior,
+archer, hero). Direction is toward the opposing home:
+- Player/Left attacks toward increasing x.
+- AI/Right attacks toward decreasing x.
+
+forwardMostFriendlyCombatX is the friendly combat unit with greatest progress in
+that direction. The active frontline is the inclusive 420-world-pixel band
+behind that unit, toward the team's home. It reports:
+- frontline.friendlyCombatCount
+- frontline.friendlyPower
+- frontline.visibleEnemyCombatCount
+- frontline.visibleEnemyPower
+- frontline.centerX / forwardMostFriendlyCombatX
+
+Visible enemy combat is local only when it is within +/-420 world pixels of the
+friendly forward-most position. This produces a symmetric, renderer-free,
+non-historical front definition. Power uses the existing assessment convention:
+max HP + (damage * 5).
+
+Exact objective-progress definition
+-----------------------------------
+Progress is the normalized directed position of the forward-most living friendly
+combat unit between homes:
+  0 at own home
+  1 at enemy home
+and is clamped to [0, 1]. distanceRemaining is raw world distance from that
+position to the enemy home. With no living friendly combat unit, forward-most
+and distanceRemaining are null, counts/power are zero, and progress is neutral
+0.
+
+Information boundary
+--------------------
+Friendly combat state is authoritative. Enemy frontline values use ONLY
+memory.currentlyVisibleEnemies, which is populated by the existing shared
+current team-vision query. Remembered mobile snapshots are intentionally
+excluded: a remembered enemy at an old x cannot become a current frontline
+contact. No vision or controlled-memory semantics changed.
+
+Decision explainability
+-----------------------
+The bounded latest decision record already retains observed assessment directly.
+Its observed.frontline and observed.objective now expose the new raw fields,
+without being consumed by strategic selection or production.
+
+Focused validation
+------------------
+Passed:
+- hard-ai-frontline-assessment: Left/Right symmetry, fixed-depth friendly
+  inclusion/exclusion, visible versus hidden/remembered enemy contact,
+  forward/homeward objective movement, no-combat empty values, read-only
+  assessment, same-seed determinism.
+- team vision, Hard vision, perception/memory, AI observability, goal selection,
+  Hard utility, recovery, build-cycle progression, infeasible counter,
+  production queue, scheduled turret, turret simulation, defense anchor,
+  defense spacing, and headless invariants.
+
+Known baseline-equivalent failure retained separately:
+- node tools/balance-check.mjs -> "Archer cooldown failed".
+  This is the pre-existing documented branch/main-equivalent failure; this pass
+  did not edit archer balance.
+
+Representative unresolved Hard-vs-Hard diagnostics
+---------------------------------------------------
+Cohort 701-705 at 3,000 seconds, unchanged behavior:
+  player wins 1; AI wins 0; unresolved 4; mean 2806.4 s.
+
+Seed 701 (AI/Right), representative fourth offensive cycle:
+- launch 483.1: total 8; frontline 8 / power 1012; visible enemy 1 / 122;
+  forward x 4519.1; progress .0793.
+- mid-engagement 493.1: total 9; frontline 8 / 1012; visible enemy 0;
+  forward x 3619.0; progress .2669.
+- structural contact 530.8: total 9; frontline 5 / 628; visible enemy 0;
+  forward x 739.1; progress .8668.
+- attack exit/rebuild 542.5: total 4; frontline 1 / 128; visible enemy 0;
+  forward x 1352.8; progress .7390.
+
+This directly distinguishes the previously ambiguous state: at structural
+contact, nine global combat units reduced to five actual forward-band units;
+at exit, four total reduced to one forward survivor. Other 701 cycles showed
+similar fragmentation, including a launch at 789.1 with total 8 but only one
+frontline unit (power 122), and exits with total 4 but only one or two front
+units.
+
+Seed 702 (AI/Right), representative structural cycle:
+- launch 452.5: total 8; frontline 1 / 122; visible enemy 0;
+  forward x 1644.1; progress .6783.
+- first contact 462.7: total 8; frontline 1 / 122; visible enemy 3 / 384;
+  forward x 830.9; progress .8477.
+- structural contact 504.1: total 6; frontline 2 / 250; visible enemy 1 / 128;
+  forward x 739.4; progress .8668.
+- attack exit/rebuild 523.1: total 4; frontline 1 / 128; visible enemy 0;
+  forward x 1403.8; progress .7284.
+
+Conclusion and next heuristic direction
+----------------------------------------
+The primitives clearly explain the stalled/dispersed attacks that global combat
+count concealed. Frontline strength identifies whether apparent army mass has
+arrived together; objective progress distinguishes a shallow exchange from a
+push approaching the defensive line. They are distinct and both should remain
+available to later reusable heuristics.
+
+Recommended next step (NOT IMPLEMENTED): introduce two separate reusable
+heuristic terms before any combined momentum/history system:
+1. relative frontline strength = friendly frontline power versus CURRENTLY
+   visible frontline enemy power; and
+2. objective progress / objective-distance pressure.
+
+Keep them raw and independently weighted by goals only after a separately
+approved behavior pass. Do not introduce engagementMomentum, casualty windows,
+damage ledgers, special-case fallback rules, or threshold tuning yet.
+
+Reproduction
+------------
+node artifacts/hard-frontline-objective-trace.mjs 701 3000 ai
+node artifacts/hard-frontline-objective-trace.mjs 702 3000 ai
+node tools/headless.js --batch --player=hard --enemy=hard --trials=5 --ticks=180000 --seed=701

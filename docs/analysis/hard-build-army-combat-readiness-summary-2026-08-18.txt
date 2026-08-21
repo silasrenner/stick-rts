@@ -1,0 +1,112 @@
+Hard Build Army combat-readiness summary — 2026-08-18
+========================================================
+
+Implemented
+-----------
+Hard's existing Build Army unit-utility weights now prefer feasible combat
+while the existing strategic goal is Build Army (which already means the team
+is below minArmyToAttack).
+
+  Before:
+    recoveryProgress: 0
+    combatEfficiency: 0
+    counterValue: 1.00
+    buildCycleBias: 0.25
+
+  After:
+    recoveryProgress: 1.00
+    combatEfficiency: 0.75
+    counterValue: 1.00
+    buildCycleBias: 0.10
+
+No signal was renamed. recoveryProgress remains the existing binary combat
+signal: warrior/archer = 1 and miner = 0.
+
+Behavior preserved
+------------------
+- Enemy vision, memory duration, composition semantics, and unknown-state
+  boundary are unchanged.
+- No hidden enemy information was restored.
+- Existing counters still choose between warrior and archer when valid enemy
+  composition is available.
+- Feasibility filtering remains authoritative.
+- The build cycle remains a secondary preference.
+- Goals, commands, minArmyToAttack, recovery, zero-miner emergency, build-index
+  advancement, turrets, heroes, queue/cap behavior, economy, combat, Raven, and
+  scouting were not changed.
+
+Deterministic proof
+-------------------
+A new real decision-path fixture uses:
+
+  goal: Build Army
+  force: one miner, zero combat
+  build-cycle slot: miner
+  enemy composition: unknown / {}
+
+It initially failed as intended: the old utility selected miner with a 0.25
+cycle-only score.
+
+It now passes:
+
+  warrior: readiness 1, efficiency 1, total 1.75
+  miner:   readiness 0, cycle-only total 0.10
+  selected: warrior
+
+Focused tests passed for Build Army readiness, valid counter choice, infeasible
+counter fallback, Recover, zero-miner emergency, cap fallback, deterministic
+selection, observability, goal selection, build-index progression, perception
+and memory, team vision, production, turrets, defense, and headless invariants.
+
+Seed 701 result
+---------------
+Both teams reach the existing five-combat threshold without enemy contact much
+earlier:
+
+  player: 232.2s before -> 109.4s after
+  AI:     128.4s before -> 109.7s after
+
+At 120s after the change, both teams are Attack / Attack with 7 miners and 5
+combat units, still with no enemy knowledge.
+
+At 900s, cumulative normal purchases changed from:
+
+  Before:
+    Player: 30 miners, 40 warriors, 19 archers
+    AI:     29 miners, 36 warriors, 26 archers
+
+  After:
+    Player: 21 miners, 58 warriors, 11 archers
+    AI:     19 miners, 34 warriors, 32 archers
+
+Paired liveness cohort: seeds 701–705, Hard versus Hard, 3,000s maximum
+-------------------------------------------------------------------------
+
+  Before: 0 player wins, 0 AI wins, 5 unresolved, 3000.0s mean
+  After:  1 player win, 0 AI wins, 4 unresolved, 2479.3s mean
+
+Seed 705 now resolves with a player win at 396.7s.
+
+Candid outcome
+--------------
+The narrow Build Army change works at its intended seam: it no longer lets an
+unknown enemy composition reduce Build Army to a miner-containing cycle.
+
+It improves liveness but does not restore healthy cohort liveness: 4 of 5
+matches remain unresolved. Per scope, no Attack standing-force maintenance,
+Raven, scouting utility, or additional tuning was added.
+
+The next likely question, requiring separate approval, is whether the existing
+Attack goal needs a narrow friendly-state standing-force maintenance rule.
+
+Browser/LAN note
+----------------
+The earlier browser validation attempt could not connect to Chrome DevTools and
+no interactive desktop application was available. The implementation has
+real deterministic simulation evidence, but no browser gameplay claim has been
+made yet.
+
+Detailed report:
+  docs/analysis/hard-build-army-combat-readiness-validation-2026-08-18.md
+
+No commit, merge, or push was performed.

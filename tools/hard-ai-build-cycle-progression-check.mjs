@@ -62,13 +62,15 @@ function decide(world) {
   if (world.teams[team].buildIndex !== 1) throw new Error(`Expected buildIndex 1 after committed warrior; got ${world.teams[team].buildIndex}.`);
 }
 
-// An infeasible counter is recorded and excluded, but a successful feasible
-// fallback still consumes exactly one production preference position.
+// An infeasible counter is recorded and excluded. Build Army's friendly
+// readiness preference then selects the feasible combat fallback, which still
+// consumes exactly one production preference position.
 {
   const world = createHardWorld();
   addMiner(world, team);
+  world.units.push(createUnit('warrior', team, CONFIG.AI_HOME_X - 700, CONFIG.GROUND_Y));
   for (let i = 0; i < 3; i += 1) {
-    world.units.push(createUnit('warrior', 'player', CONFIG.PLAYER_HOME_X + i * 10, CONFIG.GROUND_Y));
+    world.units.push(createUnit('warrior', 'player', CONFIG.AI_HOME_X - 600 + i * 10, CONFIG.GROUND_Y));
   }
   world.teams[team].gold = CONFIG.UNIT_STATS.warrior.cost;
   world.teams[team].buildIndex = 1; // miner cycle preference
@@ -78,8 +80,8 @@ function decide(world) {
   if (record.selection.counterKind !== 'archer' || archer.feasibility.reason !== 'gold') {
     throw new Error(`Expected recorded infeasible archer counter; got ${JSON.stringify(record.selection)}.`);
   }
-  if (record.selection.candidate?.kind !== 'miner' || !record.selection.result?.ok) {
-    throw new Error(`Expected feasible normal fallback purchase; got ${JSON.stringify(record.selection)}.`);
+  if (record.selection.candidate?.kind !== 'warrior' || !record.selection.result?.ok) {
+    throw new Error(`Expected feasible combat fallback purchase; got ${JSON.stringify(record.selection)}.`);
   }
   if (!record.selection.didBuildIndexAdvance || record.selection.buildIndexBefore !== 1 || record.selection.buildIndexAfter !== 2) {
     throw new Error(`Committed infeasible-counter fallback must advance cycle once; got ${JSON.stringify(record.selection)}.`);

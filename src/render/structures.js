@@ -23,6 +23,18 @@ export function drawStatue(ctx, statue) {
   if (!isDestroyed) drawHealthBar(ctx, statue.x, statue.y - STATUE_HEIGHT - 12, statue.hp, statue.maxHp, 40);
 }
 
+// Enemy base locations remain known outside vision, but this intentionally
+// ignores hp/state so it cannot reveal live core information.
+export function drawKnownBase(ctx, statue) {
+  ctx.save();
+  ctx.fillStyle = '#25252c';
+  ctx.fillRect(statue.x - STATUE_WIDTH / 2, statue.y - STATUE_HEIGHT, STATUE_WIDTH, STATUE_HEIGHT);
+  ctx.strokeStyle = '#60606c';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(statue.x - STATUE_WIDTH / 2, statue.y - STATUE_HEIGHT, STATUE_WIDTH, STATUE_HEIGHT);
+  ctx.restore();
+}
+
 export function drawStructure(ctx, structure) {
   const isDestroyed = structure.state === 'destroyed';
   const alpha = isDestroyed ? Math.max(0, structure.destroyTimer / CONFIG.STRUCTURE_DESTROY_DURATION) : 1;

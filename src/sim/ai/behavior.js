@@ -1,6 +1,6 @@
 import { CONFIG } from '../../config.js';
 import { isAliveEntity } from '../world.js';
-import { buyUnit, buyStructure, buyTurret, buyHero, getPurchaseFeasibility, hasLivingHero } from '../systems/economy.js';
+import { buyUnit, buyStructure, buyTurret, buyHero, buyRaven, getPurchaseFeasibility, hasLivingHero } from '../systems/economy.js';
 import { setTeamCommand } from '../systems/commands.js';
 import { updateAiMemory, isMemoryFresh } from './vision.js';
 import { DIFFICULTIES } from './difficulties.js';
@@ -8,7 +8,9 @@ import { buildAiAssessment } from './assessment.js';
 import { createPurchaseCandidate, createPurchaseCandidates } from './actions.js';
 import { createDecisionRecord } from './decision-log.js';
 import { selectStrategicGoal } from './goals.js';
-import { selectFeasibleUnitPurchase } from './unit-utility.js';
+import { selectFeasibleUnitPurchase, getCheapestFeasibleCombatCost } from './unit-utility.js';
+import { getRavenUtility } from './scouting.js';
+import { getAttackSustainReason, shouldSustainAttack } from './attack-sustain.js';
 
 // Ticks every team's decision timer; when it elapses, that team's
 // behavior tree runs once. A team with no difficulty set (null) is
@@ -35,7 +37,7 @@ export function updateAiDecisions(world, dt) {
 }
 
 function runDecision(world, team, difficulty) {
-  updateAiMemory(world, team, difficulty.globalVision === true);
+  updateAiMemory(world, team, difficulty.memoryStaleness);
 
   // Phase 1 observability is intentionally read-only until each existing
   // purchase/command step executes. It records the legacy decision path;
@@ -52,10 +54,11 @@ function runDecision(world, team, difficulty) {
     candidate,
     feasibility: getPurchaseFeasibility(world, team, candidate),
   }));
-  const unitCandidateStates = candidateStates.filter(({ candidate }) => candidate.action === 'unit');
-  const purchase = pickPurchase(world, team, difficulty, goal, unitCandidateStates);
+  const purchase = pickPurchase(world, team, difficulty, goal, assessment, candidateStates);
   const recordedCandidates = candidateStates.map((candidateState) =>
-    purchase.candidateStates?.find(({ candidate }) => candidate.kind === candidateState.candidate.kind)
+    purchase.candidateStates?.find(({ candidate }) =>
+      candidate.action === candidateState.candidate.action && candidate.kind === candidateState.candidate.kind,
+    )
     ?? candidateState,
   );
 
@@ -73,13 +76,35 @@ function runDecision(world, team, difficulty) {
     turretAttempt,
     heroAttempt,
     command,
+    attackCommitment: describeAttackCommitment(assessment, difficulty, command),
   });
+}
+
+function describeAttackCommitment(assessment, difficulty, command) {
+  const wasAttacking = assessment.command === 'attack';
+  const isAttacking = command === 'attack';
+  const sustainReason = wasAttacking ? getAttackSustainReason(assessment, difficulty) : null;
+  let state = 'not-attacking';
+  if (!wasAttacking && isAttacking) state = 'launched';
+  else if (wasAttacking && isAttacking) state = 'sustained';
+  else if (wasAttacking && !isAttacking) state = 'abandoned';
+  return {
+    state,
+    combatUnits: assessment.combatUnits,
+    attackLaunchCombatUnits: difficulty.attackLaunchCombatUnits,
+    attackSustainCombatUnits: difficulty.attackSustainCombatUnits,
+    forwardSustainObjectiveProgress: difficulty.forwardSustainObjectiveProgress ?? null,
+    forwardSustainFrontlineCombatUnits: difficulty.forwardSustainFrontlineCombatUnits ?? null,
+    sustainReason,
+  };
 }
 
 // Phase 3 preserves the zero-miner emergency, but all other Hard unit
 // purchases select among feasible candidates. The existing counter and cycle
 // remain inputs, not hard overrides.
-function pickPurchase(world, team, difficulty, goal, candidateStates) {
+function pickPurchase(world, team, difficulty, goal, assessment, candidateStates) {
+  const unitCandidateStates = candidateStates.filter(({ candidate }) => candidate.action === 'unit');
+  const ravenCandidateState = candidateStates.find(({ candidate }) => candidate.action === 'raven') ?? null;
   if (getLivingMinerCount(world, team) === 0) {
     return {
       source: 'no-miner',
@@ -115,10 +140,44 @@ function pickPurchase(world, team, difficulty, goal, candidateStates) {
   const utilityDecision = selectFeasibleUnitPurchase({
     goal,
     difficulty: world.teams[team].difficulty,
-    candidateStates,
+    assessment,
+    candidateStates: unitCandidateStates,
     counterKind,
     buildCycleKind,
   });
+
+  // Raven remains a separate temporary action. It is scored only after the
+  // unchanged normal-unit selector has chosen its best legal competitor; ties
+  // deliberately keep that normal purchase. Zero-miner/turret special paths
+  // above cannot be preempted by information spending.
+  const cheapestCombatCost = getCheapestFeasibleCombatCost(unitCandidateStates);
+  const ravenUtility = ravenCandidateState?.feasibility.feasible && difficulty.scouting
+    ? getRavenUtility({ assessment, goal, difficulty, cheapestCombatCost })
+    : null;
+  const normalUtility = utilityDecision.selected?.utility?.weightedTotal ?? -Infinity;
+  const ravenSelected = ravenUtility !== null && ravenUtility.weightedTotal > normalUtility;
+  const scoredRaven = ravenCandidateState ? {
+    ...ravenCandidateState,
+    utility: ravenUtility ? { ...ravenUtility, selected: ravenSelected } : null,
+  } : null;
+  const mergedCandidateStates = [
+    ...utilityDecision.candidateStates,
+    ...(scoredRaven ? [scoredRaven] : []),
+  ];
+
+  if (ravenSelected) {
+    return {
+      source: 'raven-utility',
+      candidate: scoredRaven.candidate,
+      feasibility: scoredRaven.feasibility,
+      utility: scoredRaven.utility,
+      tieBreak: { method: 'highest-utility', contenders: ['raven'] },
+      counterKind,
+      buildIndexBefore,
+      buildCycleKind,
+      candidateStates: mergedCandidateStates,
+    };
+  }
 
   // Phase 3 build-cycle progression is applied only after a successful normal
   // unit commitment. Counter presence remains a scoring input, not a reason to
@@ -132,7 +191,7 @@ function pickPurchase(world, team, difficulty, goal, candidateStates) {
     counterKind,
     buildIndexBefore,
     buildCycleKind,
-    candidateStates: utilityDecision.candidateStates,
+    candidateStates: mergedCandidateStates,
   };
 }
 
@@ -156,8 +215,10 @@ function counterPick(world, team) {
 // population-expansion response outside unit scoring.
 function attemptPurchase(world, team, purchase) {
   if (!purchase.candidate) {
-    const allCapBlocked = purchase.candidateStates?.length > 0
-      && purchase.candidateStates.every(({ feasibility }) => feasibility.reason === 'cap');
+    const allCapBlocked = purchase.candidateStates?.some(({ candidate }) => candidate.action === 'unit')
+      && purchase.candidateStates
+        .filter(({ candidate }) => candidate.action === 'unit')
+        .every(({ feasibility }) => feasibility.reason === 'cap');
     const fallbackCandidate = allCapBlocked ? createPurchaseCandidate('structure') : null;
     const fallbackFeasibility = fallbackCandidate ? getPurchaseFeasibility(world, team, fallbackCandidate) : null;
     const fallback = fallbackCandidate ? {
@@ -181,9 +242,11 @@ function attemptPurchase(world, team, purchase) {
 
   const candidate = purchase.candidate;
   const feasibility = purchase.feasibility ?? getPurchaseFeasibility(world, team, candidate);
-  const result = buyUnit(world, team, candidate.kind);
+  const result = candidate.action === 'raven'
+    ? buyRaven(world, team)
+    : buyUnit(world, team, candidate.kind);
   let fallback = null;
-  if (!result.ok && result.reason === 'cap') {
+  if (candidate.action === 'unit' && !result.ok && result.reason === 'cap') {
     const fallbackCandidate = createPurchaseCandidate('structure');
     const fallbackFeasibility = getPurchaseFeasibility(world, team, fallbackCandidate);
     fallback = {
@@ -265,14 +328,15 @@ function pickCommand(world, team, difficulty, assessment) {
   // meaningful-army threshold is restored.
   if (teamState.command === 'attack' && combatUnits === 0) teamState.recovering = true;
   if (teamState.recovering) {
-    if (combatUnits < difficulty.minArmyToAttack) return 'defend';
+    if (combatUnits < difficulty.attackLaunchCombatUnits) return 'defend';
     teamState.recovering = false;
   }
 
   if (assessment.defense.enemyNearHome) return 'defend';
+  if (teamState.command === 'attack' && shouldSustainAttack(assessment, difficulty)) return 'attack';
   if (assessment.defense.underpowered) return 'defend';
 
-  return combatUnits >= difficulty.minArmyToAttack ? 'attack' : 'defend';
+  return combatUnits >= difficulty.attackLaunchCombatUnits ? 'attack' : 'defend';
 }
 
 function getLivingMinerCount(world, team) {

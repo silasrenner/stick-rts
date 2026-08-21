@@ -1,0 +1,83 @@
+Hard AI frontline-aware Attack sustain pass — 2026-08-20
+=========================================================
+
+Scope
+-----
+Approved behavior-changing sustain pass. It reuses the existing bounded
+frontline/objective assessment. No vision, memory, targeting, movement,
+production feasibility, economy, formation, combat, or new history/momentum
+system was added.
+
+Implementation
+--------------
+New shared decision primitive: src/sim/ai/attack-sustain.js
+
+A team already committed to Attack sustains if either:
+1. It has the existing global sustain force: combatUnits >= 5; OR
+2. It has all of the new forward-pressure evidence:
+   - objective.progress >= 0.65;
+   - frontline.friendlyCombatCount >= 2;
+   - frontline.friendlyPower >= frontline.visibleEnemyPower.
+
+The enemy comparison is deliberately current-vision-only. A remembered mobile
+enemy cannot qualify or block this exception. A lone deep scout/survivor cannot
+hold the team in Attack. New attacks still require the existing launch force of
+8 combat units.
+
+Decision seams changed
+----------------------
+- src/sim/ai/goals.js: committed Attack uses the shared sustain primitive before
+  falling back to Build Army.
+- src/sim/ai/behavior.js: command posture uses the same primitive, preventing
+  goal/command disagreement; latest decision's attackCommitment exposes
+  sustainReason, progress threshold, and minimum forward-frontline count.
+- src/sim/ai/difficulties.js: Hard-only configuration:
+  attackLaunchCombatUnits=8, attackSustainCombatUnits=5,
+  forwardSustainObjectiveProgress=0.65,
+  forwardSustainFrontlineCombatUnits=2.
+
+Focused TDD evidence
+--------------------
+tools/hard-ai-frontline-sustain-check.mjs was first run red against the prior
+behavior. It now passes and proves:
+- one advanced fighter cannot sustain a 4-unit Attack;
+- two advanced friendly frontline fighters at >=0.70 objective progress and
+  current local power parity sustain Attack and report
+  sustainReason='forward-frontline-pressure';
+- low progress does not sustain; and
+- visible local enemy power superiority does not sustain.
+
+Regression evidence
+-------------------
+Final suite passed:
+frontline assessment, frontline sustain, team vision, Hard vision,
+perception/memory, observability, goals, unit utility, army recovery,
+build-cycle, infeasible counter, queue cap, turret scheduling/simulation, and
+defense anchor/spacing. git diff --check passed.
+
+Cohort evidence
+---------------
+Hard-vs-Hard seeds 701-705, 3000-second cap:
+  player wins: 1/5
+  AI wins: 0/5
+  unresolved: 4/5
+  average length: 2806.4s
+
+This equals the documented baseline cohort rather than worsening it.
+Trace runs for seeds 701 and 702 found zero runtime uses of
+'forward-frontline-pressure'. In those unresolved matches, below-global-sustain
+states either had only a lone forward survivor or lacked the configured
+objective/local-parity combination. Therefore the pass is implemented,
+deterministic, and safe against the known cohort, but it has not yet changed
+those two target matches' liveness. The next behavioral iteration should be
+chosen from additional observed cases rather than weakening the minimum mass
+constraint and reintroducing lone-survivor Attack stalls.
+
+Browser/LAN evidence
+--------------------
+The served revision was rendered in headless Chrome at http://127.0.0.1:8811/.
+The captured image artifacts/browser/hard-frontline-sustain-menu.png shows the
+live Stick RTS menu and its Play, Watch AI, Update Log, and Settings controls.
+It proves source loads; it is not claimed as a seed-locked gameplay proof.
+
+No commit, merge, push, or deployment was performed.

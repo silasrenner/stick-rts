@@ -1,19 +1,29 @@
 # HISTORY.md — Stick RTS release ledger
 
-This is a compact index, not default session context. Start with `PLAN.md`; read this file only to identify the relevant release or investigation. Detailed completed-session narratives and original v1/v2 specifications are preserved in [`docs/archive/session-history-legacy.md`](docs/archive/session-history-legacy.md). Search that archive by commit, session label, subsystem, or tool name instead of loading it wholesale.
+This is a compact index, not default session context. Start with `PLAN.md`; read this file only to identify the relevant release or investigation. Detailed completed-session narratives and original v1/v2 specifications are preserved in [`docs/archive/session-history-legacy.md`](docs/archive/session-history-legacy.md).
 
 ## Current boundary
 
-- The active work is local and uncommitted in `agent/hard-ai-liveness-regression`; it is not a release and has not been merged or pushed.
+- The active work is approved local, uncommitted, and unpushed in `agent/team-vision-spectator`.
 - `PLAN.md` is the authoritative current-state and recovery handoff.
-- The original `main` checkout remains the baseline for the active AI worktree.
-- Detailed durable analysis of the local Hard AI work is in [`docs/analysis/hard-ai-feasible-production-build-cycle-2026-08-16.md`](docs/analysis/hard-ai-feasible-production-build-cycle-2026-08-16.md).
+- Merge/push remains a separate owner decision.
+- Durable vision architecture and validation are in [`docs/analysis/team-vision-spectator-foundation-2026-08-16.md`](docs/analysis/team-vision-spectator-foundation-2026-08-16.md).
+- Latest Hard frontline/Attack sustain evidence is in [`docs/analysis/hard-ai-frontline-attack-sustain-2026-08-20.md`](docs/analysis/hard-ai-frontline-attack-sustain-2026-08-20.md).
+- Raven V1 mechanical evidence is in [`docs/analysis/raven-scouting-validation-2026-08-20.md`](docs/analysis/raven-scouting-validation-2026-08-20.md); Hard AI information-value/Raven V0 evidence is in [`docs/analysis/hard-ai-information-value-raven-utility-v0-2026-08-20.md`](docs/analysis/hard-ai-information-value-raven-utility-v0-2026-08-20.md). Owner confirmed the exact-worktree LAN review works in a private/incognito browser tab; normal browser cache may retain stale local-preview ES modules. The liveness issue remains observational and unresolved.
 
-## Local work ledger — pending owner review
+## Local work ledger — owner-approved, pending promotion
 
 | Revision | Date | Scope | Durable evidence / notes |
 |---|---|---|---|
-| `local / uncommitted` | 2026-08-16 | Hard AI Phase 0–3: infeasible-counter liveness regression, read-only assessment/feasibility/logging, explicit goals, feasible V0 normal-unit utility; follow-up build-cycle state-progression correction | Focused checks include `hard-ai-infeasible-counter-check`, `ai-observability-check`, `ai-goal-selection-check`, `hard-ai-unit-utility-check`, and `hard-ai-build-cycle-progression-check`. Repeated deterministic headless and Hard-vs-Hard seed 505 evidence passed. Owner-facing summary: `docs/analysis/hard-ai-build-cycle-correction-validation-summary-2026-08-16.txt`. No merge/push authorization. |
+| `local / approved / uncommitted` | 2026-08-16 | Deterministic simulation-owned team vision; Watch AI Full/Left/Right perspective controls and dim overlay | `tools/team-vision-check.mjs` covers source union, transitions, static/dead sources, independent teams, and perspective visibility. `artifacts/vision-browser-check.mjs` exercised canvas controls and proved identical normalized 300-tick same-seed output for Full/Left/Right. AI perception/combat/economy/production/RNG remained unchanged in this foundation slice. `tools/balance-check.mjs` has the known baseline-equivalent `Archer cooldown failed` result on this branch and `main`. |
+| `local / validated / blocked` | 2026-08-16 | Hard AI team-limited live perception plus controlled mobile/structure memory | Focused perception, decision-path, build-cycle, vision, economy/production, and repeatability checks pass; fresh-browser Full/Left/Right normalized 300s snapshot is identical. Paired seeds 701–705 are a liveness blocker: candidate 5/5 unresolved at 3,000s vs `main` 2/3/0 player/AI/unresolved, mean 835.6s. No tuning/Raven/promotion authorized. Detailed evidence: [`docs/analysis/hard-ai-team-vision-perception-validation-2026-08-16.md`](docs/analysis/hard-ai-team-vision-perception-validation-2026-08-16.md). |
+| `local / validated / blocked` | 2026-08-18 | Narrow Hard Build Army combat-readiness utility | `buildArmy` now gives existing combat progress/efficiency positive friendly-state weight while retaining counter choice and secondary cycle bias. Focused AI/perception/economy/simulation checks pass; seed 701 reaches baseline attacks near 110s without contact. Paired 701–705 improves from 0/0/5 to 1/0/4 player/AI/unresolved, mean 2479.3s; liveness remains blocked. No Raven or further utility expansion authorized. Detailed evidence: [`docs/analysis/hard-build-army-combat-readiness-validation-2026-08-18.md`](docs/analysis/hard-build-army-combat-readiness-validation-2026-08-18.md). |
+| `local / validated / observation-only` | 2026-08-20 | Hard frontline combat-strength and objective-progress assessment | Bounded records now distinguish global combat from actual forward mass and physical objective approach. Friendly state is authoritative; enemy frontline is current-team-vision-only, never stale mobile memory. Symmetry, membership, visibility/memory, empty, determinism, and read-only checks pass. Traces for unresolved seeds 701/702 established the assessment value without changing policy. Evidence: [`docs/analysis/hard-ai-frontline-objective-observability-2026-08-20.md`](docs/analysis/hard-ai-frontline-objective-observability-2026-08-20.md). |
+| `local / validated / safe-but-inactive` | 2026-08-20 | Hard frontline-aware Attack sustain | Committed Attack may sustain below five global combat only with progress >= .65, >=2 friendly frontline units, and current visible local power parity. Focused red→green and full focused regression suite pass. Seeds 701–705 remain baseline-equivalent at 1/0/4, mean 2806.4s; seed 701/702 activation traces contain zero forward-pressure sustains. One-unit relaxation worsened to 0/0/5 and was not retained. No liveness-fix claim or further tuning authorization. Evidence: [`docs/analysis/hard-ai-frontline-attack-sustain-2026-08-20.md`](docs/analysis/hard-ai-frontline-attack-sustain-2026-08-20.md). |
+| `local / validated` | 2026-08-20 | Hard AI Information Value + Raven Purchase Utility V0 | Existing four goals preserved; Raven is a bounded, generic candidate action using only team-visible/current-memory freshness, configuration-driven context and protected-reserve affordability. Focused contracts and browser Full/Left/Right proof pass. Named 701–705 observational cohort is 0/1/4, mean 2644.5s; no liveness-fix claim or seed-target tuning. Owner LAN review from another device succeeded against the exact worktree in an incognito tab; ordinary browser cache can retain stale ES modules, so use cache-busting/private review after source updates. Evidence: [`docs/analysis/hard-ai-information-value-raven-utility-v0-2026-08-20.md`](docs/analysis/hard-ai-information-value-raven-utility-v0-2026-08-20.md), `artifacts/hard-ai-raven-utility-v0-summary-2026-08-20.txt`. |
+| `local / validated` | 2026-08-20 | Raven scouting V1 mechanics | Normal-gold 750g temporary action, not FIFO/cap/combat: prepare → deterministic mirrored flight with generic moving team vision → exact 10s enemy-base reveal → exit/despawn. `tools/raven-scouting-check.mjs` and browser Full/Left/Right proof pass; Raven uses `world.visionSources` with no parallel AI-memory path. Initial V1 intentionally had no AI policy; the later local V0 ledger row adds purchase utility. Evidence: [`docs/analysis/raven-scouting-validation-2026-08-20.md`](docs/analysis/raven-scouting-validation-2026-08-20.md), `artifacts/raven-scouting-summary-2026-08-20.txt`. |
+| `local / validated` | 2026-08-20 | Hard Build → Scout → Adapt → Mass → Attack V1 | Retains the four goals; launch is configurable at 24, normal sustain is 12, friendly-only `armyBuildProgress` is exposed, Build Army Raven timing is smooth/contextual, and observed counter contribution grows through the build. Focused V1 plus retained regressions pass. In 701–710 every first attack launched at 24 and the ten-match cohort resolved 5/5/0; mid-build Raven→reveal→archer adaptation is trace-backed, while opening armies generally reached 24 before the unchanged protected reserve permitted Raven. This is an opportunity-cost finding, not liveness/economy-tuning evidence. Evidence: [`docs/analysis/hard-ai-build-scout-adapt-mass-attack-v1-2026-08-20.md`](docs/analysis/hard-ai-build-scout-adapt-mass-attack-v1-2026-08-20.md), `artifacts/hard-ai-build-scout-adapt-mass-attack-v1-summary-2026-08-20.txt`. |
+| `cf56709` | 2026-08-16 | Hard AI feasible production correction | Merged base for the vision branch. Durable analysis: [`docs/analysis/hard-ai-feasible-production-build-cycle-2026-08-16.md`](docs/analysis/hard-ai-feasible-production-build-cycle-2026-08-16.md). |
 
 ## Release ledger
 
@@ -31,15 +41,17 @@ This is a compact index, not default session context. Start with `PLAN.md`; read
 | Need | Read / search |
 |---|---|
 | Current scope, recovery state, worktree warnings | `PLAN.md` |
-| Local Phase 0–3 Hard utility and build-cycle correction | `docs/analysis/hard-ai-feasible-production-build-cycle-2026-08-16.md` |
+| Team-vision foundation and deferred AI boundary | `docs/analysis/team-vision-spectator-foundation-2026-08-16.md` |
+| Frontline/objective observability | `docs/analysis/hard-ai-frontline-objective-observability-2026-08-20.md` |
+| Frontline-aware Attack sustain activation evidence | `docs/analysis/hard-ai-frontline-attack-sustain-2026-08-20.md` |
+| Hard AI feasible production correction | `docs/analysis/hard-ai-feasible-production-build-cycle-2026-08-16.md` |
 | Hard-vs-Hard outcomes and earlier headless methodology | `docs/analysis/hard-vs-hard-100-games-2026-08-09.md`, then legacy archive if needed |
 | Detailed S5–S10 investigations, browser-cache lessons, balance findings | `docs/archive/session-history-legacy.md` |
-| Original v1/v2 session specifications and stop conditions | `docs/archive/session-history-legacy.md` |
 | File-retention decisions | `docs/retention-cleanup-manifest.md` |
 
 ## Archive policy
 
 - Preserve detailed narratives for reproducibility; do not delete or routinely inject them as context.
 - When a new release is completed, add one concise release-ledger row here and update `PLAN.md` only with the current state.
-- Track owner-reviewed but uncommitted local work in the local-work ledger until it becomes a commit/release or is discarded.
+- Track owner-approved but uncommitted local work in the local-work ledger until it becomes a commit/release or is discarded.
 - Move durable cross-session findings into focused `docs/analysis/` documents. Keep per-session narration in the archive.

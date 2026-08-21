@@ -42,8 +42,18 @@ if (!record) throw new Error('AI decision must retain one bounded explanation re
 if (record.selection.candidate.kind !== 'warrior' || record.selection.source !== 'unit-utility') {
   throw new Error(`Hard utility selection must choose the feasible productive candidate; got ${JSON.stringify(record.selection)}.`);
 }
-if (!record.selection.result.ok || record.selection.utility?.weightedTotal !== 0.25) {
-  throw new Error(`Decision record must expose the executed utility winner; got ${JSON.stringify(record.selection)}.`);
+if (!record.selection.result.ok || record.selection.utility?.weightedTotal !== 1.85
+  || record.selection.utility.recoveryProgress !== 1 || record.selection.utility.combatEfficiency !== 1) {
+  throw new Error(`Decision record must expose the executed Build Army readiness winner; got ${JSON.stringify(record.selection)}.`);
+}
+const recordedMiner = record.candidates.find(({ candidate }) => candidate.action === 'unit' && candidate.kind === 'miner');
+if (!(recordedMiner.utility?.economicNeed > 0)) {
+  throw new Error(`Decision record must explain useful miner economics when the reserve is constrained; got ${JSON.stringify(recordedMiner)}.`);
+}
+if (record.attackCommitment?.attackLaunchCombatUnits !== 8
+  || record.attackCommitment?.attackSustainCombatUnits !== 5
+  || record.attackCommitment?.state !== 'not-attacking') {
+  throw new Error(`Decision record must expose attack thresholds and commitment state; got ${JSON.stringify(record.attackCommitment)}.`);
 }
 const recordedArcher = record.candidates.find(({ candidate }) => candidate.action === 'unit' && candidate.kind === 'archer');
 if (recordedArcher.feasibility.reason !== 'gold' || recordedArcher.utility !== null) {

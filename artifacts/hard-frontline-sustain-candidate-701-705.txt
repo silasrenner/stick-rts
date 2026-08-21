@@ -1,0 +1,9 @@
+AI-vs-AI batch: player=hard vs enemy=hard, 5 trial(s)
+
+  trial 1: undecided wins (3000.0s)
+  trial 2: undecided wins (3000.0s)
+  trial 3: undecided wins (3000.0s)
+  trial 4: undecided wins (3000.0s)
+  trial 5: undecided wins (3000.0s)
+
+player(hard) wins: 0/5  enemy(hard) wins: 0/5  undecided: 5/5  avg length: 3000.0s

@@ -1,0 +1,49 @@
+Stick RTS — Team Vision & Spectator Controls Summary
+
+Status
+- Completed locally; no commit or push.
+- Worktree: C:\Users\simcr\projects\stick-rts-team-vision-spectator
+- Branch: agent/team-vision-spectator
+- LAN preview: http://192.168.0.83:8813/
+
+What changed
+- Added deterministic, simulation-owned team-vision queries in src/sim/vision.js:
+  - getTeamVisionSources(world, team)
+  - isPositionVisibleToTeam(world, team, x, y)
+  - isEntityVisibleToTeam(world, team, entity)
+  - getVisibleEnemyEntities(world, team)
+- Vision is derived from living friendly units, core/statue, turrets, structures, and optional generic world.visionSources descriptors.
+- Generic descriptors allow a future temporary/non-targetable/non-population source (such as Raven) without a redesign.
+- Existing AI perception was intentionally not changed. src/sim/ai/vision.js retains Hard AI’s current global-vision behavior.
+
+Configured vision ranges
+- Miner: 260
+- Warrior: 340
+- Archer: 380
+- Hero: 420
+- Core: 420
+- Turret: 360
+- Structure: 260
+- Spectator fog alpha: 0.42
+
+Spectator modes
+- Watch AI defaults to Full.
+- Full: authoritative battlefield and both telemetry panels.
+- Left: Left/Red units remain visible; unseen Right entities and live telemetry are hidden. Enemy base is retained as a neutral known-location silhouette; dim overlay shows the vision boundary.
+- Right: equivalent Right/Blue perspective.
+- The selected perspective is uiState-only and rendering-only. It does not enter world state, simulation, RNG, AI, targeting, combat, production, economy, movement, or match outcomes.
+
+Validation
+- node tools/team-vision-check.mjs passed.
+  Covers visibility transitions, combined sources, generic temporary descriptors, static/core vision, source death, Left/Right independence, and Full/Left/Right visibility semantics.
+- node artifacts/vision-browser-check.mjs passed.
+  Verified actual canvas control clicks select Full → Left → Right, captured each mode, and confirmed identical same-seed 300-tick normalized simulation output across all three views.
+- Existing focused AI, production, economy, defense, turret, archer, and headless invariant checks passed.
+- git diff --check passed.
+- tools/balance-check.mjs still fails with “Archer cooldown failed” on both this branch and unchanged main; it is the already-documented baseline-equivalent failure.
+
+Review before AI-limited vision
+- Decide whether AI should consume current-only visibility or a controlled memory layer.
+- Decide which structures should provide persistent strategic knowledge.
+- Define expiration and memory semantics for temporary reveals.
+- Raven, scouting, AI perception changes, and combat changes were deliberately not implemented.

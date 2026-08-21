@@ -1,0 +1,350 @@
+Hard AI liveness under team-limited information — diagnostic report
+====================================================================
+
+Scope honored
+-------------
+Diagnosis only. No project-source, strategy, config, balance, goal, utility,
+memory, Raven, commit, merge, or push changes were made. The repository remains
+in its pre-existing dirty local perception-work state. The temporary diagnostic
+harness was kept outside the repository.
+
+Reproduced blocker
+------------------
+The requested fixed-seed cohort was rerun through the real headless simulation:
+
+  Revision                 Seeds    Player wins  AI wins  Unresolved  Mean
+  -----------------------  -------  -----------  -------  ----------  --------
+  Team-limited branch      701–705            0        0           5  3000.0s
+  Unchanged main           701–705            2        3           0   835.6s
+
+Focused perception, goal, utility, and build-cycle checks pass.
+
+Executive diagnosis
+-------------------
+The dominant failure is not that Hard fails to attack before scouting. It does
+reach minArmyToAttack = 5 from friendly state alone and issues attack commands
+before meaningful contact.
+
+The failure is that, once information is unknown or memory expires, Hard's
+buildArmy goal contains no positive combat-development value:
+
+  buildArmy: {
+    recoveryProgress: 0,
+    combatEfficiency: 0,
+    counterValue: 1.00,
+    buildCycleBias: 0.25,
+  }
+
+With no fresh enemy composition:
+
+  * counterKind is null;
+  * counterValue is zero for every candidate;
+  * the only remaining preference is the build-cycle slot;
+  * miner slots therefore still select miners while the army is below the
+    attack threshold or rebuilding.
+
+The old omniscient version had enemy composition continuously from match start.
+That repeatedly supplied counterKind, giving a combat unit counterValue = 1.0
+and overriding miner-oriented portions of the cycle. It therefore assembled
+materially larger combat forces before the first serious engagement.
+
+Under limited vision, Hard attacks with a thin five-unit force, loses enough
+units to fall below five, transitions back to buildArmy/defend, then rebuilds
+using the ordinary miner-containing cycle rather than a combat-readiness
+priority. This repeats. The economic queue remains active, but it converts
+heavily into protected miners and only intermittently into a sustainable
+fighting force.
+
+Decision-chain audit
+--------------------
+Current flow is as intended architecturally:
+
+  authoritative world
+  -> simulation-owned current team vision
+  -> copied visible observation + bounded team memory
+  -> assessment
+  -> strategic goal
+  -> turret side path / feasibility
+  -> unit utility
+  -> committed production
+  -> command
+
+Information boundary
+
+  * updateAiMemory() consumes getVisibleEnemyEntities() only.
+  * Current visible and remembered mobile composition feed estimated enemy
+    power.
+  * Mobile memory lasts six seconds for Hard.
+  * Near-home threat uses current visible enemies only.
+  * No hidden entity references, HP/state tracking, or global composition route
+    remains.
+
+Friendly-state signals already available
+
+Assessment already has all information needed for baseline readiness:
+
+  * living miners, warriors, archers, and heroes;
+  * combatUnits;
+  * friendlyPower;
+  * gold, queue, population/cap;
+  * recovery state;
+  * current command;
+  * minArmyToAttack;
+  * selected strategic goal.
+
+The strategic goal already recognizes the friendly-state threshold:
+
+  * fewer than 5 combat -> buildArmy;
+  * 5 or more combat, absent live threat or relative underpower -> attack;
+  * an attacked force reduced to zero -> recover.
+
+The disconnect is downstream: buildArmy identifies the need correctly but gives
+utility no reason to fulfill it preferentially.
+
+Command behavior
+
+pickCommand() is not blocking pre-contact offense:
+
+  return combatUnits >= difficulty.minArmyToAttack ? 'attack' : 'defend';
+
+It uses friendly combat count. It does not require enemy sighting, enemy power,
+or a counter pick to attack.
+
+Representative seed 701 timeline — team-limited
+------------------------------------------------
+M/W/A means living miners / warriors / archers. C is total combat.
+
+Player
+
+  Time  Goal / command      M/W/A, C       Enemy knowledge
+        Friendly / estimated power          Result
+  ----  ------------------  ------------   -----------------------------
+  30s   Build Army / Defend 3/0/0, 0       none
+        0 / 0                                queueing first warrior
+  60s   Build Army / Defend 5/1/0, 1       none
+        128 / 0                            no counter; cycle controls
+  120s  Build Army / Defend 10/3/0, 3      none
+        384 / 0                            still below five
+  180s  Build Army / Defend 13/1/0, 1      3 remembered warriors
+        128 / 384, underpowered            earlier contact already stale/currently absent
+  240s  Attack / Attack     15/3/2, 5      none
+        628 / 0                            threshold met from own state alone
+  300s  Build Army / Defend 19/3/1, 4      none
+        506 / 0                            post-fight force below five
+  360s  Attack / Attack     21/2/4, 6      1 warrior + 1 archer visible
+        616 / 250                          brief fresh contact/counter opportunity
+  480s  Attack / Attack     23/5/1, 6      none
+        762 / 0                            still thin despite high gold
+  600s  Build Army / Defend 25/2/0, 2      1 remembered archer
+        256 / 122                          rebuild; no Build Army combat value
+  900s  Attack / Attack     28/4/2, 6      none
+        756 / 0                            unresolved; gold 10,798
+
+AI
+
+  Time  Goal / command      M/W/A, C       Enemy knowledge
+        Friendly / estimated power          Result
+  ----  ------------------  ------------   -----------------------------
+  30s   Build Army / Defend 3/0/0, 0       none
+        0 / 0                              same pre-contact path
+  120s  Build Army / Defend 9/4/0, 4       none
+        512 / 0                            one unit short
+  180s  Build Army / Defend 10/1/0, 1      remembered 12 miners, 3 warriors
+        128 / 864, underpowered            contact occurred, then force was lost
+  300s  Attack / Attack     16/5/2, 7      none
+        884 / 0                            attacks without current contact
+  480s  Build Army / Defend 19/4/0, 4      none
+        512 / 0                            threshold loss resets posture
+  600s  Attack / Attack     23/3/2, 5      2 remembered warriors
+        628 / 256                          reaches threshold again
+  900s  Build Army / Defend 29/0/4, 4      none
+        488 / 0                            unresolved; gold 9,561
+
+Seed 701 event facts
+
+  * First combat purchase: approximately 28s for both teams.
+  * First threshold / attack:
+      - Player: 232.2s
+      - AI: 128.4s
+  * First current enemy contact:
+      - Player: 170.4s
+      - AI: 169.7s
+
+Thus the AI is not waiting to scout before attacking. The AI-side attack in
+seed 701 begins about 41 seconds before first contact.
+
+At 900s, cumulative successful normal-unit commitments were:
+
+  Team     Miner purchases  Warrior purchases  Archer purchases  Living M / combat
+  -------  ---------------  -----------------  ----------------  -----------------
+  Player                30                 40                19  28 / 6
+  AI                    29                 36                26  29 / 4
+
+The issue is not an empty queue or failure to spend. Protected miner population
+stays high while repeatedly destroyed combat units are not given a special
+rebuild priority under buildArmy.
+
+Comparison with unchanged main
+------------------------------
+At the same early milestones, unchanged main sees global enemy composition
+despite no visual contact, immediately produces a counter response, and fields
+far more combat.
+
+Seed 701 at 240s:
+
+  Revision       Player living       AI living         Relevant behavior
+  -------------  ------------------  ----------------  -----------------------------
+  Team-limited   Player 15M / 5C     AI 14M / 3C       no fresh composition; cycle-driven
+  Main           Player 14M / 9C     AI 12M / 8C       global composition; counter value favors combat
+
+Main seed 701 resolves at 525.9s. Candidate seed 701 remains active at 3,000s.
+
+Across all five candidate seeds, both sides eventually cross five combat units
+and issue attacks. First attack times are broadly 128–232 seconds, often before
+first contact. Engagements pull their living combat counts below five, after
+which the no-contact buildArmy utility restores miners according to cycle
+position rather than restoring a combat-capable force.
+
+Unknown versus zero semantics
+-----------------------------
+There is no hidden-world leak, but there is an important semantic collapse at
+the strategy boundary.
+
+Correct distinctions already present:
+
+  * lastScoutedAt === null distinguishes never-observed from recently-observed.
+  * isMemoryFresh() returns false when no observation exists.
+  * enemyNearHome correctly requires current visible contact.
+  * underpowered requires estimatedEnemyPower > 0, so unknown enemy power does
+    not incorrectly trigger a relative-power retreat.
+
+Where unknown and zero converge materially:
+
+  * empty or unknown composition produces estimated power 0;
+  * counterPick() gives null for no composition, empty composition, and balanced
+    composition;
+  * null counter gives no counterValue;
+  * under buildArmy, with combat terms set to zero, the build cycle becomes the
+    only live purchase preference.
+
+This is not a bug that falsely claims “enemy power equals zero, therefore
+attack.” Hard already attacks from its own threshold. It is a missing policy
+semantic: “enemy information is unavailable, therefore continue building a
+viable own army.”
+
+Pre-contact strategy assessment
+-------------------------------
+Before reliable enemy contact, Hard currently:
+
+  1. enters buildArmy below five combat units;
+  2. buys combat only when the current build-cycle slot is combat;
+  3. buys miners at miner cycle slots because no counter signal outranks them;
+  4. reaches five combat units in most seed/team cases;
+  5. attacks without needing scouting;
+  6. loses enough units to fall below threshold;
+  7. returns to buildArmy, where the same cycle behavior resumes.
+
+The build cycle can eventually assemble a threshold-sized army, but it does not
+maintain enough combat pressure to survive the repeated threshold-loss loop.
+Miner production is not an absolute production lockout; it is strategically
+inappropriate while buildArmy is active because the utility model has no
+friendly-state military deficit term.
+
+Enemy-dependent vs. baseline behavior
+--------------------------------------
+Legitimately enemy-dependent:
+
+  * counter-unit selection;
+  * estimated enemy power and relative-underpower retreat;
+  * confirmed near-home defense;
+  * hero counter choice;
+  * tactical response to visible composition.
+
+Should not require enemy information:
+
+  * recovering from zero combat;
+  * growing from fewer than minArmyToAttack to a viable army;
+  * maintaining baseline combat readiness after losses;
+  * deciding the army is too thin for sustainable ordinary pressure;
+  * producing a default fighting force before or between sightings.
+
+Smallest recommended change
+---------------------------
+Do not change vision, memory, scouting, counters, attack threshold, economy,
+balance, or build cycle.
+
+In a separately approved strategy scope, add one reusable friendly
+combat-readiness / combat-deficit signal to the existing Hard utility path,
+active when the current goal is buildArmy (and likely shared with recover).
+
+The smallest implementation form is likely to make buildArmy positively value
+combat candidates through the existing utility dimensions, especially the
+existing recoveryProgress and combatEfficiency, instead of adding a special-case
+“blind attack” rule.
+
+Conceptually:
+
+  if own combat units < minArmyToAttack:
+      prefer an affordable combat unit over a miner
+  else:
+      retain current counter/build-cycle behavior
+
+Why this is the smallest clean fix:
+
+  * It uses only authoritative friendly state already present in assessment.
+  * The existing goal selection already encodes the deficit boundary.
+  * It does not need to infer hidden enemy strength.
+  * It preserves counter behavior once enemy composition is actually known.
+  * It corrects the exact point where buildArmy currently becomes cycle-only.
+  * It addresses both first assembly and post-combat rebuilding.
+
+The production value should be named combat-readiness progress, not recovery,
+because buildArmy includes normal pre-contact development as well as literal
+recovery.
+
+Secondary recommendation
+------------------------
+After validating the narrow buildArmy readiness change, inspect whether Hard
+needs a second, small standing-force maintenance condition while nominally in
+attack.
+
+Once it reaches five and switches to attack, current unknown-information
+purchase selection again becomes primarily build-cycle-driven. Test the first
+change alone first; it may be sufficient because combat losses naturally return
+Hard to buildArmy. Do not preemptively add the second rule.
+
+Raven implication
+-----------------
+Raven should improve an already functioning baseline through:
+
+  * earlier and longer composition refresh;
+  * better counter selection;
+  * better relative-power assessment;
+  * better defense response;
+  * more informed attack timing.
+
+Raven should not be required for ordinary military development or for Hard to
+be capable of attacking. The present implementation does not make scouting a
+prerequisite for issuing attacks; it makes scouting disproportionately important
+to production quality because the only non-cycle buildArmy utility signal is a
+composition-derived counter.
+
+Correct the friendly-state baseline first. Raven can then raise decision quality
+rather than act as a mandatory liveness patch.
+
+Evidence commands run
+---------------------
+
+  node tools/headless.js --batch --player=hard --enemy=hard --trials=5 --seed=701
+    Team-limited: 0 player / 0 AI / 5 unresolved, mean 3000.0s
+
+  (unchanged main worktree)
+  node tools/headless.js --batch --player=hard --enemy=hard --trials=5 --seed=701
+    Main: 2 player / 3 AI / 0 unresolved, mean 835.6s
+
+  node tools/ai-perception-memory-check.mjs
+  node tools/ai-goal-selection-check.mjs
+  node tools/hard-ai-unit-utility-check.mjs
+  node tools/hard-ai-build-cycle-progression-check.mjs
+
+All focused checks passed.

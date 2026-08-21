@@ -8,6 +8,7 @@ export function createPurchaseCandidate(action, kind = null) {
 export function createPurchaseCandidates() {
   return [
     ...UNIT_KINDS.map((kind) => createPurchaseCandidate('unit', kind)),
+    createPurchaseCandidate('raven'),
     createPurchaseCandidate('structure'),
     createPurchaseCandidate('turret'),
     ...HERO_KINDS.map((kind) => createPurchaseCandidate('hero', kind)),

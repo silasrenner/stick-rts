@@ -12,6 +12,7 @@ function createHardWorld(seed = 131) {
   world.matchState = 'playing';
   world.teams[team].difficulty = 'hard';
   world.teams[team].decisionTimer = 0;
+  world.teams[team].ravenCooldownTimer = Infinity;
   world.teams[team].gold = 10_000;
   return world;
 }
@@ -41,7 +42,7 @@ function assertSelection(label, record, expectedGoal, expectedKind, expectedSour
   const world = createHardWorld();
   world.teams[team].gold = CONFIG.UNIT_STATS.warrior.cost;
   addUnits(world, 'miner', team, 1, CONFIG.AI_HOME_X);
-  addUnits(world, 'warrior', 'player', 3, CONFIG.PLAYER_HOME_X);
+  addUnits(world, 'warrior', 'player', 3, CONFIG.AI_HOME_X - 100);
   const record = decide(world);
   assertSelection('infeasible counter fallback', record, 'buildArmy', 'warrior');
   const archer = record.candidates.find(({ candidate }) => candidate.action === 'unit' && candidate.kind === 'archer');
@@ -50,23 +51,20 @@ function assertSelection(label, record, expectedGoal, expectedKind, expectedSour
   }
 }
 
-// The old counter relationship remains a stronger input than cycle bias when
-// the counter is legal, across each currently reachable non-Recover goal.
+// Later Build Army preserves the existing counter relationship over cycle bias
+// once a meaningful prepared force exists. Defend/Attack goal boundaries are
+// covered by the dedicated strategic-goal check.
 for (const [label, setup, goal] of [
-  ['Build Army counter', (world) => addUnits(world, 'miner', team, 1, CONFIG.AI_HOME_X), 'buildArmy'],
-  ['Defend counter', (world) => {
+  ['Build Army counter', (world) => {
     addUnits(world, 'miner', team, 1, CONFIG.AI_HOME_X);
-    addUnits(world, 'warrior', team, 5, CONFIG.AI_HOME_X - 40);
-    addUnits(world, 'warrior', 'player', 1, CONFIG.AI_HOME_X - 100);
-  }, 'defend'],
-  ['Attack counter', (world) => {
-    addUnits(world, 'miner', team, 1, CONFIG.AI_HOME_X);
-    addUnits(world, 'warrior', team, 5, CONFIG.AI_HOME_X - 40);
-  }, 'attack'],
+    // Counter influence intentionally grows through the prepared Build Army.
+    addUnits(world, 'warrior', team, 9, CONFIG.AI_HOME_X - 200);
+  }, 'buildArmy'],
 ]) {
   const world = createHardWorld();
   setup(world);
-  addUnits(world, 'warrior', 'player', 3, CONFIG.PLAYER_HOME_X);
+  addUnits(world, 'warrior', team, 3, CONFIG.AI_HOME_X - 700);
+  addUnits(world, 'warrior', 'player', 3, CONFIG.AI_HOME_X - 600);
   assertSelection(label, decide(world), goal, 'archer');
 }
 
@@ -80,6 +78,27 @@ for (const [label, setup, goal] of [
   assertSelection('build-cycle fallback', record, 'buildArmy', 'warrior');
   if (record.selection.utility.buildCycleBias !== 1) throw new Error('Cycle fallback must expose its bias.');
   if (world.teams[team].buildIndex !== 1) throw new Error(`Cycle fallback must advance buildIndex once; got ${world.teams[team].buildIndex}.`);
+}
+
+// Build Army must actively assemble the existing meaningful force from
+// friendly state when no enemy composition is known. A miner cycle slot must
+// remain secondary to feasible combat readiness below minArmyToAttack.
+{
+  const world = createHardWorld();
+  world.teams[team].buildIndex = 1; // Hard cycle slot: miner.
+  addUnits(world, 'miner', team, 1, CONFIG.AI_HOME_X);
+  const record = decide(world);
+  assertSelection('Build Army readiness without enemy knowledge', record, 'buildArmy', 'warrior');
+  const miner = record.candidates.find(({ candidate }) => candidate.action === 'unit' && candidate.kind === 'miner');
+  const warrior = record.candidates.find(({ candidate }) => candidate.action === 'unit' && candidate.kind === 'warrior');
+  const archer = record.candidates.find(({ candidate }) => candidate.action === 'unit' && candidate.kind === 'archer');
+  if (Object.keys(record.observed.enemyMemory.composition).length !== 0) throw new Error('Readiness fixture must have no enemy composition.');
+  if (miner.utility.recoveryProgress !== 0 || warrior.utility.recoveryProgress !== 1 || archer.utility.recoveryProgress !== 1) {
+    throw new Error(`Build Army readiness utility must distinguish combat candidates; got ${JSON.stringify(record.candidates)}.`);
+  }
+  if (!(warrior.utility.weightedTotal > miner.utility.weightedTotal)) {
+    throw new Error(`Feasible combat must outrank a miner Build Army cycle slot; got ${JSON.stringify(record.candidates)}.`);
+  }
 }
 
 // Recover gives each combat unit equal progress, but the cheaper feasible
@@ -118,8 +137,9 @@ for (const [label, setup, goal] of [
   }
 }
 
-// The selector itself must exclude infeasible candidates and use a stable
-// candidate-order tie-break without random draws.
+// The selector itself must exclude infeasible candidates and remain
+// deterministic. Under Build Army, an affordable combat candidate must beat
+// the miner even when the combat candidate is not a cycle/counter preference.
 {
   const candidates = [
     createPurchaseCandidate('unit', 'miner'),
@@ -132,7 +152,46 @@ for (const [label, setup, goal] of [
   const one = selectFeasibleUnitPurchase({ goal: 'buildArmy', difficulty: 'hard', candidateStates: feasibility, counterKind: null, buildCycleKind: null });
   const two = selectFeasibleUnitPurchase({ goal: 'buildArmy', difficulty: 'hard', candidateStates: feasibility, counterKind: null, buildCycleKind: null });
   if (JSON.stringify(one) !== JSON.stringify(two)) throw new Error('Identical utility inputs must select identical records.');
-  if (one.selected.candidate.kind !== 'miner' || one.tieBreak.method !== 'candidate-order') throw new Error(`Stable candidate-order tie-break expected miner; got ${JSON.stringify(one)}.`);
+  if (one.selected.candidate.kind !== 'warrior' || one.tieBreak.method !== 'highest-utility') throw new Error(`Build Army readiness expected warrior utility win; got ${JSON.stringify(one)}.`);
 }
 
-console.log('PASS — Phase 3 feasible unit utility selection covers liveness, legacy counter preference, cycle, recovery, cap, emergency, and determinism.');
+// Attack must reinforce a thin standing force from friendly state rather than
+// letting a miner cycle slot win when no counter information exists.
+{
+  const world = createHardWorld();
+  world.teams[team].command = 'attack';
+  world.teams[team].buildIndex = 1; // Hard cycle slot: miner.
+  addUnits(world, 'miner', team, 1, CONFIG.AI_HOME_X);
+  addUnits(world, 'warrior', team, 12, CONFIG.AI_HOME_X - 40);
+  const record = decide(world);
+  assertSelection('Attack standing-force reinforcement', record, 'attack', 'warrior');
+  const miner = record.candidates.find(({ candidate }) => candidate.kind === 'miner');
+  const warrior = record.candidates.find(({ candidate }) => candidate.kind === 'warrior');
+  if (!(warrior.utility.weightedTotal > miner.utility.weightedTotal)) {
+    throw new Error(`Attack combat must beat miner cycle bias near sustain; got ${JSON.stringify(record.candidates)}.`);
+  }
+}
+
+// A resource-constrained friendly economy retains non-zero miner need, while a
+// large reserve materially suppresses it without changing the zero-miner path.
+{
+  const constrained = createHardWorld();
+  constrained.teams[team].gold = CONFIG.UNIT_STATS.miner.cost;
+  addUnits(constrained, 'miner', team, 1, CONFIG.AI_HOME_X);
+  const constrainedRecord = decide(constrained);
+  const constrainedMiner = constrainedRecord.candidates.find(({ candidate }) => candidate.kind === 'miner');
+  if (!(constrainedMiner.utility.economicNeed > 0)) {
+    throw new Error(`Resource-constrained miner must retain useful economic need; got ${JSON.stringify(constrainedMiner)}.`);
+  }
+
+  const saturated = createHardWorld();
+  saturated.teams[team].buildIndex = 1; // miner cycle slot.
+  addUnits(saturated, 'miner', team, 8, CONFIG.AI_HOME_X);
+  const saturatedRecord = decide(saturated);
+  const saturatedMiner = saturatedRecord.candidates.find(({ candidate }) => candidate.kind === 'miner');
+  if (!(saturatedMiner.utility.economicNeed < constrainedMiner.utility.economicNeed * 0.25)) {
+    throw new Error(`Large reserve must materially reduce miner economic need; got constrained=${constrainedMiner.utility.economicNeed}, saturated=${saturatedMiner.utility.economicNeed}.`);
+  }
+}
+
+console.log('PASS — Phase 3 feasible unit utility selection covers liveness, legacy counter preference, cycle, recovery, cap, emergency, determinism, attack reinforcement, and economic saturation.');

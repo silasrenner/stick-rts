@@ -1,0 +1,169 @@
+Stick RTS — AI team-vision perception and controlled-memory progress summary
+Date: 2026-08-16
+Worktree: C:\Users\simcr\projects\stick-rts-team-vision-spectator
+Branch: agent/team-vision-spectator
+Status: Local, uncommitted, unmerged, unpushed. Implementation is partial: core perception/memory and focused tests are complete; final behavioral/browser validation and durable final documentation remain incomplete.
+
+AUDIT FINDINGS
+
+Hard AI omniscience entered through more than src/sim/ai/vision.js:
+- src/sim/ai/behavior.js passed difficulty.globalVision to AI memory updates.
+- src/sim/ai/difficulties.js enabled globalVision for Hard.
+- src/sim/ai/vision.js directly scanned authoritative world.units and allowed a global-vision branch.
+- src/sim/ai/assessment.js directly scanned world.units for enemyNearHome.
+- Counter selection and hero counter selection consumed world.aiMemory[team].composition.
+
+No other AI-only direct authoritative enemy-world reads were found in src/sim/ai after the focused audit.
+
+IMPLEMENTED FILES
+
+Core:
+- src/sim/ai/vision.js
+- src/sim/ai/assessment.js
+- src/sim/ai/behavior.js
+- src/sim/ai/difficulties.js
+
+Tests:
+- Added tools/ai-perception-memory-check.mjs
+- Updated tools/hard-vision-check.mjs
+- Updated visibility setup in tools/ai-goal-selection-check.mjs
+- Updated visibility setup in tools/hard-ai-unit-utility-check.mjs
+- Updated visibility setup in tools/hard-ai-build-cycle-progression-check.mjs
+- Updated visibility setup in tools/hard-ai-infeasible-counter-check.mjs
+
+Planning:
+- PLAN.md records the approved local-only AI perception/memory scope, exclusions, and evidence gates.
+
+LIVE PERCEPTION MODEL
+
+At each AI decision:
+
+  authoritative world
+    -> src/sim/vision.js getVisibleEnemyEntities(world, team)
+    -> current visible snapshots + controlled memory update
+    -> buildAiAssessment(...)
+    -> unchanged goals / utility / commands / production
+
+Hard no longer has globalVision: true. The AI-local CONFIG.AI_SIGHT_RANGE approximation is no longer used by the AI subsystem for enemy knowledge.
+
+The shared simulation-owned vision query is the same current-visibility source used by Left/Right spectator presentation.
+
+MOBILE MEMORY
+
+Visible mobile-enemy snapshots include:
+- id
+- kind
+- team
+- x/y
+- hp/maxHp
+- state
+- type/hero flags
+- lastSeenAt
+
+On loss of vision:
+- The last visible snapshot is retained.
+- Hidden authoritative position, HP, state, direction/facing, and death are not refreshed.
+- Remembered mobile units contribute to composition only while fresh.
+
+Expiration reuses existing difficulty.memoryStaleness:
+- Hard: 6 simulated seconds
+- Medium: 15 simulated seconds
+- Easy: 0 simulated seconds
+
+Validity rule:
+  currentTime - lastSeenAt <= difficulty.memoryStaleness
+
+Expired mobile observations are removed and stop contributing to composition and enemy-power estimates.
+
+STRUCTURE AND BASE MEMORY
+
+- Observed enemy structures, including turrets, persist in rememberedEnemyStructures.
+- Hidden changing status remains frozen at the last observed snapshot.
+- Re-observation refreshes the structure snapshot.
+- Enemy core/base location remains known from match start using configured home coordinates.
+- The known base record does not expose hidden live HP/state.
+
+COMPOSITION / COUNTERS / THREAT / POWER
+
+- Existing counter relationships and utility logic are unchanged.
+- Composition now derives from currently visible mobile enemies plus unexpired remembered mobile observations.
+- Structures and the base do not contribute to mobile composition.
+- enemyNearHome now uses only currentlyVisibleEnemies; memory cannot impersonate confirmed current tactical threat.
+- estimatedEnemyPower retains its existing formula but now uses visibility/memory-derived composition.
+- friendlyPower remains fully authoritative for the AI's own team.
+
+DECISION EXPLAINABILITY
+
+The bounded assessment/decision record now exposes:
+- composition
+- currentVisibleComposition
+- rememberedComposition
+- currentlyVisibleEnemies
+- rememberedEnemies
+- rememberedStructures
+- knownEnemyBase
+- lastScoutedAt
+- lastSeenAt and memoryAge per exposed observation
+
+This supports explaining decisions that look wrong from Full spectator mode but are rational from that team’s actual knowledge.
+
+PASSED FOCUSED VALIDATION
+
+The following combined run passed:
+
+  git diff --check
+  node tools/ai-perception-memory-check.mjs
+  node tools/hard-vision-check.mjs
+  node tools/team-vision-check.mjs
+  node tools/ai-observability-check.mjs
+  node tools/ai-goal-selection-check.mjs
+  node tools/hard-ai-unit-utility-check.mjs
+  node tools/hard-ai-build-cycle-progression-check.mjs
+  node tools/hard-ai-infeasible-counter-check.mjs
+  node tools/hard-army-recovery-check.mjs
+  node tools/hard-turret-schedule-check.mjs
+  node tools/production-queue-cap-check.mjs
+
+The new focused test covers:
+- hidden enemies excluded from live composition;
+- visible enemy live snapshots;
+- frozen last-known mobile position/HP/state after leaving vision;
+- remembered mobile composition contribution;
+- expiry and composition removal;
+- persistent observed structures;
+- hidden-structure status freezing;
+- known base location;
+- re-entry refresh;
+- no confirmed hidden near-home threat;
+- no expired hidden enemy-power contribution;
+- independent Left/Right AI knowledge.
+
+PRESERVED INVARIANTS
+
+- Build index progression remains unchanged: it advances only after a successful committed normal-unit purchase.
+- Existing goal, feasibility, utility, production, command, economy, recovery, turret scheduling, and queue-cap focused checks passed.
+- No Raven, scouting-value, information-value, combat/economic heuristic, balance, hero/turret, command, or production-policy tuning was introduced.
+
+RAVEN COMPATIBILITY
+
+A future Raven can use the existing generic temporary world.visionSources descriptor:
+
+  Raven vision source appears
+  -> getVisibleEnemyEntities returns revealed enemies
+  -> normal AI snapshots refresh
+  -> Raven vision ends
+  -> current visibility disappears
+  -> normal mobile/structure memory rules continue
+
+No Raven-specific memory path is needed.
+
+INCOMPLETE FINAL GATES
+
+The following were not completed before tool access was stopped:
+- Fixed-seed before/after Hard-vs-Hard behavioral comparison.
+- Browser/LAN validation of this AI-perception pass and visible decision-memory evidence.
+- Repeated same-seed full-match deterministic comparison.
+- Final HISTORY.md and focused docs/analysis report for this phase.
+- Full remaining regression sweep and baseline-equivalent balance-check comparison.
+
+No commit, merge, push, or deployment was performed.

@@ -1,0 +1,264 @@
+Hard AI engagement/liveness diagnostic — 2026-08-19
+=====================================================
+
+Scope
+-----
+Diagnosis only. No strategy, utility, threshold, targeting, formation, vision,
+memory, economy, combat, Raven, commit, merge, or push changes were made.
+
+Repository reviewed
+-------------------
+- PLAN.md and HISTORY.md
+- Prior team-limited liveness, Build Army readiness, and attack
+  hysteresis/reinforcement/economic-saturation reports
+- Current Hard AI assessment, goal, behavior, utility, decision-record,
+  world, command, formation, movement, combat, and targeting paths
+
+Validation rerun
+----------------
+Real headless Hard-vs-Hard, seeds 701–705, 3,000-second cap:
+
+  Player wins: 1
+  AI wins:     0
+  Unresolved:  4
+  Mean:        2806.4s
+
+Full-world diagnostic traces were run for unresolved seeds 701 and 702 while
+noting the actual AI uses its team-limited perception/memory boundary. Raw
+external diagnostic trace:
+
+  C:\Users\simcr\AppData\Local\Temp\stick-engagement-701-702.json
+
+Executive diagnosis
+--------------------
+An 8-unit launch is enough to start combat, but not enough to establish durable
+local superiority at the defensive line.
+
+The repeated pattern is:
+
+  1. Both sides launch with about eight combat units.
+  2. They make contact, normally targeting combat units rather than turrets
+     or the core.
+  3. Attrition quickly reduces the attacker below five combat units.
+  4. Reinforcements exist, but arrive in small, discontinuous packets rather
+     than as one battlefield mass.
+  5. Attack exits based primarily on global living combat-unit count.
+  6. The remaining forward force receives Defend and is redirected to the
+     home-side formation.
+  7. The defender reforms under turret advantage while the attacker rebuilds
+     from four to eight.
+  8. The same loop repeats.
+
+This is no longer primarily a miner-production or first-army problem. Current
+production creates armies and continued combat purchases. The missing strategic
+information is whether the current engagement is producing a favorable,
+progressing frontline, rather than whether the team owns five combat units
+anywhere on the map.
+
+Representative engagement trace — seed 701, AI cycle
+-----------------------------------------------------
+
+  Launch, 483.1s
+    AI: 8 combat; Build Army -> Attack; defend -> attack.
+    Player: 8 combat and attacking.
+
+  First contact, 483.7s
+    AI has five units actively targeting enemy combat units. The first target
+    class is combat, not structures.
+
+  Attrition / reinforcement, 485–523s
+    AI briefly has 8–10 living combat units, but its active local engagement
+    repeatedly falls to zero and restarts in smaller groups. Player drops to
+    2–3 combat and has Build Army / Defend.
+
+  Turret pressure, 530.8–539.3s
+    AI has nine total combat units, but only one reaches a turret at first.
+    Later only two units strike turrets. AI deals 96 turret HP; no core damage.
+
+  Exit, 542.5s
+    AI reaches four combat units and transitions:
+
+      Attack -> Build Army
+      attack -> defend
+
+    The forward survivors are around x=1353, but are redirected to defensive
+    formation. Player is at two combat units, defending near home.
+
+Structural progress
+-------------------
+The observed attacks are mostly unit trades, with rare shallow turret damage.
+
+- Early cycles in both seeds show zero turret/core damage.
+- Seed 701: AI's fourth cycle dealt 96 turret HP; later cycles produced only
+  sporadic small turret hits.
+- Seed 702: structural contact was still rarer: one player cycle dealt 32
+  turret HP and one late AI cycle dealt 48.
+- Both cores remained at 2,000 / 2,000 HP after 3,000 seconds in both
+  unresolved diagnostic matches.
+
+Targeting is not prematurely choosing the core. supply.js intentionally
+prioritizes the starting turret, then combat units, miners, structures, then
+the statue/core. The issue is that local victories rarely leave enough grouped
+force to capitalize before the strategic sustain condition ends the push.
+
+Reinforcement behavior
+----------------------
+Production is occurring, but it is not reliably converted into battlefield mass.
+
+In seed 701's representative AI attack:
+
+- Launch began at 8 combat.
+- AI briefly reached 10 total combat units during the attack.
+- Active contact repeatedly collapsed to zero before restarting.
+- At nine total combat, only one unit was at a turret.
+- During turret damage, only two units were striking it.
+
+Total friendly combat therefore does not represent combat mass at the actual
+frontline. Attack movement sends units toward enemy home independently; target
+acquisition fragments them around contacts. Formation naturally regroups only
+when Defend is active. The Attack-to-Defend transition redirects all survivors
+home through commands.js and formation.js.
+
+Attack transition analysis
+--------------------------
+For the representative seed-701 AI cycle, the decisive transition was the
+sustain boundary:
+
+  combat units: 4
+  sustain threshold: 5
+  command: attack -> defend
+  goal: attack -> Build Army
+
+Relevant current paths:
+
+- behavior.js: pickCommand() sustains only at combat >= attackSustainCombatUnits
+  and otherwise launches only at combat >= attackLaunchCombatUnits.
+- goals.js likewise returns Build Army once a committed attack is below sustain.
+- commands.js applies the new command to every living unit.
+- formation.js changes their objective from enemy-home attack formation to the
+  home-side defensive line.
+
+Hysteresis is functioning as configured. The problem is not oscillation at
+8/7/6 combat. It is that hysteresis is based on an incomplete signal: global
+headcount. Some exits may also be defensive overrides; a seed-702 player attack
+exited at five due to such a higher-priority condition. The dominant pattern is
+nonetheless post-attrition exit at four combat.
+
+Defender interaction
+--------------------
+Defender behavior materially creates the stalemate but is not, by itself, a
+separate defender-policy defect.
+
+Once the attacker drops below sustain, the attacker resets while the defender:
+
+- already occupies or approaches its turret-side line,
+- has a shorter reinforcement route,
+- retains turret advantage, and
+- faces no continuing pressure from the surviving attacker.
+
+This produces the stable loop:
+
+  local attacker mass declines
+  -> global attacker count falls below five
+  -> attacker resets
+  -> defender retains/reforms home-line position
+  -> next eight-unit attack meets a reset defense
+
+Available signals and their limitation
+---------------------------------------
+Current assessment already provides:
+
+- friendlyPower
+- estimatedEnemyPower
+- living composition
+- current visible and remembered enemy composition
+- enemyNearHome
+- recovery state
+- command and strategic goal
+
+However:
+
+- friendlyPower is global friendly power, not frontline/engaged power;
+- estimatedEnemyPower comes from visible/remembered composition, not a current
+  local force;
+- mobile memory is intentionally short-lived and cannot become false certainty;
+- no bounded data records recent confirmed casualties, current engagement
+  participation, forward mass, target class, or objective damage.
+
+Global relativeCombatStrength alone is therefore not sufficient. In the seed-701
+cycle, AI had 8–10 total combat units while only one or two had reached the
+turret.
+
+Recommended missing reusable heuristic
+---------------------------------------
+Recommend one new reusable assessment primitive: engagementMomentum.
+
+This should be a bounded, team-owned snapshot, not a procedural rule such as
+"if attack fails twice". Minimum raw representation:
+
+  recentContactAt
+  friendlyCombatLossesInWindow
+  confirmedEnemyCombatLossesInWindow
+  friendlyCombatCurrentlyEngaged
+  visibleEnemyCombatAtEngagement
+  forwardMostFriendlyPosition / objective-distance progress
+  confirmedObjectiveDamageInWindow
+
+Information boundary:
+
+- Friendly losses are authoritative friendly-state facts.
+- Enemy losses must be counted only when confirmed through current team
+  engagement/visibility.
+- Local enemy force must use current team vision.
+- Forward position is friendly state.
+- Damage to a visible/attacked turret, structure, or core may be recorded as a
+  known combat outcome, not read from hidden world state.
+
+A later heuristic can derive a normalized outcome such as:
+
+  engagementMomentum =
+      recent confirmed enemy attrition
+    + confirmed objective progress
+    - recent friendly attrition
+    - lack of engaged friendly mass at the frontline
+
+No weights or behavior should be selected in this diagnostic scope.
+
+Why this is the next smallest general addition
+-----------------------------------------------
+It measures the actual battlefield outcome, rather than counting previous policy
+outcomes. It can later inform:
+
+- Attack: reinforce, hold, regroup, sustain, or abandon based on productive
+  current pressure.
+- Defend: distinguish stabilizing defense from a collapsing local front.
+- Recover: prioritize rebuilding while recent exchange remains negative.
+- Future Raven/scouting: improve confidence in local force estimates without
+  changing team-limited perception.
+
+It preserves the intended architecture:
+
+  team perception / team-known events
+  -> assessment: engagement snapshot
+  -> goals and candidate utilities weight it
+  -> feasibility remains unchanged
+  -> deterministic selection/execution remains unchanged
+
+Recommended next implementation scope — not implemented
+--------------------------------------------------------
+
+1. Add a bounded, team-owned engagement ledger outside tactical movement and
+   targeting behavior.
+2. Extend buildAiAssessment() and the latest decision record with recent own/
+   confirmed-enemy losses, active friendly count, visible local enemy count,
+   frontier/objective-distance delta, and confirmed structural/core damage
+   since recent contact.
+3. Add deterministic seam tests proving no hidden enemy information enters the
+   ledger, values reset/expire predictably after disengagement, and the same
+   seed remains behavior-identical while the fields are observational only.
+4. Rerun seeds 701–705 and compare traces before authorizing any utility or
+   strategic-goal weighting change.
+
+Do not tune launch/sustain thresholds first. The current 8/5 hysteresis behaves
+as configured, but cannot distinguish dispersed reinforcements and two units at
+a turret from a concentrated, advancing frontline.

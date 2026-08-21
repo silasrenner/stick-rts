@@ -1,0 +1,75 @@
+Hard AI strategy pass summary — 2026-08-19
+==============================================
+
+Worktree: C:\Users\simcr\projects\stick-rts-team-vision-spectator
+Branch: agent/team-vision-spectator
+Status: local-only, uncommitted, unpushed
+
+Implemented
+-----------
+1. Configurable attack hysteresis
+   - Launch: 8 combat units
+   - Sustain: 5 combat units
+   - New armies must reach 8 before attacking.
+   - An established attack stays committed at 5+ combat; below 5 it rebuilds.
+   - Confirmed near-home threats remain defensive overrides.
+
+2. Attack standing-force reinforcement
+   - Attack utility now positively values combat production.
+   - Existing counter value still chooses warrior vs archer when valid visible/
+     remembered enemy composition exists.
+   - Build-cycle preference remains secondary.
+
+3. Miner diminishing returns
+   Miner-only economic need:
+     reserveTarget = cheapest representative combat cost * 3
+     reserveNeed = clamp((reserveTarget - gold) / reserveTarget, 0, 1)
+     workforceNeed = max(0.25, 1 - miners / 8)
+     economicNeed = reserveNeed * workforceNeed
+   This is friendly-state only and not a miner cap. Zero-miner emergency remains.
+
+Validation
+----------
+Focused tests passed for launch/sustain boundaries, Attack reinforcement,
+economic saturation, zero-miner emergency, counters, determinism, recovery,
+feasibility, build-index progression, vision/memory, queue, turret, defense,
+and headless invariants.
+
+Known baseline-equivalent failure:
+  node tools/balance-check.mjs -> Archer cooldown failed
+
+Hard-vs-Hard cohort, seeds 701-705, 3000-second cap
+-----------------------------------------------------
+Immediate pre-change: player wins 1, AI wins 0, unresolved 4, mean 2479.3s
+Candidate:            player wins 1, AI wins 0, unresolved 4, mean 2806.4s
+
+Seed 701 candidate
+------------------
+First Attack:
+  Player: 144.7s at 8 combat
+  AI:     148.9s at 8 combat
+
+Milestones (miners/combat):
+  60s:  Player 4/2, AI 4/2
+  120s: Player 6/5, AI 6/5
+  240s: Player 7/8, AI 7/6
+  300s: Player 8/6, AI 7/9
+  600s: Player 8/7, AI 7/6
+
+Cumulative purchases through 900s:
+  Player: 8 miners, 51 warriors, 22 archers
+  AI:     7 miners, 66 warriors, 10 archers
+
+Remaining weakness / stop boundary
+----------------------------------
+This pass successfully produces larger launch armies, Attack reinforcement,
+and sharply reduced miner growth. It does not improve cohort liveness: forces
+can still fall below sustain, rebuild to 8, and repeat. Raven, scouting,
+broader economic strategy, and further combat tuning were not implemented.
+
+Detailed report:
+  docs/analysis/hard-attack-hysteresis-economic-saturation-validation-2026-08-19.md
+Raw artifacts:
+  artifacts/hard-strategy-baseline-701-705.txt
+  artifacts/hard-strategy-candidate-701-705.txt
+  artifacts/hard-strategy-candidate-seed-701.json

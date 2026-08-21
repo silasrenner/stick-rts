@@ -1,5 +1,5 @@
 import { CONFIG } from '../../config.js';
-import { isAliveEntity } from '../world.js';
+import { createRaven, isAliveEntity } from '../world.js';
 import { getCap, livingStructures, livingTurrets } from './supply.js';
 
 export function canAfford(world, team, cost) { return world.teams[team].gold >= cost; }
@@ -70,6 +70,15 @@ export function getPurchaseFeasibility(world, team, candidate) {
     return feasible();
   }
 
+  // Raven is deliberately outside the FIFO/cap architecture: it is a
+  // temporary scouting action, not a produced combat/population entity.
+  if (action === 'raven') {
+    if (world.ravens.some((raven) => raven.team === team)) return infeasible('ravenActive');
+    if (world.teams[team].ravenCooldownTimer > 0) return infeasible('ravenCooldown');
+    if (!canAfford(world, team, CONFIG.RAVEN.cost)) return infeasible('gold');
+    return feasible();
+  }
+
   return infeasible('invalidAction');
 }
 
@@ -106,5 +115,14 @@ export function buyStructure(world, team) {
   if (!feasibility.feasible) return purchaseResult(feasibility);
   spend(world, team, CONFIG.STRUCTURE_COST);
   enqueue(world, team, 'structure', null);
+  return { ok: true };
+}
+
+export function buyRaven(world, team) {
+  const feasibility = getPurchaseFeasibility(world, team, { action: 'raven' });
+  if (!feasibility.feasible) return purchaseResult(feasibility);
+  spend(world, team, CONFIG.RAVEN.cost);
+  world.teams[team].ravenCooldownTimer = CONFIG.RAVEN.cooldown;
+  world.ravens.push(createRaven(team));
   return { ok: true };
 }

@@ -1,0 +1,127 @@
+Raven scouting V1 — local work summary
+Date: 2026-08-20
+Worktree: C:\Users\simcr\projects\stick-rts-team-vision-spectator
+Branch: agent/team-vision-spectator
+Base: cf56709
+Remote status: local-only, uncommitted, unmerged, unpushed
+
+What changed
+============
+
+Simulation:
+  src/config.js
+    Added CONFIG.RAVEN initial V1 values.
+  src/sim/world.js
+    Added non-combat world.ravens records and per-team Raven cooldown state.
+  src/sim/systems/economy.js
+    Added normal-gold Raven feasibility/purchase path.
+  src/sim/systems/raven.js
+    Added deterministic prepare → fly → reveal → exit → removal lifecycle and generic vision-source projection.
+  src/sim/tick.js
+    Updates Raven before AI decisions.
+
+Presentation / controls:
+  src/main.js
+    Added player Raven purchase route and narrow local __buyRaven(team) browser hook.
+  src/render/ui.js
+    Added Raven button, glyph, affordability/active/cooldown text.
+  src/render/renderer.js
+    Draws a high-altitude team-colored Raven/REVEAL silhouette under Full/Left/Right perspective rules.
+
+Test / browser artifacts:
+  tools/raven-scouting-check.mjs
+  artifacts/raven-browser-check.mjs
+  artifacts/raven-browser/*.png
+  docs/analysis/raven-scouting-validation-2026-08-20.md
+
+Lifecycle
+=========
+
+Purchase → preparing (2s) → flying home-to-enemy-base with moving vision → 10s enemy-base reveal → exiting → despawn.
+
+Configured V1 values
+====================
+
+  Cost: 750g
+  Preparation: 2s
+  Movement speed: 560 px/s
+  Moving vision radius: 300 px
+  Enemy-base reveal radius: 800 px
+  Reveal duration: 10 simulated seconds
+  Cooldown: 45s
+  Exit: 700 px/s for 350 px
+
+Economy / production integration
+================================
+
+Raven uses the ordinary economy legality and spending seam: it requires real gold and adds exactly its cost to goldSpent. It uses a separate temporary-action/cooldown slot, not the FIFO production queue. This is intentionally the smallest clean seam because Raven is not an army unit or structure: it does not consume queue capacity, population, or combat-production time, and cannot alter Hard buildIndex progression.
+
+Vision and AI memory
+====================
+
+Raven writes only generic temporary descriptors into world.visionSources. Existing team-vision queries, Full/Left/Right spectator visibility, AI current observations, mobile memory expiry, and persistent observed-structure memory consume those descriptors normally. No Raven-specific visible-enemy, memory, composition, or AI information path was added.
+
+UI / spectator interaction
+==========================
+
+Player mode has a Raven button that shows 750g, Need more gold, Raven active, or Raven cooling. In Watch AI, Full/Left/Right remain available; browser validation uses the local debug hook to trigger deterministic player-side and AI-side Raven scenarios without teaching Hard AI to buy Raven.
+
+Focused validation
+==================
+
+Passed:
+  node tools/raven-scouting-check.mjs
+  node tools/team-vision-check.mjs
+  node tools/ai-perception-memory-check.mjs
+  Existing Hard AI goal/utility/build-cycle/recovery/frontline checks
+  Existing queue/cap/turret/defense/headless checks
+  node artifacts/raven-browser-check.mjs
+  git diff --check
+
+Raven check covers cost, affordability, active/cooldown blocking, non-population/non-combat isolation, mirrored direction, moving vision, hidden/outside cases, reveal start/duration/expiry, simultaneous source cleanup, AI current observation/memory behavior, structure-memory behavior, clean despawn, UI state, and same-seed determinism.
+
+Browser / spectator proof
+=========================
+
+Passed browser result:
+  Full == Left == Right normalized fixed-seed Raven snapshot
+  player Raven in-flight at 5s
+  player Raven reveal at 12s, generic reveal radius 800
+  no Raven sources after reveal expiry
+  Right Raven direction -1 and reveal radius 800
+  actual canvas control clicks selected Left and Right
+
+Screenshots:
+  artifacts/raven-browser/player-inflight-full.png
+  artifacts/raven-browser/player-inflight-left.png
+  artifacts/raven-browser/player-inflight-right.png
+  artifacts/raven-browser/player-reveal-left.png
+  artifacts/raven-browser/player-post-reveal-left.png
+  artifacts/raven-browser/ai-inflight-right.png
+  artifacts/raven-browser/ai-reveal-right.png
+
+Architecture conclusion
+=======================
+
+The existing generic world.visionSources architecture was sufficient. Raven required no substantial special-case visibility logic: only lifecycle state projected into generic source descriptors. This validates the intended source → team visibility → spectator / AI observation / controlled memory architecture.
+
+Known unresolved issue before AI scouting logic
+===============================================
+
+The documented non-omniscient Hard-AI strategic liveness blocker remains unresolved: the latest named seeds 701–705 stay 1 player win / 0 AI wins / 4 unresolved. Raven V1 does not address it because Hard AI does not buy Raven, and this pass deliberately adds no scouting-value utility, goal, or heuristic.
+
+Existing baseline-equivalent failures retained:
+  node tools/balance-check.mjs: Archer cooldown failed
+  node tools/starting-turret-check.mjs: Starting turret must not consume player population
+
+LAN review server
+=================
+
+Exact worktree server is running at:
+  http://192.168.0.83:8811/
+
+Provenance:
+  Python http.server listener bound to 0.0.0.0:8811 from this worktree.
+  Raven source marker (updateRavens) fetched successfully through both loopback and the LAN address.
+
+No commit, merge, push, or production deployment was performed.
