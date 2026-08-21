@@ -4,14 +4,14 @@ This is a compact index, not default session context. Start with `PLAN.md`; read
 
 ## Current boundary
 
-- The active work is approved local, uncommitted, and unpushed in `agent/team-vision-spectator`.
-- `PLAN.md` is the authoritative current-state and recovery handoff.
-- Merge/push remains a separate owner decision.
+- The Team Vision → Raven → Frontline → Build/Scout/Adapt/Mass/Attack V1 work was owner-approved, fast-forwarded to local `main`, and pushed to `origin/main` on 2026-08-20 in `2d05003`.
+- `PLAN.md` is the authoritative current-state and recovery handoff; no next implementation scope is active.
+- The former `agent/team-vision-spectator` worktree retains only generated local browser/raw diagnostic evidence that was intentionally excluded from the repository; its source changes are integrated.
 - Durable vision architecture and validation are in [`docs/analysis/team-vision-spectator-foundation-2026-08-16.md`](docs/analysis/team-vision-spectator-foundation-2026-08-16.md).
 - Latest Hard frontline/Attack sustain evidence is in [`docs/analysis/hard-ai-frontline-attack-sustain-2026-08-20.md`](docs/analysis/hard-ai-frontline-attack-sustain-2026-08-20.md).
-- Raven V1 mechanical evidence is in [`docs/analysis/raven-scouting-validation-2026-08-20.md`](docs/analysis/raven-scouting-validation-2026-08-20.md); Hard AI information-value/Raven V0 evidence is in [`docs/analysis/hard-ai-information-value-raven-utility-v0-2026-08-20.md`](docs/analysis/hard-ai-information-value-raven-utility-v0-2026-08-20.md). Owner confirmed the exact-worktree LAN review works in a private/incognito browser tab; normal browser cache may retain stale local-preview ES modules. The liveness issue remains observational and unresolved.
+- Raven V1 mechanical evidence is in [`docs/analysis/raven-scouting-validation-2026-08-20.md`](docs/analysis/raven-scouting-validation-2026-08-20.md); Hard AI information-value/Raven V0 evidence is in [`docs/analysis/hard-ai-information-value-raven-utility-v0-2026-08-20.md`](docs/analysis/hard-ai-information-value-raven-utility-v0-2026-08-20.md). The current LAN review build may require a private/incognito tab or cache-busting URL because browsers can retain stale ES modules.
 
-## Local work ledger — owner-approved, pending promotion
+## Integrated scope ledger — included in `2d05003`
 
 | Revision | Date | Scope | Durable evidence / notes |
 |---|---|---|---|
@@ -29,6 +29,7 @@ This is a compact index, not default session context. Start with `PLAN.md`; read
 
 | Commit | Date | Scope | Durable evidence / notes |
 |---|---|---|---|
+| `2d05003` | 2026-08-20 | Team vision, controlled Hard perception/memory, Raven V1 + V0 utility, frontline assessment/sustain, and Build → Scout → Adapt → Mass → Attack V1 | Owner-approved fast-forward to local `main` and verified push to `origin/main`. Source, focused tests, durable analysis, and lightweight diagnostic scripts/reports are versioned. Large generated browser screenshots/raw trace directories remain deliberately local-only. The V1 cohort (701–710) resolved 5/5/0 with all first attacks at 24; this is behavioral observation, not a liveness claim. |
 | `bae1545` | 2026-08-10 | Queue cap, income adjustment, Hard turret schedule, Turret glyph | Focused checks: `turret-glyph-check`, `production-queue-cap-check`, `turret-sim-check`, `hard-vision-check`, `defend-anchor-check`, `balance-check`. |
 | `5510579` | 2026-08-10 | Newly spawned defender archers advance to assigned formation | `node tools/archer-spawn-formation-check.mjs`. |
 | `4060cc9` | 2026-08-10 | Pause/Resume and player-facing Update Log | `node tools/pause-ux-check.mjs`; includes Player-vs-AI and Watch AI control placement. |

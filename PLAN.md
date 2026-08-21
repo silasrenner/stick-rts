@@ -4,19 +4,20 @@ Cross-session context carrier. Keep current scope, recovery state, and dirty-wor
 
 ## Current status — 2026-08-20
 
-### Active isolated worktree
+### Integrated mainline
 
 ```text
-C:\Users\simcr\projects\stick-rts-team-vision-spectator
-branch: agent/team-vision-spectator
-base: cf56709 (merge: Hard AI feasible production correction)
+C:\Users\simcr\projects\stick-rts
+branch: main
+integration: 2d05003 (feat: add team vision Raven scouting and Hard army massing)
+origin/main: synchronized after owner-approved push
 ```
 
-- This worktree is dirty, local, uncommitted, unmerged, and unpushed.
-- Owner approved the completed local team-vision and Watch AI spectator scope.
-- Do not merge or push without a separate explicit owner decision.
+- The Team Vision → Raven → Frontline → Build/Scout/Adapt/Mass/Attack V1 source, focused checks, durable analysis, and lightweight artifacts are committed and pushed to `main`.
+- The former `agent/team-vision-spectator` worktree remains locally available only for its untracked, generated browser/raw diagnostic evidence; it has no unintegrated source changes.
+- No active implementation scope is currently authorized. Do not merge/push retained experimental worktrees without a separate owner decision.
 
-### Completed local scope — approved
+### Completed mainline scope — Team vision spectator foundation
 
 The game now has deterministic, simulation-owned team-vision queries plus Watch AI `Full` / `Left` / `Right` presentation modes.
 
@@ -33,7 +34,7 @@ docs/analysis/team-vision-spectator-foundation-2026-08-16.md
 artifacts/team-vision-spectator-summary.txt
 ```
 
-### Active approved scope — AI perception and controlled memory
+### Completed mainline scope — AI perception and controlled memory
 
 The owner has now approved a second local-only phase in this same isolated worktree: remove Hard AI omniscience by feeding its unchanged strategic architecture from the simulation-owned team-vision query surface plus bounded last-known memory.
 
@@ -53,7 +54,7 @@ The owner has now approved a second local-only phase in this same isolated workt
 
 **Validation result:** the perception contract is validated, but paired Hard-vs-Hard seeds `701–705` are a deterministic liveness blocker: candidate `0/0/5` player/AI/unresolved at 3,000s versus unchanged `main` `2/3/0`, mean 835.6s. Detailed diagnosis: `docs/analysis/hard-ai-team-limited-liveness-diagnostic-2026-08-18.txt`.
 
-### Active approved scope — Hard Build Army combat readiness
+### Completed mainline scope — Hard Build Army combat readiness
 
 The owner has approved one narrow, local-only strategy correction downstream of the validated perception boundary.
 
@@ -65,7 +66,7 @@ The owner has approved one narrow, local-only strategy correction downstream of 
 
 **Validation result / stop:** `buildArmy` now positively selects feasible combat from friendly state while preserving counter and information boundaries. The cohort improved from `0/0/5` to `1/0/4` player/AI/unresolved (mean `2479.3s`), but 4/5 unresolved remains a liveness blocker. Stop here: no Raven or Attack standing-force/other utility expansion is authorized. Detailed evidence: `docs/analysis/hard-build-army-combat-readiness-validation-2026-08-18.md`.
 
-### Active approved scope — Hard attack hysteresis, reinforcement, and economic saturation
+### Completed mainline scope — Hard attack hysteresis, reinforcement, and economic saturation
 
 Owner approval: 2026-08-19. Local-only continuation in this same dirty isolated worktree.
 
@@ -95,7 +96,7 @@ Owner-approved behavior pass, local-only. A team already committed to Attack sus
 - Hard-vs-Hard seeds `701–705` remain baseline-equivalent at `1/0/4` player/AI/unresolved, mean `2806.4s`; no candidate regression.
 - Activation traces for seeds `701` and `702` record zero `forward-frontline-pressure` decisions. This is **safe but inactive** for the named stalled matches, not a liveness fix. Do not weaken the minimum forward mass without a separately approved, evidence-backed pass: the one-unit variant worsened the cohort to `0/0/5`.
 
-**Current approved scope / stop boundary — Hard AI Information Value + Raven Purchase Utility V0:** owner has authorized and this worktree now contains a local-only, evidence-backed Raven purchasing pass. Hard retains Recover / Build Army / Defend / Attack only; Raven is a generic legal candidate action ranked against the existing best normal-unit purchase from bounded current observations and controlled-memory age. It uses no hidden enemy truth and leaves normal unit utility/cycle mechanics intact.
+**Completed mainline scope — Hard AI Information Value + Raven Purchase Utility V0:** this V0 Raven purchasing pass was included in the `2d05003` mainline integration. Hard retains Recover / Build Army / Defend / Attack only; Raven is a generic legal candidate action ranked against the existing best normal-unit purchase from bounded current observations and controlled-memory age. It uses no hidden enemy truth and leaves normal unit utility/cycle mechanics intact.
 
 **Implemented V0:** raw bounded information state (current/remembered combat and structures, contact/meaningful-observation ages); reusable configurable `scoutingNeed`; goal-context weights; affordability that protects the existing economic reserve and current readiness shortfall; strict deterministic Raven-vs-normal comparison; decision-record explainability; focused testing, named 701–705 observational diagnostics, and browser Full/Left/Right proof. The initial stale horizon is 60s so the policy does not become a 45-second-cooldown auto-rebuy loop.
 
@@ -103,13 +104,13 @@ Owner-approved behavior pass, local-only. A team already committed to Attack sus
 
 Evidence: [`docs/analysis/hard-ai-information-value-raven-utility-v0-2026-08-20.md`](docs/analysis/hard-ai-information-value-raven-utility-v0-2026-08-20.md), `artifacts/hard-ai-raven-utility-v0-summary-2026-08-20.txt`, `tools/hard-ai-raven-utility-check.mjs`, `artifacts/hard-ai-raven-diagnostic.mjs`, and `artifacts/hard-ai-raven-browser-check.mjs`. **Owner LAN review confirmed:** the exact-worktree server renders successfully at `http://192.168.0.83:8811/` from another device when opened in an incognito/private tab. Normal browser cache may retain stale ES modules from prior local previews; use a cache-busting query or private tab for review after local source updates. No production deployment.
 
-### Current approved scope — Hard Build → Scout → Adapt → Mass → Attack V1
+### Completed mainline scope — Hard Build → Scout → Adapt → Mass → Attack V1
 
-Owner approval: 2026-08-20. Local-only continuation in this same dirty isolated worktree.
+**Completed V1:** owner-approved on 2026-08-20, then included in the `2d05003` mainline integration. The behavior and its supporting source/tests are now versioned on `main`.
 
 **Included:** keep the exact four Hard goals—Recover, Build Army, Defend, Attack—while increasing the configurable attack-launch force to 24 combat units; expose authoritative `armyBuildProgress = clamp(combatUnits / attackLaunchCombatUnits, 0, 1)` in assessment/decision records; add a simple configurable Build-Army Raven timing multiplier that favors the mid-build window without making Raven mandatory; and make existing counter utility increasingly influential through Build Army after legitimate observation. Preserve the existing Raven feasibility/protected-reserve model, counter relationships, economy saturation, build-cycle rule, Attack reinforcement, frontline sustain exception, vision/memory semantics, and all combat/formation/targeting mechanics.
 
-**Boundaries:** Raven remains optional. Reaching 24 combat units can launch Attack even when stale information exists and Raven is unavailable/unaffordable/not selected. No Scout/Prepare/Muster/Recon goal, omniscient composition planner, fixed composition table, new unit type, mechanical Raven change, formation/targeting rewrite, seed-target tuning, commit, merge, push, or remote deployment.
+**Boundaries retained in the implemented behavior:** Raven remains optional. Reaching 24 combat units can launch Attack even when stale information exists and Raven is unavailable/unaffordable/not selected. No Scout/Prepare/Muster/Recon goal, omniscient composition planner, fixed composition table, new unit type, mechanical Raven change, formation/targeting rewrite, or seed-target tuning was introduced.
 
 **Evidence gates:** red→green focused boundaries for 23/24 launch, build-progress endpoints, early/mid/fresh Raven context, optional Raven readiness, bounded observe→counter adaptation, build-index isolation, reserve/economy preservation, sustain boundaries/frontline exception, and determinism; then existing regression suites plus ordered 701–705 and a broader observational sample with preparation/engagement traces. Save an artifact-backed summary and provide a verified exact-worktree LAN preview only after the complete batch is viewable.
 
