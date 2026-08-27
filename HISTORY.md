@@ -5,7 +5,7 @@ This is a compact index, not default session context. Start with `PLAN.md`; read
 ## Current boundary
 
 - The Team Vision → Raven → Frontline → Build/Scout/Adapt/Mass/Attack V1 work was owner-approved, fast-forwarded to local `main`, and pushed to `origin/main` on 2026-08-20 in `2d05003`.
-- The 2026-08-27 telemetry, warrior/archer target-saturation, and truthful population/persistent queue-icon passes are integrated locally on `main` in `be4e188` and `3feec8f`; generated browser screenshots remain local-only.
+- The 2026-08-27 telemetry, warrior/archer target-saturation, and truthful population/persistent queue-icon passes are integrated on `main` in `be4e188` and `3feec8f`, then pushed to `origin/main` in `1c276c3`; remote equality was verified. Generated browser screenshots remain local-only.
 - `PLAN.md` is the authoritative current-state and recovery handoff.
 - The former `agent/team-vision-spectator` worktree retains only generated local browser/raw diagnostic evidence that was intentionally excluded from the repository; its source changes are integrated.
 - Durable vision architecture and validation are in [`docs/analysis/team-vision-spectator-foundation-2026-08-16.md`](docs/analysis/team-vision-spectator-foundation-2026-08-16.md).
