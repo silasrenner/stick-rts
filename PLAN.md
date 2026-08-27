@@ -4,6 +4,21 @@ Cross-session context carrier. Keep current scope, recovery state, and dirty-wor
 
 ## Current status — 2026-08-27
 
+### Approved local scope — shared match telemetry, kills, and player pause placement
+
+Owner approval: 2026-08-27. Isolated worktree: `C:\\Users\\simcr\\projects\\stick-rts\\worktrees\\player-telemetry-kills` on `agent/player-telemetry-kills-local`, based on `main` `df05832`.
+
+**Included:**
+
+1. Share the match clock and existing total-resource gold differential between Watch AI and Player-vs-AI presentation.
+2. Show match-total unit kills around the centered clock in both modes: Player/left **Blue** kills on the left; AI/right **Red** kills on the right. Kills derive from the opponent's authoritative unit-loss counter; structures and cores remain excluded.
+3. Move only the Player-vs-AI pause button from top center into the top-right control cluster, immediately left of the existing + / − zoom buttons. Preserve Watch AI's bottom-left speed/pause controls.
+4. Add focused telemetry/layout regression coverage, exercise real click paths and rendering in Chrome, then serve and verify the exact candidate on the LAN before a local-only commit.
+
+**Deliberate exclusions:** combat/gold/AI/timing behavior, any new simulation counters, Watch control placement, mobile control redesign, deployment, push, and unrelated dirty artifacts/worktrees.
+
+**Validation complete:** `tools/match-telemetry-check.mjs` and `tools/match-telemetry-layout-check.mjs` pass. Chrome CDP against the candidate confirmed rendered `BLUE 5 | 03:42 | 2 RED` plus gold differential, real top-right pause/resume, and adjacent zoom-in; `tools/pause-ux-check.mjs` and `tools/desktop-ux-check.mjs` also pass against the same LAN server with no console errors. Screenshot: `artifacts/screenshots/player-telemetry-kills-browser.png` (local-only). The candidate is served at `http://192.168.0.83:8812/`; its served `src/render/matchTelemetry.js` SHA-256 matches the worktree. No push is authorized.
+
 ### Completed mainline scope — heroes off, third tower, queue capacity
 
 Owner approval: 2026-08-27. Source was reviewed in `C:\\Users\\simcr\\projects\\stick-rts\\worktrees\\pvai-pause-speed` on `agent/pvai-pause-speed-local`, then fast-forwarded to `main` and pushed to `origin/main` in `ad03217`. Generated screenshots remain intentionally untracked.

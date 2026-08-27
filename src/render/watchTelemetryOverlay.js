@@ -3,7 +3,7 @@ import { getOccupiedCap } from '../sim/systems/economy.js';
 import { getCap, livingStructures, livingTurrets } from '../sim/systems/supply.js';
 import { isAliveEntity, isWatchAiMatch } from '../sim/world.js';
 import { TEAM_COLORS } from './stickFigure.js';
-import { formatMatchClock, getGoldDifferential } from './matchTelemetry.js';
+import { formatMatchClock, getGoldDifferential, getUnitKillTotals } from './matchTelemetry.js';
 import { spectatorViewTeam } from './spectatorVision.js';
 
 function composition(world, team) {
@@ -22,10 +22,34 @@ export function drawWatchTelemetryOverlay(ctx, world, spectatorView = 'full') {
     const left = team === 'player'; const x = left ? 4 : ctx.canvas.width - CONFIG.HUD_PANEL_WIDTH - 4;
     const textX = left ? x + 8 : x + CONFIG.HUD_PANEL_WIDTH - 8; const state = world.teams[team]; const c = composition(world, team);
     ctx.save(); ctx.fillStyle = 'rgba(20,20,26,.72)'; ctx.fillRect(x, 4, CONFIG.HUD_PANEL_WIDTH, 72);
-    ctx.textAlign = left ? 'left' : 'right'; ctx.fillStyle = left ? TEAM_COLORS.player : TEAM_COLORS.ai; ctx.font = 'bold 12px monospace'; ctx.fillText(left ? 'RED' : 'BLUE', textX, 18);
+    ctx.textAlign = left ? 'left' : 'right'; ctx.fillStyle = left ? TEAM_COLORS.player : TEAM_COLORS.ai; ctx.font = 'bold 12px monospace'; ctx.fillText(left ? 'BLUE' : 'RED', textX, 18);
     ctx.fillStyle = '#e8e8ee'; ctx.font = '12px monospace'; ctx.fillText(`${state.gold} gold`, textX, 35); ctx.fillText(`${getOccupiedCap(world, team)}/${getCap(world, team)} pop`, textX, 51); ctx.fillText(`M${c.miner} W${c.warrior} A${c.archer} S${c.structures} T${c.turrets}`, textX, 67); ctx.restore();
   }
-  const diff = getGoldDifferential(world); ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = '#e8e8ee'; ctx.font = 'bold 16px monospace'; ctx.fillText(formatMatchClock(world.matchElapsedTime), ctx.canvas.width / 2, 20);
-  if (perspectiveTeam === null) { ctx.fillStyle = diff.team === 'player' ? TEAM_COLORS.player : diff.team === 'ai' ? TEAM_COLORS.ai : '#e8e8ee'; ctx.font = 'bold 13px monospace'; ctx.fillText(`${diff.amount} gold`, ctx.canvas.width / 2, 40); }
+}
+
+// Shared in-game top telemetry. Both modes reveal the score; Watch's limited
+// team perspectives retain their established restriction on resource lead.
+export function drawMatchTelemetry(ctx, world, { showGoldDifferential = true } = {}) {
+  if (world.matchState !== 'playing') return;
+  const kills = getUnitKillTotals(world);
+  const diff = getGoldDifferential(world);
+  const centerX = ctx.canvas.width / 2;
+  ctx.save();
+  ctx.font = 'bold 13px monospace';
+  ctx.textAlign = 'right';
+  ctx.fillStyle = TEAM_COLORS.player;
+  ctx.fillText(`BLUE ${kills.player}`, centerX - 58, 20);
+  ctx.textAlign = 'left';
+  ctx.fillStyle = TEAM_COLORS.ai;
+  ctx.fillText(`${kills.ai} RED`, centerX + 58, 20);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#e8e8ee';
+  ctx.font = 'bold 16px monospace';
+  ctx.fillText(formatMatchClock(world.matchElapsedTime), centerX, 20);
+  if (showGoldDifferential) {
+    ctx.fillStyle = diff.team === 'player' ? TEAM_COLORS.player : diff.team === 'ai' ? TEAM_COLORS.ai : '#e8e8ee';
+    ctx.font = 'bold 13px monospace';
+    ctx.fillText(`${diff.amount} gold`, centerX, 40);
+  }
   ctx.restore();
 }

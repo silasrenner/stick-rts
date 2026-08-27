@@ -220,11 +220,12 @@ export function drawWatchSpeedButton(ctx, speed) {
   ctx.fillText(`${speed}×`, rect.x + rect.w / 2, rect.y + 15); ctx.textAlign = 'left';
 }
 
-// Centered in the top safe area: avoids the player HUD at left, zoom controls
-// at right, and the Watch team boards in the upper corners.
+// Pause placement: Player-vs-AI groups it with the top-right zoom controls;
+// Watch keeps the compact speed/pause row at bottom left.
 export function getPauseButtonRect(canvas, spectator = false) {
   if (spectator) return { x: 64, y: canvas.height - 30, w: 88, h: 22 };
-  return { x: canvas.width / 2 - 45, y: 8, w: 90, h: 28 };
+  const zoom = getZoomButtonRects(canvas, false);
+  return { x: zoom.in.x - 96, y: zoom.in.y, w: 90, h: 28 };
 }
 
 export function getPauseOverlayRects(canvas) {

@@ -6,7 +6,7 @@ import { isEntityVisibleInSpectatorView, spectatorViewTeam } from './spectatorVi
 import { drawStatue, drawKnownBase, drawStructure, drawTurret, drawMine, drawHealthBar } from './structures.js';
 import { drawHUD, drawBuildMenu, drawWinLoseOverlay, drawMenuScreen, getBottomBarTop, drawZoomControls, drawTouchCommandControls, drawWatchSpeedButton, drawSpectatorViewSelector, drawPauseButton, drawPauseOverlay } from './ui.js';
 import { drawParallax } from './parallax.js';
-import { drawWatchTelemetryOverlay } from './watchTelemetryOverlay.js';
+import { drawMatchTelemetry, drawWatchTelemetryOverlay } from './watchTelemetryOverlay.js';
 
 const LEGEND_LINE =
   'Your command: Q Attack  W Defend  E Retreat   |   Debug: F FPS  S Stress-spawn';
@@ -69,6 +69,7 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   drawLegend(ctx, world);
   if (!isWatchAiMatch(world)) drawHUD(ctx, world, uiMessage);
   drawWatchTelemetryOverlay(ctx, world, spectatorView);
+  drawMatchTelemetry(ctx, world, { showGoldDifferential: !isWatchAiMatch(world) || spectatorView === 'full' });
   drawZoomControls(ctx, isWatchAiMatch(world));
   if (isWatchAiMatch(world) && world.matchState === 'playing') drawWatchSpeedButton(ctx, uiState.speed);
   if (isWatchAiMatch(world) && world.matchState === 'playing') drawSpectatorViewSelector(ctx, spectatorView);
