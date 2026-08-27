@@ -4,7 +4,7 @@ Cross-session context carrier. Keep current scope, recovery state, and dirty-wor
 
 ## Current status — 2026-08-27
 
-### Approved local scope — truthful population + persistent structure/turret queue icons
+### Integrated local-main scope — population, saturation, and telemetry
 
 Owner approval: 2026-08-27. Continue in the existing reviewed saturation worktree/branch without discarding its dirty source/test changes.
 
@@ -12,9 +12,9 @@ Owner approval: 2026-08-27. Continue in the existing reviewed saturation worktre
 
 **Deliberate exclusions:** cap/queue-limit rebalance, unit/structure/turret prices or stats, build ordering, AI policy, saturation behavior, deployment, push, and generated screenshot versioning.
 
-**Validation complete / awaiting owner LAN review:** `tools/population-and-queue-ui-check.mjs` passed red→green, proving turrets reserve zero population, the player HUD shows literal units with explicit queued reservation, and the active structure glyph persists in the queue row. Retained queue, turret, saturation, syntax, and 5,000-tick headless checks pass; `git diff --check` passes. Real Chrome/CDP canvas input on the candidate clicked Structure, Turret, and Miner, producing active `structure` at ~50% progress plus pending `turret` and `unit`; it observed `living: 0`, `queued: 1`, `reserved: 1`, no console errors, and screenshot `artifacts/screenshots/population-queue-browser.png` (local-only). The served `economy.js` and `ui.js` SHA-256 values match the candidate worktree at `http://192.168.0.83:8812/`. No commit or push has been performed.
+**Validation complete / awaiting owner LAN review:** `tools/population-and-queue-ui-check.mjs` passed red→green, proving turrets reserve zero population, the player HUD shows literal units with explicit queued reservation, and the active structure glyph persists in the queue row. Retained queue, turret, saturation, syntax, and 5,000-tick headless checks pass; `git diff --check` passes. Real Chrome/CDP canvas input on the candidate clicked Structure, Turret, and Miner, producing active `structure` at ~50% progress plus pending `turret` and `unit`; it observed `living: 0`, `queued: 1`, `reserved: 1`, no console errors, and screenshot `artifacts/screenshots/population-queue-browser.png` (local-only). The served `economy.js` and `ui.js` SHA-256 values match the candidate worktree at `http://192.168.0.83:8812/`. `PLAN.md` evidence is now recorded in `HISTORY.md`; source/test integration is complete on local `main` in `3feec8f`. Generated screenshots remain local-only.
 
-### Approved local scope — warrior/archer target saturation
+### Integrated local-main scope — warrior/archer target saturation
 
 Owner approval: 2026-08-27. Worktree: `C:\\Users\\simcr\\projects\\stick-rts\\worktrees\\player-telemetry-kills` on `agent/warrior-archer-target-saturation-local`, based on local commit `be4e188`.
 
@@ -22,9 +22,9 @@ Owner approval: 2026-08-27. Worktree: `C:\\Users\\simcr\\projects\\stick-rts\\wo
 
 **Deliberate exclusions:** combat stats/balance, production/AI strategy, heroes, turrets, formations, continuous retargeting, changes to targeting priority/gating, deployment, push, and unrelated generated screenshots.
 
-**Validation complete / awaiting owner LAN review:** `tools/target-saturation-check.mjs`, `tools/core-turret-shield-check.mjs`, `tools/turret-targeting-check.mjs`, `tools/turret-sim-check.mjs`, and `tools/headless.js` pass; `git diff --check` passes. A real Chrome CDP fixture against this candidate created two enemy combat targets and two warriors plus two archers, and observed an exact `2/2` target split (`warrior → near/far`, `archer → near/far`) with no console errors. Screenshot: `artifacts/screenshots/target-saturation-browser.png` (local-only). The exact candidate is served at `http://192.168.0.83:8812/`; served `src/sim/systems/supply.js` SHA-256 matches the worktree. No commit or push has been performed.
+**Validation complete / awaiting owner LAN review:** `tools/target-saturation-check.mjs`, `tools/core-turret-shield-check.mjs`, `tools/turret-targeting-check.mjs`, `tools/turret-sim-check.mjs`, and `tools/headless.js` pass; `git diff --check` passes. A real Chrome CDP fixture against this candidate created two enemy combat targets and two warriors plus two archers, and observed an exact `2/2` target split (`warrior → near/far`, `archer → near/far`) with no console errors. Screenshot: `artifacts/screenshots/target-saturation-browser.png` (local-only). The exact candidate is served at `http://192.168.0.83:8812/`; served `src/sim/systems/supply.js` SHA-256 matches the worktree. `PLAN.md` evidence is now recorded in `HISTORY.md`; source/test integration is complete on local `main` in `3feec8f`. Generated screenshots remain local-only.
 
-### Approved local scope — shared match telemetry, kills, and player pause placement
+### Integrated local-main scope — shared match telemetry, kills, and player pause placement
 
 Owner approval: 2026-08-27. Isolated worktree: `C:\\Users\\simcr\\projects\\stick-rts\\worktrees\\player-telemetry-kills` on `agent/player-telemetry-kills-local`, based on `main` `df05832`.
 
@@ -37,7 +37,7 @@ Owner approval: 2026-08-27. Isolated worktree: `C:\\Users\\simcr\\projects\\stic
 
 **Deliberate exclusions:** combat/gold/AI/timing behavior, any new simulation counters, Watch control placement, mobile control redesign, deployment, push, and unrelated dirty artifacts/worktrees.
 
-**Validation complete:** `tools/match-telemetry-check.mjs` and `tools/match-telemetry-layout-check.mjs` pass. Chrome CDP against the candidate confirmed rendered `BLUE 5 | 03:42 | 2 RED` plus gold differential, real top-right pause/resume, and adjacent zoom-in; `tools/pause-ux-check.mjs` and `tools/desktop-ux-check.mjs` also pass against the same LAN server with no console errors. Screenshot: `artifacts/screenshots/player-telemetry-kills-browser.png` (local-only). The candidate is served at `http://192.168.0.83:8812/`; its served `src/render/matchTelemetry.js` SHA-256 matches the worktree. No push is authorized.
+**Validation complete:** `tools/match-telemetry-check.mjs` and `tools/match-telemetry-layout-check.mjs` pass. Chrome CDP against the candidate confirmed rendered `BLUE 5 | 03:42 | 2 RED` plus gold differential, real top-right pause/resume, and adjacent zoom-in; `tools/pause-ux-check.mjs` and `tools/desktop-ux-check.mjs` also pass against the same LAN server with no console errors. Screenshot: `artifacts/screenshots/player-telemetry-kills-browser.png` (local-only). The candidate is served at `http://192.168.0.83:8812/`; its served `src/render/matchTelemetry.js` SHA-256 matches the worktree. The telemetry source/test integration is complete on local `main` in `be4e188`; its concise release ledger is in `HISTORY.md`.
 
 ### Completed mainline scope — heroes off, third tower, queue capacity
 
