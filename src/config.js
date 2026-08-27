@@ -64,23 +64,27 @@ export const CONFIG = {
   WARRIOR_BUILD_TIME: 10,
   ARCHER_BUILD_TIME: 12,
   STRUCTURE_BUILD_TIME: 20,
+  // Keep hero systems and data preserved while temporarily removing the
+  // feature from every player/AI purchase surface.
+  HEROES_ENABLED: false,
   HERO_BUILD_TIME: 30, // independent of HERO_RESPAWN_COOLDOWN below — see sim/systems/production.js
-  PRODUCTION_QUEUE_LIMIT: 5, // paid FIFO items per team; applies to all production kinds
+  PRODUCTION_QUEUE_LIMIT: 10, // paid FIFO items per team; applies to all production kinds
 
   STRUCTURE_COST: 300, // S8: doubled from 150
   TURRET_COST: 600,
   TURRET_BUILD_TIME: 15,
   TURRET_POPULATION_COST: 8,
-  MAX_TURRETS: 3, // one free base turret plus two buildable defensive positions
+  MAX_TURRETS: 4, // one free base turret plus three buildable defensive positions
   TURRET_HP: 450,
   TURRET_DAMAGE: 56,
   TURRET_RANGE: 560,
   TURRET_ATTACK_COOLDOWN: 1.8,
   TURRET_PROJECTILE_SPEED: 320,
   STARTING_TURRET_OFFSET: 20,
-  TURRET_SLOT_OFFSETS: [380, 900],
+  TURRET_SLOT_OFFSETS: [380, 900, 1420],
   HARD_TURRET_FIRST_TIME: 5.5 * 60,
   HARD_TURRET_SECOND_TIME: 13 * 60,
+  HARD_TURRET_THIRD_TIME: 20 * 60,
   STRUCTURE_CAP_BONUS: 13,
   MAX_STRUCTURES: 5,
   STRUCTURE_HP: 200,

@@ -1,7 +1,7 @@
 import { CONFIG } from '../config.js';
 import { UPDATE_LOG, UPDATE_LOG_VERSION, UPDATE_LOG_DATE } from '../updateLog.js';
-import { canAfford, getOccupiedCap, hasLivingOrQueuedHero, getHeroCost, countQueued } from '../sim/systems/economy.js';
-import { getCap, livingStructures } from '../sim/systems/supply.js';
+import { canAfford, getOccupiedCap, countQueued } from '../sim/systems/economy.js';
+import { getCap, livingStructures, livingTurrets } from '../sim/systems/supply.js';
 import { isAliveEntity, isWatchAiMatch } from '../sim/world.js';
 import { drawStickFigure, TEAM_COLORS } from './stickFigure.js';
 
@@ -11,9 +11,9 @@ const BUILD_MENU_ITEMS = [
   { kind: 'archer', action: 'unit', label: 'Archer', costFn: () => CONFIG.UNIT_STATS.archer.cost },
   { kind: 'structure', action: 'structure', label: 'Structure', costFn: () => CONFIG.STRUCTURE_COST },
   { kind: 'turret', action: 'turret', label: 'Turret', costFn: () => CONFIG.TURRET_COST },
-  { kind: 'forgemaster', action: 'hero', label: 'Forgemaster', costFn: (world) => getHeroCost(world, 'player') },
-  { kind: 'hawkeye', action: 'hero', label: 'Hawkeye', costFn: (world) => getHeroCost(world, 'player') },
-  { kind: 'vanguard', action: 'hero', label: 'Vanguard', costFn: (world) => getHeroCost(world, 'player') },
+  { kind: 'forgemaster', action: 'hero', label: 'Forgemaster', costFn: () => CONFIG.BASE_HERO_COST },
+  { kind: 'hawkeye', action: 'hero', label: 'Hawkeye', costFn: () => CONFIG.BASE_HERO_COST },
+  { kind: 'vanguard', action: 'hero', label: 'Vanguard', costFn: () => CONFIG.BASE_HERO_COST },
   { kind: 'raven', action: 'raven', label: 'Raven', costFn: () => CONFIG.RAVEN.cost },
 ];
 
@@ -127,7 +127,12 @@ function drawKindGlyph(ctx, x, feetY, button) {
 
 function getBuildButtonRowWidth() {
   const { BUILD_BUTTON_WIDTH: w, BUILD_BUTTON_GAP: gap } = CONFIG;
-  return BUILD_MENU_ITEMS.length * w + (BUILD_MENU_ITEMS.length - 1) * gap;
+  const items = getVisibleBuildMenuItems();
+  return items.length * w + (items.length - 1) * gap;
+}
+
+function getVisibleBuildMenuItems() {
+  return BUILD_MENU_ITEMS.filter((item) => CONFIG.HEROES_ENABLED || item.action !== 'hero');
 }
 
 export function getBuildButtonRowRect(canvas) {
@@ -293,7 +298,7 @@ export function getBuildMenuButtons(canvas) {
   const startX = (canvas.width - totalWidth) / 2;
   const { y, h } = getBuildButtonRowRect(canvas);
 
-  return BUILD_MENU_ITEMS.map((item, i) => ({
+  return getVisibleBuildMenuItems().map((item, i) => ({
     ...item,
     rect: { x: startX + i * (w + gap), y, w, h },
   }));
@@ -324,11 +329,18 @@ export function getBuildButtonDisabledReason(world, button) {
     if (!canAfford(world, 'player', cost)) return 'gold';
     return null;
   }
-  // hero
-  if (hasLivingOrQueuedHero(world, 'player')) return 'heroAlive';
-  if (world.teams.player.heroCooldownTimer > 0) return 'heroCooldown';
-  if (!canAfford(world, 'player', cost)) return 'gold';
-  return null;
+  if (button.action === 'turret') {
+    if (livingTurrets(world, 'player').length + countQueued(world, 'player', 'turret') >= CONFIG.MAX_TURRETS) return 'maxTurrets';
+    if (!canAfford(world, 'player', cost)) return 'gold';
+    if (getOccupiedCap(world, 'player') + CONFIG.TURRET_POPULATION_COST > getCap(world, 'player')) return 'cap';
+    return null;
+  }
+  return 'heroesDisabled';
+}
+
+export function isBuildQueueItemActive(item, button) {
+  if (!item || !button || item.action !== button.action) return false;
+  return item.kind === button.kind || (item.kind === null && button.kind === item.action);
 }
 
 // Groups consecutive identical (action, kind) queue entries into stacked
@@ -377,15 +389,19 @@ function drawQueueOverflowChip(ctx, x, y, w, h, remaining) {
   ctx.textAlign = 'left';
 }
 
-function drawQueueChipRow(ctx, queuedItems) {
-  const chips = groupQueueChips(queuedItems);
-  if (chips.length === 0) return;
-
+function drawQueueChipRow(ctx, queue) {
+  const chips = groupQueueChips(queue.slice(1));
   const canvas = ctx.canvas;
   const { y, h } = getQueueChipRowRect(canvas);
   const { QUEUE_CHIP_WIDTH: chipW, QUEUE_CHIP_GAP: gap } = CONFIG;
   const rowWidth = getBuildButtonRowWidth();
   const startX = (canvas.width - rowWidth) / 2;
+  ctx.fillStyle = '#b8b8c2';
+  ctx.font = '12px monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText(`${queue.length}/${CONFIG.PRODUCTION_QUEUE_LIMIT}`, startX - gap, y + h / 2 + 4);
+  ctx.textAlign = 'left';
+  if (chips.length === 0) return;
   const maxSlots = Math.max(1, Math.floor((rowWidth + gap) / (chipW + gap)));
 
   const overflow = chips.length > maxSlots;
@@ -407,7 +423,7 @@ export function drawBuildMenu(ctx, world) {
   if (world.matchState !== 'playing' || isWatchAiMatch(world)) return;
 
   const queue = world.teams.player.productionQueue;
-  drawQueueChipRow(ctx, queue.slice(1));
+  drawQueueChipRow(ctx, queue);
 
   const activeItem = queue[0] ?? null;
 
@@ -415,7 +431,7 @@ export function drawBuildMenu(ctx, world) {
     const reason = getBuildButtonDisabledReason(world, button);
     const cost = button.costFn(world);
     const { x, y, w, h } = button.rect;
-    const isActive = activeItem && activeItem.action === button.action && activeItem.kind === button.kind;
+    const isActive = isBuildQueueItemActive(activeItem, button);
 
     // Solid fills throughout (never ctx.globalAlpha) — at CAMERA_ZOOM_MAX
     // world content can reach into the footer band (pre-existing S10
@@ -439,7 +455,7 @@ export function drawBuildMenu(ctx, world) {
 
     ctx.fillStyle = reason ? '#e0704a' : isActive ? '#8fd1e0' : '#d8c67a';
     ctx.font = '8px monospace';
-    ctx.fillText(reason ? BUTTON_REASON_TEXT[reason] : `${cost}g`, x + 24, y + 23);
+    ctx.fillText(reason ? (BUTTON_REASON_TEXT[reason] ?? 'Unavailable') : `${cost}g`, x + 24, y + 23);
 
     if (isActive) {
       const progress = Math.max(0, Math.min(1, 1 - activeItem.remaining / activeItem.total));

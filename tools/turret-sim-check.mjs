@@ -8,11 +8,11 @@ import { updateProductionQueue } from '../src/sim/systems/production.js';
 
 const world = createWorld(1);
 world.matchState = 'playing';
-world.teams.player.gold = 1_000;
+world.teams.player.gold = 10_000;
 
 const first = buyTurret(world, 'player');
 if (!first.ok) throw new Error(`Expected first turret purchase to succeed: ${JSON.stringify(first)}`);
-if (world.teams.player.gold !== 1_000 - CONFIG.TURRET_COST) throw new Error(`Turret must deduct ${CONFIG.TURRET_COST} gold; got ${world.teams.player.gold}`);
+if (world.teams.player.gold !== 10_000 - CONFIG.TURRET_COST) throw new Error(`Turret must deduct ${CONFIG.TURRET_COST} gold; got ${world.teams.player.gold}`);
 const queued = world.teams.player.productionQueue[0];
 if (queued?.action !== 'turret' || queued.total !== CONFIG.TURRET_BUILD_TIME) throw new Error(`Expected a 20-second turret queue entry: ${JSON.stringify(queued)}`);
 
@@ -22,15 +22,27 @@ if (!turret) throw new Error('Turret did not materialize after its 20-second bui
 if (turret.x !== CONFIG.PLAYER_HOME_X + CONFIG.TURRET_SLOT_OFFSETS[0]) throw new Error(`Turret used wrong automatic slot: ${turret.x}`);
 
 world.structures.push(createStructure('player', CONFIG.PLAYER_HOME_X + CONFIG.STRUCTURE_SLOT_OFFSETS[0]));
-world.teams.player.gold = CONFIG.TURRET_COST;
+world.teams.player.gold = CONFIG.TURRET_COST * 3;
 const second = buyTurret(world, 'player');
 if (!second.ok) throw new Error(`Expected second turret purchase to succeed: ${JSON.stringify(second)}`);
 const third = buyTurret(world, 'player');
-if (third.ok || third.reason !== 'maxTurrets') throw new Error(`Third turret must be rejected: ${JSON.stringify(third)}`);
+if (!third.ok) throw new Error(`Expected third buildable turret purchase to succeed: ${JSON.stringify(third)}`);
+const fourth = buyTurret(world, 'player');
+if (fourth.ok || fourth.reason !== 'maxTurrets') throw new Error(`Fourth buildable turret must be rejected: ${JSON.stringify(fourth)}`);
 
 world.teams.player.gold = 2_000;
 updateProductionQueue(world, CONFIG.TURRET_BUILD_TIME);
-for (let i = 0; i < 12; i += 1) {
+updateProductionQueue(world, CONFIG.TURRET_BUILD_TIME);
+const buildableTurrets = world.structures.filter((entity) => entity.isTurret && !entity.isStartingTurret);
+if (buildableTurrets.length !== 3) throw new Error(`Expected three buildable turrets, got ${buildableTurrets.length}.`);
+for (const [index, builtTurret] of buildableTurrets.entries()) {
+  const expectedX = CONFIG.PLAYER_HOME_X + CONFIG.TURRET_SLOT_OFFSETS[index];
+  if (builtTurret.x !== expectedX) throw new Error(`Buildable turret ${index + 1} used wrong automatic slot: ${builtTurret.x}, expected ${expectedX}.`);
+}
+if (CONFIG.TURRET_SLOT_OFFSETS[2] - CONFIG.TURRET_SLOT_OFFSETS[1] !== CONFIG.TURRET_SLOT_OFFSETS[1] - CONFIG.TURRET_SLOT_OFFSETS[0]) {
+  throw new Error(`Third buildable turret must preserve buildable slot spacing: ${JSON.stringify(CONFIG.TURRET_SLOT_OFFSETS)}`);
+}
+for (let i = 0; i < 4; i += 1) {
   const purchase = buyUnit(world, 'player', 'miner');
   if (!purchase.ok) throw new Error(`Expected remaining cap to accept miner ${i + 1}: ${JSON.stringify(purchase)}`);
   updateProductionQueue(world, CONFIG.MINER_BUILD_TIME);

@@ -50,6 +50,7 @@ export function getPurchaseFeasibility(world, team, candidate) {
   }
 
   if (action === 'hero') {
+    if (!CONFIG.HEROES_ENABLED) return infeasible('heroesDisabled');
     if (!CONFIG.HERO_STATS[kind]) return infeasible('invalidKind');
     if (hasLivingOrQueuedHero(world, team)) return infeasible('heroAlive');
     if (world.teams[team].heroCooldownTimer > 0) return infeasible('heroCooldown');

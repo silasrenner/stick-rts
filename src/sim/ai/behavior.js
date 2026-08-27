@@ -64,7 +64,7 @@ function runDecision(world, team, difficulty) {
 
   const selection = attemptPurchase(world, team, purchase);
   applyBuildCycleProgression(world, team, selection);
-  const heroAttempt = maybeManageHero(world, team, difficulty);
+  const heroAttempt = CONFIG.HEROES_ENABLED ? maybeManageHero(world, team, difficulty) : null;
   const command = pickCommand(world, team, difficulty, assessment);
   setTeamCommand(world, team, command);
 

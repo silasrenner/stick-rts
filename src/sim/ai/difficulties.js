@@ -92,7 +92,7 @@ export const DIFFICULTIES = {
     heroPurchaseDelay: 20,
     heroKind: 'auto',
     defendMineThreshold: 400,
-    turretBuildTimes: [CONFIG.HARD_TURRET_FIRST_TIME, CONFIG.HARD_TURRET_SECOND_TIME],
+    turretBuildTimes: [CONFIG.HARD_TURRET_FIRST_TIME, CONFIG.HARD_TURRET_SECOND_TIME, CONFIG.HARD_TURRET_THIRD_TIME],
     unitUtilityWeights: {
       recover: { recoveryProgress: 1.00, combatEfficiency: 0.75, counterValue: 0.25, buildCycleBias: 0.10, economicNeed: 1.00 },
       // Below minArmyToAttack, Build Army must convert friendly-state combat

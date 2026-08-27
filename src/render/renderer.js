@@ -9,7 +9,7 @@ import { drawParallax } from './parallax.js';
 import { drawWatchTelemetryOverlay } from './watchTelemetryOverlay.js';
 
 const LEGEND_LINE =
-  'Your command: Q Attack  W Defend  E Retreat   |   Hero: H Toggle control  ←/→ Move  J Attack  K Special   |   Debug: F FPS  S Stress-spawn';
+  'Your command: Q Attack  W Defend  E Retreat   |   Debug: F FPS  S Stress-spawn';
 
 // Reads world state only; never mutates it. Spectator perspective is uiState
 // only and therefore cannot affect simulation, AI knowledge, or RNG.

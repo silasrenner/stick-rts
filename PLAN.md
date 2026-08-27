@@ -2,7 +2,25 @@
 
 Cross-session context carrier. Keep current scope, recovery state, and dirty-worktree warnings here. Completed work belongs in `HISTORY.md`; detailed durable findings live in focused `docs/analysis/` documents.
 
-## Current status — 2026-08-20
+## Current status — 2026-08-27
+
+### Active local-only scope — heroes off, third tower, queue capacity
+
+Owner approval: 2026-08-27. Worktree: `C:\\Users\\simcr\\projects\\stick-rts\\worktrees\\pvai-pause-speed`; branch: `agent/pvai-pause-speed-local`. This batch must remain separate from the pre-existing untracked `artifacts/screenshots/pvai-pause-speed-overlay.png`.
+
+**Included:**
+
+1. Preserve hero implementation but disable it through a configuration gate: remove hero purchase/UI/control/HUD presentation; reject player hero purchases at the authoritative economy seam; ensure AI creates no hero candidates or hero-purchase attempt.
+2. Raise the total turret limit from three to four (one starting/core plus three buildable), add the third automatic mirrored slot at `1420px` from home so it is spaced `520px` after the second buildable tower, and schedule Hard AI's third buildable tower at 20 minutes.
+3. Raise the shared FIFO production queue limit from five to ten and render an exact `current/10` indicator immediately left of the queue chips.
+4. Correct build-menu active-state matching so queue entries with action-owned null kinds (structures and turrets) receive their active progress bar; add a render-path regression that prevents an undefined turret button status after the tower limit is reached.
+5. Add focused deterministic/UI checks and run affected existing checks; verify the exact worktree through a cache-busted LAN browser review before a local commit.
+
+**Deliberate exclusions:** deleting hero source/assets, hero redesign/balance, changes to existing tower cost/combat/population behavior, altering the established defensive formation anchor (inner first turret; outward coverage only through second turret), queue ordering/build times, broad AI strategy/balance work, remote push/deployment, or unrelated dirty/generated artifacts.
+
+**Evidence gates:** red→green focused checks prove hero disabling across economy/AI/UI, third-tower legality/placement/AI schedule and retained population accounting, ten-item queue enforcement, and queue indicator geometry/text contract. Existing relevant checks must remain green. Browser/LAN review must show no hero controls, a queue indicator at an occupied queue, and the served candidate asset from this exact worktree. Commit only after owner review.
+
+**Local validation complete; owner review pending:** `tools/heroes-off-check.mjs`, `tools/turret-sim-check.mjs`, `tools/production-queue-cap-check.mjs`, `tools/queue-indicator-check.mjs`, `tools/build-menu-active-state-check.mjs`, `tools/hard-turret-schedule-check.mjs`, and `tools/hard-third-turret-schedule-check.mjs` pass. Real Chrome CDP sessions against the verified LAN endpoint exercised four unit purchases and observed a `4/10` queue; separately queued a live structure with `remaining: 15/20`, visibly rendered its cyan progress bar, confirmed direct hero purchase rejection (`heroesDisabled`), emitted no console errors, and captured `artifacts/screenshots/heroes-towers-queue-browser.png` plus `artifacts/screenshots/build-menu-active-browser.png`. The server's LAN `src/config.js` and `src/render/ui.js` SHA-256 values match this worktree. The screenshots are local review evidence only and remain untracked alongside the pre-existing screenshot. No commit or push has occurred.
 
 ### Integrated mainline
 

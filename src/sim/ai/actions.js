@@ -1,3 +1,5 @@
+import { CONFIG } from '../../config.js';
+
 const UNIT_KINDS = ['miner', 'warrior', 'archer'];
 const HERO_KINDS = ['forgemaster', 'hawkeye', 'vanguard'];
 
@@ -11,7 +13,7 @@ export function createPurchaseCandidates() {
     createPurchaseCandidate('raven'),
     createPurchaseCandidate('structure'),
     createPurchaseCandidate('turret'),
-    ...HERO_KINDS.map((kind) => createPurchaseCandidate('hero', kind)),
+    ...(CONFIG.HEROES_ENABLED ? HERO_KINDS.map((kind) => createPurchaseCandidate('hero', kind)) : []),
   ];
 }
 
