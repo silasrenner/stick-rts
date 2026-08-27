@@ -1,5 +1,5 @@
 import { CONFIG } from '../config.js';
-import { UPDATE_LOG, UPDATE_LOG_VERSION, UPDATE_LOG_DATE } from '../updateLog.js';
+import { UPDATE_LOG } from '../updateLog.js';
 import { canAfford, getOccupiedCap, getPopulationState, countQueued } from '../sim/systems/economy.js';
 import { getCap, livingStructures, livingTurrets } from '../sim/systems/supply.js';
 import { isAliveEntity, isWatchAiMatch } from '../sim/world.js';
@@ -24,8 +24,8 @@ export const PURCHASE_REASON_TEXT = {
   queueFull: 'Production queue is full',
   gold: 'Not enough gold',
   cap: 'Population cap reached',
-  maxStructures: 'Max structures built',
-  maxTurrets: 'Max turrets built',
+  maxStructures: 'Max count reached',
+  maxTurrets: 'Max count reached',
   heroAlive: 'Hero already deployed',
   heroCooldown: 'Hero respawning...',
   ravenActive: 'Raven already active',
@@ -39,7 +39,8 @@ const BUTTON_REASON_TEXT = {
   queueFull: 'Queue full',
   gold: 'Need more gold',
   cap: 'Population full',
-  maxStructures: 'Structures full',
+  maxStructures: 'Max count reached',
+  maxTurrets: 'Max count reached',
   heroAlive: 'Hero deployed',
   heroCooldown: 'Hero respawning',
   ravenActive: 'Raven active',
@@ -222,8 +223,9 @@ export function drawWatchSpeedButton(ctx, speed) {
 
 // Pause placement: Player-vs-AI groups it with the top-right zoom controls;
 // Watch keeps the compact speed/pause row at bottom left.
-export function getPauseButtonRect(canvas, spectator = false) {
+export function getPauseButtonRect(canvas, spectator = false, touchControlsEnabled = false) {
   if (spectator) return { x: 64, y: canvas.height - 30, w: 88, h: 22 };
+  if (touchControlsEnabled) return { x: canvas.width - 98, y: 136, w: 90, h: 28 };
   const zoom = getZoomButtonRects(canvas, false);
   return { x: zoom.in.x - 96, y: zoom.in.y, w: 90, h: 28 };
 }
@@ -236,8 +238,8 @@ export function getPauseOverlayRects(canvas) {
   };
 }
 
-export function drawPauseButton(ctx, paused, spectator = false) {
-  drawMenuButton(ctx, getPauseButtonRect(ctx.canvas, spectator), paused ? 'Resume (P)' : 'Pause (P)', paused);
+export function drawPauseButton(ctx, paused, spectator = false, touchControlsEnabled = false) {
+  drawMenuButton(ctx, getPauseButtonRect(ctx.canvas, spectator, touchControlsEnabled), paused ? 'Resume (P)' : 'Pause (P)', paused);
 }
 
 export function drawPauseOverlay(ctx, speed) {
@@ -646,6 +648,10 @@ export function getBackToMenuButtonRect(canvas) {
   return { x: canvas.width / 2 - 70, y: canvas.height / 2 + 20, w: 140, h: 30 };
 }
 
+export function getExitToMenuButtonRect(canvas) {
+  return { x: canvas.width / 2 - 70, y: canvas.height / 2 + 104, w: 140, h: 30 };
+}
+
 export function drawWinLoseOverlay(ctx, world) {
   if (world.matchState !== 'won' && world.matchState !== 'lost') return;
 
@@ -678,6 +684,7 @@ export function drawWinLoseOverlay(ctx, world) {
   ctx.fillText('Difficulty', ctx.canvas.width / 2, ctx.canvas.height / 2 + 58);
 
   drawDifficultyButtons(ctx, getDifficultyButtonRects(ctx.canvas), world.teams.ai.difficulty);
+  drawMenuButton(ctx, getExitToMenuButtonRect(ctx.canvas), 'Exit to Menu');
 
   ctx.restore();
 }
@@ -801,17 +808,16 @@ function drawSettingsScreen(ctx, uiState) {
 export function getUpdateLogBackRect(canvas) { return getBackButtonRect(canvas); }
 
 function drawUpdateLogScreen(ctx) {
+  ctx.fillStyle = '#1f1f27';
+  ctx.fillRect(64, 86, 1272, 372);
   ctx.textAlign = 'center';
   ctx.fillStyle = '#e8e8ee';
   ctx.font = 'bold 20px monospace';
   ctx.fillText('Update Log', ctx.canvas.width / 2, 74);
-  ctx.font = '13px monospace';
-  ctx.fillStyle = '#8fd1e0';
-  ctx.fillText(`${UPDATE_LOG_VERSION}  •  ${UPDATE_LOG_DATE}`, ctx.canvas.width / 2, 100);
   ctx.textAlign = 'left';
-  ctx.font = '13px monospace';
+  ctx.font = '12px monospace';
   ctx.fillStyle = '#d0d0d8';
-  UPDATE_LOG.forEach((entry, index) => ctx.fillText(`• ${entry}`, 90, 144 + index * 34));
+  UPDATE_LOG.forEach((entry, index) => ctx.fillText(`${entry.date}  —  ${entry.text}`, 90, 116 + index * 34));
   drawMenuButton(ctx, getUpdateLogBackRect(ctx.canvas), '< Back');
 }
 

@@ -1,10 +1,15 @@
-export const UPDATE_LOG_VERSION = 'v3.0';
-export const UPDATE_LOG_DATE = 'August 9, 2026';
-
+// Player-facing release history. Keep this newest-first and retain the ten
+// latest meaningful shipped gameplay updates; documentation-only commits do not
+// displace a player-visible release.
 export const UPDATE_LOG = [
-  'Archers now advance from spawn to their mine-side formation position.',
-  'Each team begins with a turret and can build three additional turrets.',
-  'Watch AI shows match time, resource lead, and both teams’ summaries.',
-  'Watch speed supports 1×, 5×, 10×, and 20×.',
-  'Hard AI has global awareness of enemy army composition.',
+  { date: '2026-08-27', text: 'Target saturation, truthful population, and persistent production chips.' },
+  { date: '2026-08-27', text: 'Match telemetry, kill totals, and player pause placement.' },
+  { date: '2026-08-27', text: 'Heroes disabled; third buildable tower and ten-slot production queue.' },
+  { date: '2026-08-27', text: 'Reviewed speed controls, turret/archer/warrior balance, and Escape pause.' },
+  { date: '2026-08-20', text: 'Team vision, Raven scouting, and Hard build-to-attack strategy.' },
+  { date: '2026-08-16', text: 'Hard AI feasible-production correction.' },
+  { date: '2026-08-16', text: 'Hard build cycle advances only after committed unit production.' },
+  { date: '2026-08-10', text: 'Archer range and cadence tuning.' },
+  { date: '2026-08-10', text: 'Hard AI rebuilds armies before attacking.' },
+  { date: '2026-08-10', text: 'Scheduled Hard turret prioritization.' },
 ];

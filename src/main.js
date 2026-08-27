@@ -11,6 +11,7 @@ import {
   getRematchButtonRect,
   getDifficultyButtonRects,
   getBackToMenuButtonRect,
+  getExitToMenuButtonRect,
   getMainMenuButtonRects,
   getPlayDifficultyRects,
   getWatchSetupRects,
@@ -371,7 +372,7 @@ canvas.addEventListener('pointercancel', releaseHeldHeroControl);
 
 bindClick(canvas, (x, y) => {
   if (world.matchState === 'playing') {
-    if (pointInRect(x, y, getPauseButtonRect(canvas, isWatchAiMatch(world)))) {
+    if (pointInRect(x, y, getPauseButtonRect(canvas, isWatchAiMatch(world), uiState.touchControlsEnabled))) {
       togglePause();
       return;
     }
@@ -405,6 +406,10 @@ bindClick(canvas, (x, y) => {
   }
 
   if (world.matchState !== 'playing') {
+    if (pointInRect(x, y, getExitToMenuButtonRect(canvas))) {
+      backToMenu();
+      return;
+    }
     if (pointInRect(x, y, getRematchButtonRect(canvas))) {
       resetMatch();
       return;

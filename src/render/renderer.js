@@ -8,8 +8,7 @@ import { drawHUD, drawBuildMenu, drawWinLoseOverlay, drawMenuScreen, getBottomBa
 import { drawParallax } from './parallax.js';
 import { drawMatchTelemetry, drawWatchTelemetryOverlay } from './watchTelemetryOverlay.js';
 
-const LEGEND_LINE =
-  'Your command: Q Attack  W Defend  E Retreat   |   Debug: F FPS  S Stress-spawn';
+
 
 // Reads world state only; never mutates it. Spectator perspective is uiState
 // only and therefore cannot affect simulation, AI knowledge, or RNG.
@@ -66,7 +65,6 @@ export function render(ctx, world, camera, uiMessage, uiState) {
     drawMenuScreen(ctx, uiState);
     return;
   }
-  drawLegend(ctx, world);
   if (!isWatchAiMatch(world)) drawHUD(ctx, world, uiMessage);
   drawWatchTelemetryOverlay(ctx, world, spectatorView);
   drawMatchTelemetry(ctx, world, { showGoldDifferential: !isWatchAiMatch(world) || spectatorView === 'full' });
@@ -76,7 +74,7 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   if (uiState.touchControlsEnabled && !isWatchAiMatch(world) && world.matchState === 'playing') drawTouchCommandControls(ctx, world);
   drawBuildMenu(ctx, world);
   drawWinLoseOverlay(ctx, world);
-  if (world.matchState === 'playing') drawPauseButton(ctx, uiState.paused, isWatchAiMatch(world));
+  if (world.matchState === 'playing') drawPauseButton(ctx, uiState.paused, isWatchAiMatch(world), uiState.touchControlsEnabled);
   if (uiState.paused) drawPauseOverlay(ctx, uiState.speed);
 }
 
@@ -122,16 +120,5 @@ function projectilePosition(projectile) {
 }
 function drawProjectile(ctx, pos) {
   ctx.fillStyle = '#f2d24b'; ctx.beginPath(); ctx.arc(pos.x, pos.y, 3, 0, Math.PI * 2); ctx.fill();
-}
-const LEGEND_LINE_GAP = 6;
-const LEGEND_LINE_HEIGHT = 14;
-function drawLegend(ctx, world) {
-  ctx.fillStyle = '#8a8a96'; ctx.font = '11px monospace';
-  const bottomLineY = getBottomBarTop(ctx.canvas) - LEGEND_LINE_GAP;
-  if (isWatchAiMatch(world)) return;
-  const difficulty = world.teams.ai.difficulty;
-  const label = difficulty ? difficulty[0].toUpperCase() + difficulty.slice(1) : 'none';
-  ctx.fillText(`AI difficulty: ${label}`, 10, bottomLineY - LEGEND_LINE_HEIGHT);
-  ctx.fillText(LEGEND_LINE, 10, bottomLineY);
 }
 function lerp(a, b, t) { return a + (b - a) * t; }
