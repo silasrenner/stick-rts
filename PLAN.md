@@ -2,6 +2,12 @@
 
 Cross-session context carrier. Keep current scope, recovery state, and dirty-worktree warnings here. Completed work belongs in `HISTORY.md`; detailed durable findings live in focused `docs/analysis/` documents.
 
+## Current mainline scope — mobile/player UI polish and dated update history
+
+Owner-approved 2026-08-27 integration: Player Structure/Turret max-count labels now read `Max count reached`; turret range/damage are `700`/`47.6`; Archer and Warrior speed are both `90`; mobile Player Pause avoids the touch-command tray while active/pending queue chips remain visible. Player victory/defeat overlays include Exit to Menu; Player-vs-AI no longer renders AI-difficulty or command/debug descriptions; Update Log presents the ten latest meaningful gameplay updates newest-first with dates and an opaque reading panel.
+
+Source and focused browser/Node regressions are integrated on local `main` in `28b7e9b`; generated screenshots remain local-only. This handoff will be synchronized with `origin/main` by the following documentation commit. No active implementation scope is authorized.
+
 ## Current status — 2026-08-27
 
 ### Integrated local-main scope — population, saturation, and telemetry
