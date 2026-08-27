@@ -4,9 +4,9 @@ Cross-session context carrier. Keep current scope, recovery state, and dirty-wor
 
 ## Current status — 2026-08-27
 
-### Active local-only scope — heroes off, third tower, queue capacity
+### Completed mainline scope — heroes off, third tower, queue capacity
 
-Owner approval: 2026-08-27. Worktree: `C:\\Users\\simcr\\projects\\stick-rts\\worktrees\\pvai-pause-speed`; branch: `agent/pvai-pause-speed-local`. This batch must remain separate from the pre-existing untracked `artifacts/screenshots/pvai-pause-speed-overlay.png`.
+Owner approval: 2026-08-27. Source was reviewed in `C:\\Users\\simcr\\projects\\stick-rts\\worktrees\\pvai-pause-speed` on `agent/pvai-pause-speed-local`, then fast-forwarded to `main` and pushed to `origin/main` in `ad03217`. Generated screenshots remain intentionally untracked.
 
 **Included:**
 
@@ -20,7 +20,7 @@ Owner approval: 2026-08-27. Worktree: `C:\\Users\\simcr\\projects\\stick-rts\\wo
 
 **Evidence gates:** red→green focused checks prove hero disabling across economy/AI/UI, third-tower legality/placement/AI schedule and retained population accounting, ten-item queue enforcement, and queue indicator geometry/text contract. Existing relevant checks must remain green. Browser/LAN review must show no hero controls, a queue indicator at an occupied queue, and the served candidate asset from this exact worktree. Commit only after owner review.
 
-**Local validation complete; owner review pending:** `tools/heroes-off-check.mjs`, `tools/turret-sim-check.mjs`, `tools/production-queue-cap-check.mjs`, `tools/queue-indicator-check.mjs`, `tools/build-menu-active-state-check.mjs`, `tools/hard-turret-schedule-check.mjs`, and `tools/hard-third-turret-schedule-check.mjs` pass. Real Chrome CDP sessions against the verified LAN endpoint exercised four unit purchases and observed a `4/10` queue; separately queued a live structure with `remaining: 15/20`, visibly rendered its cyan progress bar, confirmed direct hero purchase rejection (`heroesDisabled`), emitted no console errors, and captured `artifacts/screenshots/heroes-towers-queue-browser.png` plus `artifacts/screenshots/build-menu-active-browser.png`. The server's LAN `src/config.js` and `src/render/ui.js` SHA-256 values match this worktree. The screenshots are local review evidence only and remain untracked alongside the pre-existing screenshot. No commit or push has occurred.
+**Local validation and promotion complete:** `tools/heroes-off-check.mjs`, `tools/turret-sim-check.mjs`, `tools/production-queue-cap-check.mjs`, `tools/queue-indicator-check.mjs`, `tools/build-menu-active-state-check.mjs`, `tools/hard-turret-schedule-check.mjs`, and `tools/hard-third-turret-schedule-check.mjs` pass. Real Chrome CDP sessions against the verified LAN endpoint exercised four unit purchases and observed a `4/10` queue; separately queued a live structure with `remaining: 15/20`, visibly rendered its cyan progress bar, confirmed direct hero purchase rejection (`heroesDisabled`), emitted no console errors, and captured `artifacts/screenshots/heroes-towers-queue-browser.png` plus `artifacts/screenshots/build-menu-active-browser.png`. The LAN `src/config.js` and `src/render/ui.js` SHA-256 values matched the reviewed worktree. The reviewed branch fast-forwarded to local `main` and `ad03217` was verified equal to `origin/main`. The screenshots remain local-only.
 
 ### Integrated mainline
 
