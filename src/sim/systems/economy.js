@@ -24,7 +24,7 @@ function enqueue(world, team, action, kind) {
 }
 
 function queueHasCapacity(world, team) { return world.teams[team].productionQueue.length < CONFIG.PRODUCTION_QUEUE_LIMIT; }
-function occupiedCap(world, team) {
+export function getOccupiedCap(world, team) {
   return getUnitCount(world, team)
     + countQueued(world, team, 'unit')
     + (livingTurrets(world, team).filter((turret) => !turret.isStartingTurret).length + countQueued(world, team, 'turret')) * CONFIG.TURRET_POPULATION_COST;
@@ -45,7 +45,7 @@ export function getPurchaseFeasibility(world, team, candidate) {
     const stats = CONFIG.UNIT_STATS[kind];
     if (!stats) return infeasible('invalidKind');
     if (!canAfford(world, team, stats.cost)) return infeasible('gold');
-    if (occupiedCap(world, team) + 1 > getCap(world, team)) return infeasible('cap');
+    if (getOccupiedCap(world, team) + 1 > getCap(world, team)) return infeasible('cap');
     return feasible();
   }
 
@@ -60,7 +60,7 @@ export function getPurchaseFeasibility(world, team, candidate) {
   if (action === 'turret') {
     if (livingTurrets(world, team).length + countQueued(world, team, 'turret') >= CONFIG.MAX_TURRETS) return infeasible('maxTurrets');
     if (!canAfford(world, team, CONFIG.TURRET_COST)) return infeasible('gold');
-    if (occupiedCap(world, team) + CONFIG.TURRET_POPULATION_COST > getCap(world, team)) return infeasible('cap');
+    if (getOccupiedCap(world, team) + CONFIG.TURRET_POPULATION_COST > getCap(world, team)) return infeasible('cap');
     return feasible();
   }
 

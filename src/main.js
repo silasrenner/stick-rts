@@ -30,6 +30,8 @@ import { bindClick, pointInRect, bindMouseMove, bindCameraGestures, bindWheel } 
 import { createKeyState } from './input/keyState.js';
 
 const DEFAULT_DIFFICULTY = 'medium';
+const GAME_SPEEDS = [1, 5, 10, 20];
+const DEFAULT_GAME_SPEED = 5;
 
 const canvas = document.getElementById('game');
 canvas.width = CONFIG.VIEWPORT_WIDTH;
@@ -43,7 +45,7 @@ const uiState = {
   menuScreen: 'main', // 'main' | 'playDifficulty' | 'watchSetup' | 'settings'
   settings: { fpsVisible: false, defaultDifficulty: DEFAULT_DIFFICULTY },
   watchSetup: { playerDifficulty: 'hard', aiDifficulty: 'hard', seed: null },
-  watchSpeed: 1,
+  speed: DEFAULT_GAME_SPEED,
   spectatorView: 'full', // render-only Watch AI perspective; never part of world.
   paused: false,
   touchControlsEnabled: window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0,
@@ -98,7 +100,7 @@ function resetMatch(difficulty = world.teams.ai.difficulty ?? uiState.settings.d
   world.matchState = 'playing';
   world.teams.ai.difficulty = difficulty;
   uiMessage = { text: '', timer: 0 };
-  uiState.watchSpeed = 1;
+  uiState.speed = DEFAULT_GAME_SPEED;
   uiState.spectatorView = 'full';
   uiState.paused = false;
   camera.x = 0;
@@ -112,7 +114,7 @@ function startWatchAiMatch(playerDifficulty, aiDifficulty, seed) {
   world.teams.player.difficulty = playerDifficulty;
   world.teams.ai.difficulty = aiDifficulty;
   uiMessage = { text: '', timer: 0 };
-  uiState.watchSpeed = 1;
+  uiState.speed = DEFAULT_GAME_SPEED;
   uiState.spectatorView = 'full';
   uiState.paused = false;
   camera.x = 0;
@@ -159,6 +161,11 @@ function toggleFpsOverlay() {
 function togglePause() {
   if (world.matchState !== 'playing') return;
   uiState.paused = !uiState.paused;
+}
+
+function cycleGameSpeed() {
+  const currentIndex = GAME_SPEEDS.indexOf(uiState.speed);
+  uiState.speed = GAME_SPEEDS[(currentIndex + 1) % GAME_SPEEDS.length] ?? DEFAULT_GAME_SPEED;
 }
 
 // Debug-only stress scenario
@@ -221,6 +228,7 @@ bindDebugKeys({
   f: () => toggleFpsOverlay(),
   s: () => spawnStressTest(),
   p: () => togglePause(),
+  escape: () => togglePause(),
 });
 
 function handleMenuClick(x, y) {
@@ -316,8 +324,7 @@ function handleWatchAiClick(x, y) {
     }
   }
   if (world.matchState === 'playing' && pointInRect(x, y, getWatchSpeedButtonRect(canvas))) {
-    const speeds = [1, 5, 10, 20];
-    uiState.watchSpeed = speeds[(speeds.indexOf(uiState.watchSpeed) + 1) % speeds.length];
+    cycleGameSpeed();
     return;
   }
   if ((world.matchState === 'won' || world.matchState === 'lost') && pointInRect(x, y, getBackToMenuButtonRect(canvas))) backToMenu();
@@ -370,7 +377,8 @@ bindClick(canvas, (x, y) => {
     }
     if (uiState.paused) {
       const rects = getPauseOverlayRects(canvas);
-      if (pointInRect(x, y, rects.resume)) togglePause();
+      if (pointInRect(x, y, rects.speed)) cycleGameSpeed();
+      else if (pointInRect(x, y, rects.resume)) togglePause();
       else if (pointInRect(x, y, rects.exit)) backToMenu();
       return;
     }
@@ -459,12 +467,15 @@ function tick(dt) {
   tickCount++;
 }
 
+function advanceSimulation(deltaMs) {
+  if (uiState.paused) return;
+  accumulator.advance(deltaMs * (world.matchState === 'playing' ? uiState.speed : 1), tick);
+}
+
 function frame(time) {
   const deltaMs = time - lastTime;
   lastTime = time;
-  if (!uiState.paused) {
-    accumulator.advance(deltaMs * (isWatchAiMatch(world) && world.matchState === 'playing' ? uiState.watchSpeed : 1), tick);
-  }
+  advanceSimulation(deltaMs);
   updateCamera(camera, world, mouseX, deltaMs / 1000, dragDeltaX);
   dragDeltaX = 0; // consumed for this frame — only read inside updateCamera's Watch-AI branch, harmless otherwise
   render(ctx, world, camera, uiMessage, uiState);
@@ -500,6 +511,7 @@ window.__heroSpecial = specialWithControlledHero;
 window.__spawnStressTest = spawnStressTest;
 window.__toggleFpsOverlay = toggleFpsOverlay;
 window.__togglePause = togglePause;
+window.__advanceSimulation = advanceSimulation;
 window.__fps = () => fps;
 window.__uiState = uiState;
 window.__startWatchAiMatch = startWatchAiMatch;

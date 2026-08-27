@@ -70,13 +70,13 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   if (!isWatchAiMatch(world)) drawHUD(ctx, world, uiMessage);
   drawWatchTelemetryOverlay(ctx, world, spectatorView);
   drawZoomControls(ctx, isWatchAiMatch(world));
-  if (isWatchAiMatch(world) && world.matchState === 'playing') drawWatchSpeedButton(ctx, uiState.watchSpeed);
+  if (isWatchAiMatch(world) && world.matchState === 'playing') drawWatchSpeedButton(ctx, uiState.speed);
   if (isWatchAiMatch(world) && world.matchState === 'playing') drawSpectatorViewSelector(ctx, spectatorView);
   if (uiState.touchControlsEnabled && !isWatchAiMatch(world) && world.matchState === 'playing') drawTouchCommandControls(ctx, world);
   drawBuildMenu(ctx, world);
   drawWinLoseOverlay(ctx, world);
   if (world.matchState === 'playing') drawPauseButton(ctx, uiState.paused, isWatchAiMatch(world));
-  if (uiState.paused) drawPauseOverlay(ctx);
+  if (uiState.paused) drawPauseOverlay(ctx, uiState.speed);
 }
 
 function drawVisionFog(ctx, world, team) {

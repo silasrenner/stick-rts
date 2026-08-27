@@ -1,6 +1,6 @@
 import { CONFIG } from '../config.js';
 import { UPDATE_LOG, UPDATE_LOG_VERSION, UPDATE_LOG_DATE } from '../updateLog.js';
-import { canAfford, getUnitCount, hasLivingOrQueuedHero, getHeroCost, countQueued } from '../sim/systems/economy.js';
+import { canAfford, getOccupiedCap, hasLivingOrQueuedHero, getHeroCost, countQueued } from '../sim/systems/economy.js';
 import { getCap, livingStructures } from '../sim/systems/supply.js';
 import { isAliveEntity, isWatchAiMatch } from '../sim/world.js';
 import { drawStickFigure, TEAM_COLORS } from './stickFigure.js';
@@ -224,8 +224,9 @@ export function getPauseButtonRect(canvas, spectator = false) {
 
 export function getPauseOverlayRects(canvas) {
   return {
-    resume: { x: canvas.width / 2 - 70, y: canvas.height / 2 - 2, w: 140, h: 34 },
-    exit: { x: canvas.width / 2 - 70, y: canvas.height / 2 + 46, w: 140, h: 34 },
+    speed: { x: canvas.width / 2 - 70, y: canvas.height / 2 - 2, w: 140, h: 34 },
+    resume: { x: canvas.width / 2 - 70, y: canvas.height / 2 + 44, w: 140, h: 34 },
+    exit: { x: canvas.width / 2 - 70, y: canvas.height / 2 + 90, w: 140, h: 34 },
   };
 }
 
@@ -233,7 +234,7 @@ export function drawPauseButton(ctx, paused, spectator = false) {
   drawMenuButton(ctx, getPauseButtonRect(ctx.canvas, spectator), paused ? 'Resume (P)' : 'Pause (P)', paused);
 }
 
-export function drawPauseOverlay(ctx) {
+export function drawPauseOverlay(ctx, speed) {
   const rects = getPauseOverlayRects(ctx.canvas);
   ctx.save();
   ctx.fillStyle = 'rgba(0, 0, 0, 0.68)';
@@ -245,6 +246,7 @@ export function drawPauseOverlay(ctx) {
   ctx.font = '13px monospace';
   ctx.fillStyle = '#b8b8c2';
   ctx.fillText('Simulation and both AIs are frozen.', ctx.canvas.width / 2, ctx.canvas.height / 2 - 24);
+  drawMenuButton(ctx, rects.speed, `Game Speed: ${speed}×`);
   drawMenuButton(ctx, rects.resume, 'Resume');
   drawMenuButton(ctx, rects.exit, 'Exit to Menu');
   ctx.restore();
@@ -306,7 +308,7 @@ export function getBuildButtonDisabledReason(world, button) {
 
   if (button.action === 'unit') {
     if (!canAfford(world, 'player', cost)) return 'gold';
-    if (getUnitCount(world, 'player') + countQueued(world, 'player', 'unit') >= getCap(world, 'player')) return 'cap';
+    if (getOccupiedCap(world, 'player') >= getCap(world, 'player')) return 'cap';
     return null;
   }
   if (button.action === 'structure') {
@@ -477,7 +479,7 @@ function drawArmyCompositionRow(ctx, x, y, composition) {
 export function drawHUD(ctx, world, uiMessage) {
   const gold = world.teams.player.gold;
   const cap = getCap(world, 'player');
-  const count = getUnitCount(world, 'player');
+  const occupied = getOccupiedCap(world, 'player');
   const command = world.teams.player.command;
   const heroCooldown = world.teams.player.heroCooldownTimer;
   const composition = getArmyComposition(world, 'player');
@@ -506,7 +508,7 @@ export function drawHUD(ctx, world, uiMessage) {
   ctx.font = '13px monospace';
   ctx.fillText(`Gold: ${gold}`, 10, y);
   y += lineHeight;
-  ctx.fillText(`Units: ${count}/${cap}`, 10, y);
+  ctx.fillText(`Population: ${occupied}/${cap}`, 10, y);
   y += lineHeight;
   ctx.fillText(`Command: ${command[0].toUpperCase()}${command.slice(1)}`, 10, y);
   y += lineHeight;

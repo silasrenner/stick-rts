@@ -16,11 +16,11 @@ if (resetStates.watch.x !== 0 || resetStates.watch.targetX !== 0 || resetStates.
 await evaluate(`window.__startWatchAiMatch('easy', 'hard', 1)`);
 const speedLabels = [];
 for (let i = 0; i < 5; i += 1) {
-  speedLabels.push(await evaluate('window.__uiState.watchSpeed'));
+  speedLabels.push(await evaluate('window.__uiState.speed'));
   await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: 33, y: 521, button: 'left', buttons: 1, clickCount: 1 });
   await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: 33, y: 521, button: 'left', buttons: 0, clickCount: 1 });
 }
-if (speedLabels.join(',') !== '1,5,10,20,1') throw new Error(`Watch speed must cycle 1→5→10→20→1: ${speedLabels}`);
+if (speedLabels.join(',') !== '5,10,20,1,5') throw new Error(`Watch speed must cycle 5→10→20→1→5: ${speedLabels}`);
 await evaluate(`window.__resetMatch('medium'); window.__camera.x = 900; window.__camera.targetX = 900; window.__camera.zoom = 0.7;`);
 await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: 900, y: 200, button: 'left', buttons: 1, clickCount: 1 });
 await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 700, y: 200, button: 'left', buttons: 1 });

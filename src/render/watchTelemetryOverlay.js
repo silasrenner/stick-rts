@@ -1,5 +1,5 @@
 import { CONFIG } from '../config.js';
-import { getUnitCount } from '../sim/systems/economy.js';
+import { getOccupiedCap } from '../sim/systems/economy.js';
 import { getCap, livingStructures, livingTurrets } from '../sim/systems/supply.js';
 import { isAliveEntity, isWatchAiMatch } from '../sim/world.js';
 import { TEAM_COLORS } from './stickFigure.js';
@@ -23,7 +23,7 @@ export function drawWatchTelemetryOverlay(ctx, world, spectatorView = 'full') {
     const textX = left ? x + 8 : x + CONFIG.HUD_PANEL_WIDTH - 8; const state = world.teams[team]; const c = composition(world, team);
     ctx.save(); ctx.fillStyle = 'rgba(20,20,26,.72)'; ctx.fillRect(x, 4, CONFIG.HUD_PANEL_WIDTH, 72);
     ctx.textAlign = left ? 'left' : 'right'; ctx.fillStyle = left ? TEAM_COLORS.player : TEAM_COLORS.ai; ctx.font = 'bold 12px monospace'; ctx.fillText(left ? 'RED' : 'BLUE', textX, 18);
-    ctx.fillStyle = '#e8e8ee'; ctx.font = '12px monospace'; ctx.fillText(`${state.gold} gold`, textX, 35); ctx.fillText(`${getUnitCount(world, team)}/${getCap(world, team)} pop`, textX, 51); ctx.fillText(`M${c.miner} W${c.warrior} A${c.archer} S${c.structures} T${c.turrets}`, textX, 67); ctx.restore();
+    ctx.fillStyle = '#e8e8ee'; ctx.font = '12px monospace'; ctx.fillText(`${state.gold} gold`, textX, 35); ctx.fillText(`${getOccupiedCap(world, team)}/${getCap(world, team)} pop`, textX, 51); ctx.fillText(`M${c.miner} W${c.warrior} A${c.archer} S${c.structures} T${c.turrets}`, textX, 67); ctx.restore();
   }
   const diff = getGoldDifferential(world); ctx.save(); ctx.textAlign = 'center'; ctx.fillStyle = '#e8e8ee'; ctx.font = 'bold 16px monospace'; ctx.fillText(formatMatchClock(world.matchElapsedTime), ctx.canvas.width / 2, 20);
   if (perspectiveTeam === null) { ctx.fillStyle = diff.team === 'player' ? TEAM_COLORS.player : diff.team === 'ai' ? TEAM_COLORS.ai : '#e8e8ee'; ctx.font = 'bold 13px monospace'; ctx.fillText(`${diff.amount} gold`, ctx.canvas.width / 2, 40); }

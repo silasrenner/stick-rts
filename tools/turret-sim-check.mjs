@@ -2,7 +2,8 @@ import { CONFIG } from '../src/config.js';
 import { createWorld, createUnit, createStructure } from '../src/sim/world.js';
 import { updateCombat } from '../src/sim/systems/combat.js';
 import { updateProjectiles } from '../src/sim/systems/projectiles.js';
-import { buyTurret, buyUnit } from '../src/sim/systems/economy.js';
+import { buyTurret, buyUnit, getOccupiedCap, getUnitCount } from '../src/sim/systems/economy.js';
+import { getCap } from '../src/sim/systems/supply.js';
 import { updateProductionQueue } from '../src/sim/systems/production.js';
 
 const world = createWorld(1);
@@ -36,13 +37,16 @@ for (let i = 0; i < 12; i += 1) {
 }
 const capped = buyUnit(world, 'player', 'miner');
 if (capped.ok || capped.reason !== 'cap') throw new Error(`Turrets must consume ${CONFIG.TURRET_POPULATION_COST} cap slots each: ${JSON.stringify(capped)}`);
+if (getOccupiedCap(world, 'player') !== getCap(world, 'player') || getUnitCount(world, 'player') === getOccupiedCap(world, 'player')) throw new Error(`Population display must include turret cap use while unit count stays distinct: ${JSON.stringify({ units: getUnitCount(world, 'player'), occupied: getOccupiedCap(world, 'player'), cap: getCap(world, 'player') })}`);
 
 const target = createUnit('warrior', 'ai', turret.x + 100, CONFIG.GROUND_Y);
+target.hp = 200;
+target.maxHp = 200;
 world.units.push(target);
 const hpBeforeShot = target.hp;
 updateCombat(world, 1 / CONFIG.TICK_HZ);
 for (let i = 0; i < 120 && target.hp === hpBeforeShot; i += 1) updateProjectiles(world, 1 / CONFIG.TICK_HZ);
-if (target.hp !== hpBeforeShot - CONFIG.TURRET_DAMAGE) throw new Error(`Turret shot must deal 28 damage: before=${hpBeforeShot} after=${target.hp}`);
+if (target.hp !== hpBeforeShot - CONFIG.TURRET_DAMAGE) throw new Error(`Turret shot must deal doubled 56 damage: before=${hpBeforeShot} after=${target.hp}`);
 if (turret.x !== CONFIG.PLAYER_HOME_X + CONFIG.TURRET_SLOT_OFFSETS[0]) throw new Error('Turret moved while attacking.');
 
-console.log('PASS — turret cost, queue time, automatic slot, max-two limit, population use, and 28-damage stationary shot are correct.');
+console.log('PASS — turret cost, queue time, automatic slot, max-two limit, population use, and doubled 56-damage stationary shot are correct.');
