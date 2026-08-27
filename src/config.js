@@ -73,8 +73,7 @@ export const CONFIG = {
   STRUCTURE_COST: 300, // S8: doubled from 150
   TURRET_COST: 600,
   TURRET_BUILD_TIME: 15,
-  TURRET_POPULATION_COST: 8,
-  MAX_TURRETS: 4, // one free base turret plus three buildable defensive positions
+  MAX_TURRETS: 4,
   TURRET_HP: 450,
   TURRET_DAMAGE: 56,
   TURRET_RANGE: 560,
@@ -99,6 +98,13 @@ export const CONFIG = {
   GOLD_PER_TRIP: 23,
   UNIT_KILL_REWARD_RATE: 0.10, // killer receives 10% of a defeated unit's invested value
   MINER_ARRIVE_THRESHOLD: 4, // px
+
+  // Warriors and archers distribute new/reacquired targets within an existing
+  // priority tier. Heroes and turrets retain their ordinary nearest-target rule.
+  TARGET_SATURATION: {
+    multipliers: [1.00, 0.70, 0.40, 0.15], // 0, 1, 2, 3+ committed friendly warrior/archer attackers
+    distanceWeight: 0.35,
+  },
 
   // S7 formation system (sim/systems/formation.js): deterministic per-unit
   // slot assignment so groups read as ranks/files, not stacked blobs.

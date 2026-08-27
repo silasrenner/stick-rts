@@ -4,6 +4,26 @@ Cross-session context carrier. Keep current scope, recovery state, and dirty-wor
 
 ## Current status — 2026-08-27
 
+### Approved local scope — truthful population + persistent structure/turret queue icons
+
+Owner approval: 2026-08-27. Continue in the existing reviewed saturation worktree/branch without discarding its dirty source/test changes.
+
+**Included:** make population’s primary count equal living non-hero units and explicitly show queued unit reservations; structures and all turrets (completed or queued) consume zero population and do not block turret purchase on cap. Keep queue-limit, gold, structure/turret maximum, and unit-reservation enforcement authoritative. Render the active production-queue head as a persistent, progress-marked chip so structure/turret glyphs do not vanish when they become active; retain the existing active build-button progress cue.
+
+**Deliberate exclusions:** cap/queue-limit rebalance, unit/structure/turret prices or stats, build ordering, AI policy, saturation behavior, deployment, push, and generated screenshot versioning.
+
+**Validation complete / awaiting owner LAN review:** `tools/population-and-queue-ui-check.mjs` passed red→green, proving turrets reserve zero population, the player HUD shows literal units with explicit queued reservation, and the active structure glyph persists in the queue row. Retained queue, turret, saturation, syntax, and 5,000-tick headless checks pass; `git diff --check` passes. Real Chrome/CDP canvas input on the candidate clicked Structure, Turret, and Miner, producing active `structure` at ~50% progress plus pending `turret` and `unit`; it observed `living: 0`, `queued: 1`, `reserved: 1`, no console errors, and screenshot `artifacts/screenshots/population-queue-browser.png` (local-only). The served `economy.js` and `ui.js` SHA-256 values match the candidate worktree at `http://192.168.0.83:8812/`. No commit or push has been performed.
+
+### Approved local scope — warrior/archer target saturation
+
+Owner approval: 2026-08-27. Worktree: `C:\\Users\\simcr\\projects\\stick-rts\\worktrees\\player-telemetry-kills` on `agent/warrior-archer-target-saturation-local`, based on local commit `be4e188`.
+
+**Included:** deterministic target-saturation selection for warriors and archers only. Within the existing selected target-priority tier, a new/reacquiring warrior or archer uses the configured saturation multiplier for living friendly warrior/archer units currently committed to each candidate, then the existing distance preference and stable-ID tie-break. Preserve existing target stickiness, priority hierarchy, core-turret shield/statue gating, movement, hero behavior, and turret behavior.
+
+**Deliberate exclusions:** combat stats/balance, production/AI strategy, heroes, turrets, formations, continuous retargeting, changes to targeting priority/gating, deployment, push, and unrelated generated screenshots.
+
+**Validation complete / awaiting owner LAN review:** `tools/target-saturation-check.mjs`, `tools/core-turret-shield-check.mjs`, `tools/turret-targeting-check.mjs`, `tools/turret-sim-check.mjs`, and `tools/headless.js` pass; `git diff --check` passes. A real Chrome CDP fixture against this candidate created two enemy combat targets and two warriors plus two archers, and observed an exact `2/2` target split (`warrior → near/far`, `archer → near/far`) with no console errors. Screenshot: `artifacts/screenshots/target-saturation-browser.png` (local-only). The exact candidate is served at `http://192.168.0.83:8812/`; served `src/sim/systems/supply.js` SHA-256 matches the worktree. No commit or push has been performed.
+
 ### Approved local scope — shared match telemetry, kills, and player pause placement
 
 Owner approval: 2026-08-27. Isolated worktree: `C:\\Users\\simcr\\projects\\stick-rts\\worktrees\\player-telemetry-kills` on `agent/player-telemetry-kills-local`, based on `main` `df05832`.

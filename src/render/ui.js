@@ -1,6 +1,6 @@
 import { CONFIG } from '../config.js';
 import { UPDATE_LOG, UPDATE_LOG_VERSION, UPDATE_LOG_DATE } from '../updateLog.js';
-import { canAfford, getOccupiedCap, countQueued } from '../sim/systems/economy.js';
+import { canAfford, getOccupiedCap, getPopulationState, countQueued } from '../sim/systems/economy.js';
 import { getCap, livingStructures, livingTurrets } from '../sim/systems/supply.js';
 import { isAliveEntity, isWatchAiMatch } from '../sim/world.js';
 import { drawStickFigure, TEAM_COLORS } from './stickFigure.js';
@@ -333,7 +333,6 @@ export function getBuildButtonDisabledReason(world, button) {
   if (button.action === 'turret') {
     if (livingTurrets(world, 'player').length + countQueued(world, 'player', 'turret') >= CONFIG.MAX_TURRETS) return 'maxTurrets';
     if (!canAfford(world, 'player', cost)) return 'gold';
-    if (getOccupiedCap(world, 'player') + CONFIG.TURRET_POPULATION_COST > getCap(world, 'player')) return 'cap';
     return null;
   }
   return 'heroesDisabled';
@@ -357,10 +356,10 @@ function groupQueueChips(queue) {
   return chips;
 }
 
-function drawQueueChip(ctx, x, y, w, h, chip) {
-  ctx.fillStyle = '#2c2c33'; // solid — see drawBuildMenu's note on avoiding bleed-through at high zoom
+function drawQueueChip(ctx, x, y, w, h, chip, { active = false, progress = 0 } = {}) {
+  ctx.fillStyle = active ? '#263945' : '#2c2c33';
   ctx.fillRect(x, y, w, h);
-  ctx.strokeStyle = '#55555f';
+  ctx.strokeStyle = active ? '#8fd1e0' : '#55555f';
   ctx.lineWidth = 1;
   ctx.strokeRect(x, y, w, h);
 
@@ -372,6 +371,13 @@ function drawQueueChip(ctx, x, y, w, h, chip) {
   ctx.fillStyle = '#e8e8ee';
   ctx.font = '10px monospace';
   ctx.fillText(`×${chip.count}`, x + w - 4, y + h - 4);
+  if (active) {
+    const barH = CONFIG.BUILD_PROGRESS_BAR_HEIGHT;
+    ctx.fillStyle = '#1a1a1f';
+    ctx.fillRect(x, y + h - barH, w, barH);
+    ctx.fillStyle = '#8fd1e0';
+    ctx.fillRect(x, y + h - barH, w * progress, barH);
+  }
   ctx.textAlign = 'left';
 }
 
@@ -391,6 +397,7 @@ function drawQueueOverflowChip(ctx, x, y, w, h, remaining) {
 }
 
 function drawQueueChipRow(ctx, queue) {
+  const activeItem = queue[0] ?? null;
   const chips = groupQueueChips(queue.slice(1));
   const canvas = ctx.canvas;
   const { y, h } = getQueueChipRowRect(canvas);
@@ -402,18 +409,22 @@ function drawQueueChipRow(ctx, queue) {
   ctx.textAlign = 'right';
   ctx.fillText(`${queue.length}/${CONFIG.PRODUCTION_QUEUE_LIMIT}`, startX - gap, y + h / 2 + 4);
   ctx.textAlign = 'left';
-  if (chips.length === 0) return;
+  if (!activeItem) return;
+
   const maxSlots = Math.max(1, Math.floor((rowWidth + gap) / (chipW + gap)));
+  const progress = Math.max(0, Math.min(1, 1 - activeItem.remaining / activeItem.total));
+  drawQueueChip(ctx, startX, y, chipW, h, { ...activeItem, count: 1 }, { active: true, progress });
+  if (maxSlots === 1 || chips.length === 0) return;
 
-  const overflow = chips.length > maxSlots;
-  const visibleCount = overflow ? maxSlots - 1 : chips.length;
-
+  const pendingSlots = maxSlots - 1;
+  const overflow = chips.length > pendingSlots;
+  const visibleCount = overflow ? Math.max(0, pendingSlots - 1) : chips.length;
   for (let i = 0; i < visibleCount; i++) {
-    drawQueueChip(ctx, startX + i * (chipW + gap), y, chipW, h, chips[i]);
+    drawQueueChip(ctx, startX + (i + 1) * (chipW + gap), y, chipW, h, chips[i]);
   }
   if (overflow) {
-    const remaining = chips.slice(visibleCount).reduce((sum, c) => sum + c.count, 0);
-    drawQueueOverflowChip(ctx, startX + visibleCount * (chipW + gap), y, chipW, h, remaining);
+    const remaining = chips.slice(visibleCount).reduce((sum, chip) => sum + chip.count, 0);
+    drawQueueOverflowChip(ctx, startX + (visibleCount + 1) * (chipW + gap), y, chipW, h, remaining);
   }
 }
 
@@ -496,7 +507,7 @@ function drawArmyCompositionRow(ctx, x, y, composition) {
 export function drawHUD(ctx, world, uiMessage) {
   const gold = world.teams.player.gold;
   const cap = getCap(world, 'player');
-  const occupied = getOccupiedCap(world, 'player');
+  const population = getPopulationState(world, 'player');
   const command = world.teams.player.command;
   const heroCooldown = world.teams.player.heroCooldownTimer;
   const composition = getArmyComposition(world, 'player');
@@ -525,7 +536,7 @@ export function drawHUD(ctx, world, uiMessage) {
   ctx.font = '13px monospace';
   ctx.fillText(`Gold: ${gold}`, 10, y);
   y += lineHeight;
-  ctx.fillText(`Population: ${occupied}/${cap}`, 10, y);
+  ctx.fillText(`Population: ${population.living}/${cap}${population.queued > 0 ? ` (+${population.queued} queued)` : ''}`, 10, y);
   y += lineHeight;
   ctx.fillText(`Command: ${command[0].toUpperCase()}${command.slice(1)}`, 10, y);
   y += lineHeight;

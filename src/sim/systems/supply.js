@@ -25,32 +25,60 @@ export function targetPriorityTier(entity) {
   return 0;
 }
 
-// Nearest living enemy combat unit (warrior/archer/hero) in range if any;
-// else nearest living enemy miner in range — living defenders are always
-// preferred over miners when both are reachable, not just "nearest."
-function findPriorityUnitWithin(world, unit) {
-  let nearestCombat = null;
-  let nearestCombatDist = Infinity;
-  let nearestMiner = null;
-  let nearestMinerDist = Infinity;
+const SATURATION_ATTACKER_KINDS = new Set(['warrior', 'archer']);
 
+function isSaturationAttacker(unit) {
+  return SATURATION_ATTACKER_KINDS.has(unit.kind);
+}
+
+function committedSaturationAttackers(world, unit, candidate) {
+  let count = 0;
   for (const other of world.units) {
-    if (other.team === unit.team || !isAliveEntity(other)) continue;
-    const dist = Math.abs(other.x - unit.x);
-    if (dist > unit.acquireRange) continue;
+    if (other.team === unit.team && isAliveEntity(other) && isSaturationAttacker(other) && other.targetId === candidate.id) count += 1;
+  }
+  return count;
+}
 
-    if (other.isMiner) {
-      if (dist < nearestMinerDist) {
-        nearestMiner = other;
-        nearestMinerDist = dist;
-      }
-    } else if (dist < nearestCombatDist) {
-      nearestCombat = other;
-      nearestCombatDist = dist;
+// Select only within an already-established priority tier. Warriors and
+// archers favor comparable candidates with fewer committed friendly
+// warrior/archer attackers; all other attackers retain nearest-target choice.
+function selectTargetWithinTier(world, unit, candidates) {
+  let selected = null;
+  let selectedScore = -Infinity;
+  let selectedDistance = Infinity;
+  for (const candidate of candidates) {
+    const distance = Math.abs(candidate.x - unit.x);
+    const saturation = isSaturationAttacker(unit)
+      ? CONFIG.TARGET_SATURATION.multipliers[Math.min(
+        CONFIG.TARGET_SATURATION.multipliers.length - 1,
+        committedSaturationAttackers(world, unit, candidate),
+      )]
+      : 1;
+    const distancePreference = 1 - CONFIG.TARGET_SATURATION.distanceWeight * Math.min(1, distance / unit.acquireRange);
+    const score = saturation * distancePreference;
+    if (
+      score > selectedScore
+      || (score === selectedScore && distance < selectedDistance)
+      || (score === selectedScore && distance === selectedDistance && candidate.id < selected.id)
+    ) {
+      selected = candidate;
+      selectedScore = score;
+      selectedDistance = distance;
     }
   }
+  return selected;
+}
 
-  return nearestCombat ?? nearestMiner;
+// Living combat defenders still outrank miners; saturation is deliberately
+// applied only after that tier choice is made.
+function findPriorityUnitWithin(world, unit) {
+  const combat = [];
+  const miners = [];
+  for (const other of world.units) {
+    if (other.team === unit.team || !isAliveEntity(other) || Math.abs(other.x - unit.x) > unit.acquireRange) continue;
+    (other.isMiner ? miners : combat).push(other);
+  }
+  return selectTargetWithinTier(world, unit, combat.length > 0 ? combat : miners);
 }
 
 // Nearest living enemy combat unit in range; else nearest living enemy
@@ -72,11 +100,7 @@ export function findAttackTarget(world, unit) {
   const structuresInRange = world.structures.filter(
     (s) => s.team === enemyTeam && isAliveEntity(s) && Math.abs(s.x - unit.x) <= unit.acquireRange
   );
-  if (structuresInRange.length > 0) {
-    return structuresInRange.reduce((nearest, s) =>
-      Math.abs(s.x - unit.x) < Math.abs(nearest.x - unit.x) ? s : nearest
-    );
-  }
+  if (structuresInRange.length > 0) return selectTargetWithinTier(world, unit, structuresInRange);
 
   const statue = world.statues[enemyTeam];
   if (isAliveEntity(statue) && Math.abs(statue.x - unit.x) <= unit.acquireRange) {

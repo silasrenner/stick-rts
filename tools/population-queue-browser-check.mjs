@@ -1,0 +1,23 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const CDP_PORT = Number(process.env.CDP_PORT || 9225);
+const APP_URL = process.env.APP_URL || `http://192.168.0.83:8812/?population-queue-browser-check=${Date.now()}`;
+async function newTarget(url) { const response = await fetch(`http://127.0.0.1:${CDP_PORT}/json/new?${encodeURIComponent(url)}`, { method: 'PUT' }); if (!response.ok) throw new Error(`Could not open CDP target: ${response.status}`); return response.json(); }
+function connect(url) { const ws = new WebSocket(url); let id = 0; const pending = new Map(); const errors = []; ws.onmessage = ({ data }) => { const message = JSON.parse(data); if (!message.id) { if (message.method === 'Runtime.exceptionThrown') errors.push(message.params.exceptionDetails.text); if (message.method === 'Log.entryAdded' && message.params.entry.level === 'error') errors.push(message.params.entry.text); return; } const request = pending.get(message.id); pending.delete(message.id); message.error ? request.reject(new Error(message.error.message)) : request.resolve(message.result); }; const ready = new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; }); const send = (method, params = {}) => new Promise((resolve, reject) => { const requestId = ++id; pending.set(requestId, { resolve, reject }); ws.send(JSON.stringify({ id: requestId, method, params })); }); return { ws, ready, send, errors }; }
+const target = await newTarget('about:blank'); const { ws, ready, send, errors } = connect(target.webSocketDebuggerUrl); await ready;
+await send('Page.enable'); await send('Runtime.enable'); await send('Log.enable'); await send('Network.enable'); await send('Network.setCacheDisabled', { cacheDisabled: true }); await send('Emulation.setDeviceMetricsOverride', { width: 1400, height: 540, deviceScaleFactor: 1, mobile: false }); await send('Page.navigate', { url: APP_URL });
+async function evaluate(expression) { const result = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true }); if (result.exceptionDetails) throw new Error(result.exceptionDetails.text); return result.result.value; }
+for (let i = 0; i < 30; i += 1) { await new Promise((resolve) => setTimeout(resolve, 100)); if (await evaluate('typeof window.__resetMatch') === 'function') break; if (i === 29) throw new Error('Game did not initialize'); }
+await evaluate(`window.__resetMatch('medium'); window.__world.teams.player.gold = 10000;`);
+const buttons = await evaluate(`(async () => { const { getBuildMenuButtons } = await import('/src/render/ui.js'); return getBuildMenuButtons(document.querySelector('#game')).map(({ action, rect }) => ({ action, rect })); })()`);
+for (const action of ['structure', 'turret', 'unit']) {
+  const button = buttons.find((item) => item.action === action && (action !== 'unit' || item.rect));
+  if (!button) throw new Error(`Missing ${action} button`);
+  await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: button.rect.x + button.rect.w / 2, y: button.rect.y + button.rect.h / 2, button: 'left', clickCount: 1 });
+  await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: button.rect.x + button.rect.w / 2, y: button.rect.y + button.rect.h / 2, button: 'left', clickCount: 1 });
+}
+await evaluate('window.__forceTicks(600);');
+const result = await evaluate(`(async () => { const { getPopulationState } = await import('/src/sim/systems/economy.js'); const state = getPopulationState(window.__world, 'player'); return { queue: window.__world.teams.player.productionQueue.map(({ action, remaining, total }) => ({ action, remaining, total })), population: state, livingUnits: window.__world.units.filter((unit) => unit.team === 'player' && !unit.isHero && unit.state !== 'dead').length }; })()`);
+if (result.queue.length !== 3 || result.queue[0].action !== 'structure' || result.queue[1].action !== 'turret' || result.queue[2].action !== 'unit' || !(result.queue[0].remaining > 0 && result.queue[0].remaining < result.queue[0].total) || result.population.living !== 0 || result.population.queued !== 1 || result.population.reserved !== 1 || result.livingUnits !== 0) throw new Error(`Unexpected canvas-input scenario: ${JSON.stringify(result)}`);
+const screenshot = await send('Page.captureScreenshot', { format: 'png' }); const screenshotPath = join('artifacts', 'screenshots', 'population-queue-browser.png'); mkdirSync(join('artifacts', 'screenshots'), { recursive: true }); writeFileSync(screenshotPath, screenshot.data, 'base64'); ws.close(); if (errors.length) throw new Error(`Browser console errors: ${JSON.stringify(errors)}`); console.log(JSON.stringify({ appUrl: APP_URL, result, screenshotPath }, null, 2));

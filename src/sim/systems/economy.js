@@ -24,11 +24,16 @@ function enqueue(world, team, action, kind) {
 }
 
 function queueHasCapacity(world, team) { return world.teams[team].productionQueue.length < CONFIG.PRODUCTION_QUEUE_LIMIT; }
-export function getOccupiedCap(world, team) {
-  return getUnitCount(world, team)
-    + countQueued(world, team, 'unit')
-    + (livingTurrets(world, team).filter((turret) => !turret.isStartingTurret).length + countQueued(world, team, 'turret')) * CONFIG.TURRET_POPULATION_COST;
+export function getQueuedUnitCount(world, team) { return countQueued(world, team, 'unit'); }
+export function getPopulationState(world, team) {
+  const living = getUnitCount(world, team);
+  const queued = getQueuedUnitCount(world, team);
+  return { living, queued, reserved: living + queued };
 }
+// Reserved cap is authoritative purchase accounting. The player-facing
+// Population value is getPopulationState(...).living; queued units are shown
+// separately, while structures and turrets reserve no population at all.
+export function getOccupiedCap(world, team) { return getPopulationState(world, team).reserved; }
 function spend(world, team, cost) { world.teams[team].gold -= cost; world.teams[team].goldSpent += cost; }
 
 function feasible() { return { feasible: true, reason: null }; }
@@ -61,7 +66,6 @@ export function getPurchaseFeasibility(world, team, candidate) {
   if (action === 'turret') {
     if (livingTurrets(world, team).length + countQueued(world, team, 'turret') >= CONFIG.MAX_TURRETS) return infeasible('maxTurrets');
     if (!canAfford(world, team, CONFIG.TURRET_COST)) return infeasible('gold');
-    if (getOccupiedCap(world, team) + CONFIG.TURRET_POPULATION_COST > getCap(world, team)) return infeasible('cap');
     return feasible();
   }
 
