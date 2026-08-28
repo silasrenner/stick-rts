@@ -20,6 +20,17 @@ function nearestFriendlyWarriorDistance(world, unit) {
 // Sets state to 'idle'/'walking'; combat.js may override to 'attacking'
 // afterward in this same tick. Controlled heroes are skipped entirely —
 // their movement is player-driven (see heroes.js's updateHeroControl).
+function minerIsThreatened(world, miner) {
+  if (findNearestEnemyWithin(world, miner, miner.threatRange)) return true;
+  // A ranged attacker can hold a miner as its live target from beyond the
+  // miner's short proximity radius. Include both units and turrets: combat
+  // refreshes targetId after movement, so this protects the miner on the next
+  // movement tick before another attack can resolve.
+  return [...world.units, ...world.structures].some(
+    (enemy) => enemy.team !== miner.team && isAliveEntity(enemy) && enemy.targetId === miner.id
+  );
+}
+
 export function updateMovement(world, dt) {
   for (const unit of world.units) {
     if (unit.state === 'dying') continue;
@@ -30,9 +41,8 @@ export function updateMovement(world, dt) {
     let holding = false;
 
     if (unit.isMiner) {
-      const threat = findNearestEnemyWithin(world, unit, unit.threatRange);
-      if (threat) {
-        desiredX = unit.fleeX;
+      if (minerIsThreatened(world, unit)) {
+        desiredX = world.statues[unit.team].x;
       } else {
         const decision = getMinerDesiredX(unit, world);
         desiredX = decision.desiredX;

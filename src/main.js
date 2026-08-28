@@ -17,6 +17,7 @@ import {
   getWatchSetupRects,
   getSettingsRects,
   getUpdateLogBackRect,
+  getBackButtonRect,
   getPauseButtonRect,
   getPauseOverlayRects,
   getZoomButtonRects,
@@ -49,6 +50,7 @@ const uiState = {
   speed: DEFAULT_GAME_SPEED,
   spectatorView: 'full', // render-only Watch AI perspective; never part of world.
   paused: false,
+  guideOpen: false,
   touchControlsEnabled: window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0,
 };
 
@@ -282,6 +284,10 @@ function handleMenuClick(x, y) {
       if (pointInRect(x, y, getUpdateLogBackRect(canvas))) uiState.menuScreen = 'main';
       return;
     }
+    case 'guide': {
+      if (pointInRect(x, y, getBackButtonRect(canvas))) uiState.menuScreen = 'main';
+      return;
+    }
     case 'settings': {
       const rects = getSettingsRects(canvas);
       if (pointInRect(x, y, rects.back)) {
@@ -306,6 +312,7 @@ function handleMenuClick(x, y) {
         if (id === 'play') uiState.menuScreen = 'playDifficulty';
         else if (id === 'watchAi') uiState.menuScreen = 'watchSetup';
         else if (id === 'updates') uiState.menuScreen = 'updates';
+        else if (id === 'guide') uiState.menuScreen = 'guide';
         else if (id === 'settings') uiState.menuScreen = 'settings';
         return;
       }
@@ -377,9 +384,14 @@ bindClick(canvas, (x, y) => {
       return;
     }
     if (uiState.paused) {
+      if (uiState.guideOpen) {
+        if (pointInRect(x, y, getBackButtonRect(canvas))) uiState.guideOpen = false;
+        return;
+      }
       const rects = getPauseOverlayRects(canvas);
       if (pointInRect(x, y, rects.speed)) cycleGameSpeed();
       else if (pointInRect(x, y, rects.resume)) togglePause();
+      else if (pointInRect(x, y, rects.guide)) uiState.guideOpen = true;
       else if (pointInRect(x, y, rects.exit)) backToMenu();
       return;
     }

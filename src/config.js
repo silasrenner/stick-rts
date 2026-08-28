@@ -60,7 +60,7 @@ export const CONFIG = {
 
   STARTING_GOLD: 300,
   BASE_UNIT_CAP: 15, // S8: cap rework — 15 + 5*13 = 80 max, under the 100-unit stress target
-  MINER_BUILD_TIME: 5, // seconds
+  MINER_BUILD_TIME: 5.75, // seconds (+15% from the former 5s)
   WARRIOR_BUILD_TIME: 10,
   ARCHER_BUILD_TIME: 12,
   STRUCTURE_BUILD_TIME: 20,
@@ -93,7 +93,8 @@ export const CONFIG = {
   STATUE_HP: 2000,
   STATUE_WARNING_DURATION: 3, // seconds the "statue under attack" signal stays lit after the last hit
   MINE_OFFSET: 240, // px from homeX, toward the battlefield, past the last structure slot
-  MINE_SLOTS: 4,
+  MINE_DEPOSIT_SPACING: 38, // px either side of the original mine center; visible split without crowding the first turret
+  MINE_SLOTS: 4, // team-wide simultaneous extraction cap across all deposits
   MINE_CYCLE_TIME: 3, // seconds to extract one load
   GOLD_PER_TRIP: 23,
   UNIT_KILL_REWARD_RATE: 0.10, // killer receives 10% of a defeated unit's invested value

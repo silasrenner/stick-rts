@@ -1,14 +1,44 @@
 import { CONFIG } from '../../config.js';
 
+function assignMineDeposits(world) {
+  for (const team of ['player', 'ai']) {
+    const mineField = world.mines[team];
+    const commitments = mineField.deposits.map(() => 0);
+    const unassigned = [];
+
+    for (const unit of world.units) {
+      if (!unit.minesGold || unit.team !== team || unit.state === 'dying') continue;
+      if (Number.isInteger(unit.mineDepositIndex) && mineField.deposits[unit.mineDepositIndex]) commitments[unit.mineDepositIndex] += 1;
+      else unassigned.push(unit);
+    }
+
+    // Stable ID order makes allocation independent of incidental world.units ordering.
+    for (const unit of unassigned.sort((a, b) => a.id - b.id)) {
+      const lowestCommitment = Math.min(...commitments);
+      const depositIndex = commitments.findIndex((count) => count === lowestCommitment);
+      unit.mineDepositIndex = depositIndex;
+      commitments[depositIndex] += 1;
+    }
+  }
+}
+
+function assignedDeposit(world, unit) {
+  const deposits = world.mines[unit.team].deposits;
+  return deposits[unit.mineDepositIndex] ?? deposits[1];
+}
+
 // Runs before movement: decides/advances each gold-mining unit's toMine ->
 // mining -> toBase -> toMine cycle. Movement.js reads the resulting
 // miningState via getMinerDesiredX to know where to walk (unless a miner's
 // threat-flee override, or a forgemaster's combat target, takes priority).
 export function updateMining(world, dt) {
+  assignMineDeposits(world);
+
   for (const unit of world.units) {
     if (!unit.minesGold || unit.state === 'dying') continue;
 
-    const mine = world.mines[unit.team];
+    const mineField = world.mines[unit.team];
+    const deposit = assignedDeposit(world, unit);
     const statue = world.statues[unit.team];
 
     if (unit.miningState === 'mining') {
@@ -23,15 +53,16 @@ export function updateMining(world, dt) {
         world.teams[unit.team].gold += unit.carrying;
         unit.carrying = 0;
         unit.miningState = 'toMine';
+        unit.mineDepositIndex = null;
       }
     } else {
       // 'toMine' (also the safe default for any unexpected value)
       unit.miningState = 'toMine';
-      if (Math.abs(unit.x - mine.x) <= CONFIG.MINER_ARRIVE_THRESHOLD) {
+      if (Math.abs(unit.x - deposit.x) <= CONFIG.MINER_ARRIVE_THRESHOLD) {
         const miningCount = world.units.filter(
           (u) => u.minesGold && u.team === unit.team && u.miningState === 'mining' && u.state !== 'dying'
         ).length;
-        if (miningCount < mine.slots) {
+        if (miningCount < mineField.slots) {
           unit.miningState = 'mining';
           unit.mineTimer = CONFIG.MINE_CYCLE_TIME;
         }
@@ -43,5 +74,5 @@ export function updateMining(world, dt) {
 export function getMinerDesiredX(unit, world) {
   if (unit.miningState === 'mining') return { desiredX: unit.x, holding: true };
   if (unit.miningState === 'toBase') return { desiredX: world.statues[unit.team].x, holding: false };
-  return { desiredX: world.mines[unit.team].x, holding: false };
+  return { desiredX: assignedDeposit(world, unit).x, holding: false };
 }

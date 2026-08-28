@@ -3,6 +3,15 @@ import { createRng } from './rng.js';
 
 let nextId = 1;
 
+// Each field retains the old team-wide worker ceiling while presenting three
+// small deposits. `direction` preserves a mirrored left/right ordering.
+function createMineField(centerX, y, direction) {
+  return {
+    slots: CONFIG.MINE_SLOTS,
+    deposits: [-1, 0, 1].map((offset) => ({ x: centerX + direction * offset * CONFIG.MINE_DEPOSIT_SPACING, y })),
+  };
+}
+
 // Each team gets its own RNG stream, derived from one master seed but never
 // sharing a draw counter — same seed reproduces an identical trace for both
 // teams regardless of which team's decision timer happens to elapse first
@@ -63,8 +72,8 @@ export function createWorld(seed = Date.now()) {
       },
     },
     mines: {
-      player: { x: CONFIG.PLAYER_HOME_X + CONFIG.MINE_OFFSET, y: CONFIG.GROUND_Y, slots: CONFIG.MINE_SLOTS },
-      ai: { x: CONFIG.AI_HOME_X - CONFIG.MINE_OFFSET, y: CONFIG.GROUND_Y, slots: CONFIG.MINE_SLOTS },
+      player: createMineField(CONFIG.PLAYER_HOME_X + CONFIG.MINE_OFFSET, CONFIG.GROUND_Y, 1),
+      ai: createMineField(CONFIG.AI_HOME_X - CONFIG.MINE_OFFSET, CONFIG.GROUND_Y, -1),
     },
     statues: {
       player: createStatue('player', CONFIG.PLAYER_HOME_X, CONFIG.GROUND_Y),
@@ -131,6 +140,7 @@ export function createUnit(kind, team, x, y) {
 
     // mining (miners only, but harmless as unused fields on other kinds)
     miningState: 'toMine',
+    mineDepositIndex: null, // stable chosen deposit for the current home → mine → home trip
     mineTimer: 0,
     carrying: 0,
   };

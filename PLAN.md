@@ -2,11 +2,15 @@
 
 Cross-session context carrier. Keep current scope, recovery state, and dirty-worktree warnings here. Completed work belongs in `HISTORY.md`; detailed durable findings live in focused `docs/analysis/` documents.
 
-## Current mainline scope — mobile/player UI polish and dated update history
+## Current approved scope — deposits, player guide, and miner safety/build time
 
-Owner-approved 2026-08-27 integration: Player Structure/Turret max-count labels now read `Max count reached`; turret range/damage are `700`/`47.6`; Archer and Warrior speed are both `90`; mobile Player Pause avoids the touch-command tray while active/pending queue chips remain visible. Player victory/defeat overlays include Exit to Menu; Player-vs-AI no longer renders AI-difficulty or command/debug descriptions; Update Log presents the ten latest meaningful gameplay updates newest-first with dates and an opaque reading panel.
+Owner approval: 2026-08-27. Candidate worktree: `C:\\Users\\simcr\\projects\\stick-rts\\worktrees\\miner-three-deposits` on `agent/miner-three-deposits-local`, based on synchronized `main` `fc70266`.
 
-Source and focused browser/Node regressions are integrated on local `main` in `28b7e9b`; generated screenshots remain local-only. This handoff will be synchronized with `origin/main` by the following documentation commit. No active implementation scope is authorized.
+**Included:** retain the already-validated three mirrored gold deposits centered at the existing mine (±`38px`) and deterministic stable miner allocation while preserving the four-worker team-wide extraction cap, mine-cycle timing, and gold per trip. Add an opaque Game Guide reachable from the landing page and Player-vs-AI pause menu, returning to the originating menu/state and covering current controls, UI, Miner/Warrior/Archer/Structure/Turret/Raven references, matching glyphs, and Q/W/E command keycaps. Increase authoritative miner build time from `5s` to `5.75s` (+15%). First diagnose the owner-reported miner non-retreat through a deterministic red reproduction and real browser path; trace the threat query, movement intent, tick order, and render state before applying only the necessary source fix so threatened miners reliably retreat to their core.
+
+**Deliberate exclusions:** changes to miner cost/speed, gold amount/cycle, AI production policy, tower placement and defense formation, combat balance/targeting, hero re-enablement, deployment/push, and generated screenshot versioning.
+
+**Evidence gates:** preserve the completed mine-deposit regression/browser evidence. New guide/navigation, miner-build-time, and miner-retreat tests must be red first; the retreat test must demonstrate the reported failure before any fix. Retain relevant pause/menu, mining/deposit, turret/defense, and headless checks. Real Chrome/CDP must exercise landing → Guide → Back and paused match → Guide → Back, plus a concrete miner-threat scenario. Serve and hash-verify the exact candidate at `http://192.168.0.83:8861/`; do not commit until owner review. External-device LAN reachability remains unverified unless the elevation-required firewall rule for port `8861` is added.
 
 ## Current status — 2026-08-27
 

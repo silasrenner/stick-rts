@@ -234,7 +234,8 @@ export function getPauseOverlayRects(canvas) {
   return {
     speed: { x: canvas.width / 2 - 70, y: canvas.height / 2 - 2, w: 140, h: 34 },
     resume: { x: canvas.width / 2 - 70, y: canvas.height / 2 + 44, w: 140, h: 34 },
-    exit: { x: canvas.width / 2 - 70, y: canvas.height / 2 + 90, w: 140, h: 34 },
+    guide: { x: canvas.width / 2 - 70, y: canvas.height / 2 + 90, w: 140, h: 34 },
+    exit: { x: canvas.width / 2 - 70, y: canvas.height / 2 + 136, w: 140, h: 34 },
   };
 }
 
@@ -256,6 +257,7 @@ export function drawPauseOverlay(ctx, speed) {
   ctx.fillText('Simulation and both AIs are frozen.', ctx.canvas.width / 2, ctx.canvas.height / 2 - 24);
   drawMenuButton(ctx, rects.speed, `Game Speed: ${speed}×`);
   drawMenuButton(ctx, rects.resume, 'Resume');
+  drawMenuButton(ctx, rects.guide, 'Game Guide');
   drawMenuButton(ctx, rects.exit, 'Exit to Menu');
   ctx.restore();
 }
@@ -701,6 +703,7 @@ const MENU_ITEMS = [
   { id: 'play', label: 'Play' },
   { id: 'watchAi', label: 'Watch AI' },
   { id: 'updates', label: 'Update Log' },
+  { id: 'guide', label: 'Game Guide' },
   { id: 'settings', label: 'Settings' },
 ];
 
@@ -718,7 +721,7 @@ function drawMainMenu(ctx) {
   ctx.textAlign = 'center';
   ctx.fillStyle = '#e8e8ee';
   ctx.font = 'bold 40px monospace';
-  ctx.fillText('STICK RTS', ctx.canvas.width / 2, ctx.canvas.height / 2 - 100);
+  ctx.fillText('STICK RTS', ctx.canvas.width / 2, 110);
 
   for (const { label, rect } of getMainMenuButtonRects(ctx.canvas)) {
     drawMenuButton(ctx, rect, label);
@@ -821,6 +824,47 @@ function drawUpdateLogScreen(ctx) {
   drawMenuButton(ctx, getUpdateLogBackRect(ctx.canvas), '< Back');
 }
 
+function drawGuideKeycap(ctx, x, y, key, description) {
+  ctx.save();
+  ctx.fillStyle = '#303644'; ctx.strokeStyle = '#8fd1e0'; ctx.lineWidth = 1;
+  ctx.fillRect(x, y - 13, 24, 18); ctx.strokeRect(x, y - 13, 24, 18);
+  ctx.textAlign = 'center'; ctx.fillStyle = '#f6d68a'; ctx.font = 'bold 12px monospace'; ctx.fillText(key, x + 12, y);
+  ctx.textAlign = 'left'; ctx.fillStyle = '#d0d0d8'; ctx.font = '12px monospace'; ctx.fillText(description, x + 34, y);
+  ctx.restore();
+}
+
+function drawGameGuideScreen(ctx) {
+  ctx.fillStyle = '#1f1f27'; ctx.fillRect(64, 54, 1272, 432);
+  ctx.textAlign = 'center'; ctx.fillStyle = '#e8e8ee'; ctx.font = 'bold 24px monospace'; ctx.fillText('Game Guide', ctx.canvas.width / 2, 84);
+  ctx.textAlign = 'left'; ctx.font = 'bold 14px monospace';
+
+  ctx.fillStyle = '#8fd1e0'; ctx.fillText('Controls', 100, 132);
+  drawGuideKeycap(ctx, 100, 162, 'Q', 'Attack: rally your army toward the enemy core');
+  drawGuideKeycap(ctx, 100, 190, 'W', 'Defend: hold the line around your home');
+  drawGuideKeycap(ctx, 100, 218, 'E', 'Retreat: pull your fighters back to safety');
+  ctx.fillStyle = '#d0d0d8'; ctx.font = '12px monospace';
+  ctx.fillText('P / Escape: catch your breath and pause', 100, 252);
+  ctx.fillText('Mouse / touch: build, command, and explore', 100, 280);
+  ctx.fillText('Zoom buttons: survey the battlefield', 100, 308);
+
+  ctx.fillStyle = '#8fd1e0'; ctx.font = 'bold 14px monospace'; ctx.fillText('Interface', 480, 132);
+  ctx.fillStyle = '#d0d0d8'; ctx.font = '12px monospace';
+  ['Gold: fuel your growing warband', 'Population: living troops + queued recruits', 'Queue: watch your next reinforcements arrive', 'Clock and kills: follow the battle’s momentum'].forEach((line, index) => ctx.fillText(line, 480, 162 + index * 28));
+
+  ctx.fillStyle = '#8fd1e0'; ctx.font = 'bold 14px monospace'; ctx.fillText('Units', 900, 132);
+  const units = [
+    [{ kind: 'miner', action: 'unit' }, 'Miner: hauls gold and runs for the core'],
+    [{ kind: 'warrior', action: 'unit' }, 'Warrior: fearless close-range brawler'],
+    [{ kind: 'archer', action: 'unit' }, 'Archer: sharp-eyed long-range striker'],
+    [{ kind: 'structure', action: 'structure' }, 'Structure: raises your population cap'],
+    [{ kind: 'turret', action: 'turret' }, 'Turret: steadfast fortress defense'],
+    [{ kind: 'raven', action: 'raven' }, 'Raven: scout the unknown and reveal the way'],
+  ];
+  ctx.fillStyle = '#d0d0d8'; ctx.font = '12px monospace';
+  units.forEach(([item, line], index) => { const y = 162 + index * 28; drawKindGlyph(ctx, 908, y + 4, item); ctx.fillText(line, 924, y); });
+  drawMenuButton(ctx, getBackButtonRect(ctx.canvas), '< Back');
+}
+
 export function drawMenuScreen(ctx, uiState) {
   ctx.save();
   switch (uiState.menuScreen) {
@@ -832,6 +876,9 @@ export function drawMenuScreen(ctx, uiState) {
       break;
     case 'updates':
       drawUpdateLogScreen(ctx);
+      break;
+    case 'guide':
+      drawGameGuideScreen(ctx);
       break;
     case 'settings':
       drawSettingsScreen(ctx, uiState);

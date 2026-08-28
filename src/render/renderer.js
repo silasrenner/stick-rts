@@ -29,8 +29,11 @@ export function render(ctx, world, camera, uiMessage, uiState) {
     return x >= camera.x - CONFIG.CAMERA_CULL_MARGIN && x <= camera.x + visibleWorldWidth + CONFIG.CAMERA_CULL_MARGIN;
   };
 
-  if (visible(world.mines.player.x)) drawMine(ctx, world.mines.player);
-  if (visible(world.mines.ai.x)) drawMine(ctx, world.mines.ai);
+  for (const mineField of Object.values(world.mines)) {
+    for (const deposit of mineField.deposits) {
+      if (visible(deposit.x)) drawMine(ctx, deposit);
+    }
+  }
 
   // General base locations remain known. Outside vision the neutral silhouette
   // intentionally excludes hp and destroyed/live state.
@@ -75,7 +78,10 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   drawBuildMenu(ctx, world);
   drawWinLoseOverlay(ctx, world);
   if (world.matchState === 'playing') drawPauseButton(ctx, uiState.paused, isWatchAiMatch(world), uiState.touchControlsEnabled);
-  if (uiState.paused) drawPauseOverlay(ctx, uiState.speed);
+  if (uiState.paused) {
+    if (uiState.guideOpen) drawMenuScreen(ctx, { ...uiState, menuScreen: 'guide' });
+    else drawPauseOverlay(ctx, uiState.speed);
+  }
 }
 
 function drawVisionFog(ctx, world, team) {
