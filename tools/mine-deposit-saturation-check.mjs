@@ -7,7 +7,7 @@ function expect(condition, message) {
 }
 
 const world = createWorld(73);
-expect(CONFIG.GOLD_PER_TRIP === 11.5, `Gold per completed trip must be halved from 23 to 11.5; got ${CONFIG.GOLD_PER_TRIP}.`);
+expect(CONFIG.GOLD_PER_TRIP === 23, `Gold per completed trip must restore the original 23-gold yield; got ${CONFIG.GOLD_PER_TRIP}.`);
 const playerDeposits = world.mines.player.deposits;
 const aiDeposits = world.mines.ai.deposits;
 
@@ -65,6 +65,6 @@ assigned.x = world.statues.player.x;
 const goldBeforeDelivery = world.teams.player.gold;
 updateMining(world, 0);
 expect(assigned.miningState === 'toMine' && assigned.mineDepositIndex === null, 'A miner must clear its assignment only after returning home.');
-expect(world.teams.player.gold === goldBeforeDelivery + 11.5, `A completed normal mining trip must credit 11.5 gold; got ${world.teams.player.gold - goldBeforeDelivery}.`);
+expect(world.teams.player.gold === goldBeforeDelivery + 23, `A completed normal mining trip must credit 23 gold; got ${world.teams.player.gold - goldBeforeDelivery}.`);
 
 console.log('PASS — three mirrored deposits deterministically distribute miners while preserving stable trips and the shared extraction cap.');

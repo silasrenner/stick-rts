@@ -9,6 +9,24 @@ import { drawParallax } from './parallax.js';
 import { drawMatchTelemetry, drawWatchTelemetryOverlay } from './watchTelemetryOverlay.js';
 import { createVisionMemory, getSustainedVisionSamples, updateVisionMemory } from './visionMemory.js';
 
+const FOG_LAYER_TOP = -1000;
+const FOG_LAYER_HEIGHT = 2500;
+let fogLayer = null;
+
+function getFogLayerContext() {
+  if (!fogLayer) {
+    if (typeof OffscreenCanvas !== 'undefined') {
+      fogLayer = new OffscreenCanvas(CONFIG.WORLD_WIDTH, FOG_LAYER_HEIGHT);
+    } else if (typeof document !== 'undefined') {
+      fogLayer = document.createElement('canvas');
+      fogLayer.width = CONFIG.WORLD_WIDTH;
+      fogLayer.height = FOG_LAYER_HEIGHT;
+    } else {
+      throw new Error('Canvas fog requires OffscreenCanvas or document canvas support.');
+    }
+  }
+  return fogLayer.getContext('2d');
+}
 
 
 // Reads world state only; never mutates it. Watch perspectives and the Player
@@ -41,7 +59,8 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   if (spectatorTeam !== null) {
     const visionMemory = uiState.visionMemory ??= createVisionMemory();
     updateVisionMemory(visionMemory, getTeamVisionSources(world, spectatorTeam), world.matchElapsedTime);
-    drawVisionFog(ctx, world, spectatorTeam, getSustainedVisionSamples(visionMemory, world.matchElapsedTime));
+    const fogAlpha = watchAiMatch ? CONFIG.SPECTATOR_FOG_ALPHA : CONFIG.PLAYER_FOG_ALPHA;
+    drawVisionFog(ctx, world, spectatorTeam, getSustainedVisionSamples(visionMemory, world.matchElapsedTime), fogAlpha);
   }
 
   for (const structure of world.structures) {
@@ -95,22 +114,25 @@ export function isMineVisibleToViewer(world, viewerTeam, mineTeam, deposit) {
   return viewerTeam === null || mineTeam === viewerTeam || isPositionVisibleToTeam(world, viewerTeam, deposit.x, deposit.y);
 }
 
-export function drawVisionFog(ctx, world, team, sustainedSources = []) {
-  // Subtract each source from one fog layer. destination-out preserves the
-  // union of overlapping circles; the old even-odd clip inverted their overlap
-  // and made shared vision appear dark. Recent presentation-only samples stay
-  // fully clear for 10s, then their subtraction fades across the next 2s.
-  ctx.save();
-  ctx.fillStyle = `rgba(10, 12, 20, ${CONFIG.SPECTATOR_FOG_ALPHA})`;
-  ctx.fillRect(0, -1000, CONFIG.WORLD_WIDTH, 2500);
-  ctx.globalCompositeOperation = 'destination-out';
+export function drawVisionFog(ctx, world, team, sustainedSources = [], fogAlpha = CONFIG.SPECTATOR_FOG_ALPHA) {
+  // destination-out must act only on a transparent fog layer. Applying it to
+  // the main world canvas removes parallax/background pixels already rendered
+  // below the vision circles. Separate circles preserve the visibility union.
+  const fogCtx = getFogLayerContext();
+  fogCtx.save();
+  fogCtx.clearRect(0, 0, CONFIG.WORLD_WIDTH, FOG_LAYER_HEIGHT);
+  fogCtx.translate(0, -FOG_LAYER_TOP);
+  fogCtx.fillStyle = `rgba(10, 12, 20, ${fogAlpha})`;
+  fogCtx.fillRect(0, FOG_LAYER_TOP, CONFIG.WORLD_WIDTH, FOG_LAYER_HEIGHT);
+  fogCtx.globalCompositeOperation = 'destination-out';
   for (const source of [...getTeamVisionSources(world, team), ...sustainedSources]) {
-    ctx.globalAlpha = source.alpha ?? 1;
-    ctx.beginPath();
-    ctx.arc(source.x, source.y, source.radius, 0, Math.PI * 2);
-    ctx.fill();
+    fogCtx.globalAlpha = source.alpha ?? 1;
+    fogCtx.beginPath();
+    fogCtx.arc(source.x, source.y, source.radius, 0, Math.PI * 2);
+    fogCtx.fill();
   }
-  ctx.restore();
+  fogCtx.restore();
+  ctx.drawImage(fogLayer, 0, FOG_LAYER_TOP);
 }
 
 function drawRaven(ctx, raven) {

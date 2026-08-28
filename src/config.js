@@ -36,6 +36,7 @@ export const CONFIG = {
     structure: 325,
   },
   SPECTATOR_FOG_ALPHA: 0.42,
+  PLAYER_FOG_ALPHA: 0.30,
   VISION_SUSTAIN_SECONDS: 10,
   VISION_FADE_SECONDS: 2,
   VISION_MEMORY_SAMPLE_INTERVAL: 0.25,
@@ -98,7 +99,7 @@ export const CONFIG = {
   MINE_DEPOSIT_SPACING: 38, // px either side of the original mine center; visible split without crowding the first turret
   MINE_SLOTS: 4, // team-wide simultaneous extraction cap across all deposits
   MINE_CYCLE_TIME: 3, // seconds to extract one load
-  GOLD_PER_TRIP: 11.5, // exactly half the former 23-gold completed-trip yield
+  GOLD_PER_TRIP: 23, // restored original completed-trip yield after gameplay review
   UNIT_KILL_REWARD_RATE: 0.10,
 
   // Damaged non-core entities wait out this no-damage interval, then recover

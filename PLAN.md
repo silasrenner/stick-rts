@@ -179,6 +179,16 @@ Evidence: [`docs/analysis/hard-ai-information-value-raven-utility-v0-2026-08-20.
 
 **Validation result:** focused V1 and retained regression checks pass. Across Hard-vs-Hard seeds `701–710`, every first attack launched at exactly 24 combat, all 20 sides made major contact, and the cohort resolved `5 player / 5 AI / 0 unresolved`; this is observation, not a liveness claim. Mid-build Raven → observed composition → archer adaptation is present in raw traces, while initial opening armies generally reached 24 before the existing protected reserve permitted Raven; record this as an opportunity-cost finding, not an unapproved economy change. Evidence: `docs/analysis/hard-ai-build-scout-adapt-mass-attack-v1-2026-08-20.md` and `artifacts/hard-ai-build-scout-adapt-mass-attack-v1-summary-2026-08-20.txt`.
 
+## Current approved scope — Hard income retune and Player fog rendering
+
+Owner approval: 2026-08-28. Isolated worktree: `C:\Users\simcr\projects\stick-rts\worktrees\hard-income-fog` on `agent/hard-income-fog-local`, based on `main` `f2a9bcf`.
+
+**Included:** owner supersedes the bounded `15` retune after gameplay review: restore the original `23` gold completed-trip yield and confirm, through the same deterministic seeds, that Hard composition and first-attack timing return to the original-income behavior. Do not alter AI decision logic, costs, unit stats, composition/counter policy, or build-cycle mechanics. Correct Player-vs-AI fog composition so current/recent vision no longer erases already-rendered parallax/background imagery, and make unseen terrain visibly lighter while retaining the existing hidden-mobile-unit visibility rules.
+
+**Deliberate exclusions:** warrior/miner cost changes; AI scripted miner caps, treasury-reservation logic, goal/utility/feasibility/build-cycle changes; mine-slot/cycle/deposit changes; combat, formation, Raven, Watch-AI perspective, or simulation-vision behavior changes; push/deployment; generated screenshot versioning.
+
+**Evidence gates:** a red deterministic reproduction records the baseline 78-miner/2-warrior seed-701 composition at `11.5`; the restored original `23` gold/trip cohort across seeds `701–705` produces `18–21` miners, `36–39` warrior purchases, and first attacks at `461–492s`. `tools/hard-income-retune-check.mjs`, mining, Hard utility, fog composition/visibility, vision-sustain, and headless checks pass. Player fog renders from an isolated destination-out layer at `0.30` alpha and retains terrain/parallax behind vision. Owner completed LAN review; served `config.js` and `renderer.js` hashes match this worktree. Promotion to local `main` and `origin/main` is approved. Generated screenshots remain local-only; the existing browser harness's final clean-console assertion still reports only a missing `/favicon.ico` 404, not a game-render failure.
+
 ## Architecture invariants
 
 - Vanilla JS ES modules + Canvas 2D; no build step. Local preview: `python -m http.server`.

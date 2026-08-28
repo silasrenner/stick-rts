@@ -147,7 +147,9 @@ for (const [label, setup, goal] of [
     createPurchaseCandidate('unit', 'archer'),
   ];
   const world = createHardWorld();
-  world.teams[team].gold = 110;
+  // Keep the warrior feasible after its configured cost changed above the old
+  // literal 110-gold fixture input; this asserts utility, not a price point.
+  world.teams[team].gold = CONFIG.UNIT_STATS.warrior.cost;
   const feasibility = candidates.map((candidate) => ({ candidate, feasibility: getPurchaseFeasibility(world, team, candidate) }));
   const one = selectFeasibleUnitPurchase({ goal: 'buildArmy', difficulty: 'hard', candidateStates: feasibility, counterKind: null, buildCycleKind: null });
   const two = selectFeasibleUnitPurchase({ goal: 'buildArmy', difficulty: 'hard', candidateStates: feasibility, counterKind: null, buildCycleKind: null });
