@@ -80,18 +80,21 @@ const setup = await evaluate(`(async () => {
   world.units.push(scout, damaged, enemy);
   world.ravens.push(raven);
   world.projectiles.push(projectile);
+  window.__forceTicks(1);
+  // Set the review camera after the tick: production camera-follow must not
+  // move the hidden-turret fixture out of the fogged center before capture.
   window.__camera.zoom = 0.7;
   window.__camera.x = 1700;
-  window.__forceTicks(1);
   return { enemyId: enemy.id, scoutId: scout.id, damagedId: damaged.id, turretId: world.structures[0].id };
 })()`);
 
-const hidden = await evaluate(`(() => {
+const hidden = await evaluate(`(async () => {
+  const { isPositionVisibleToTeam } = await import('/src/sim/vision.js');
   const world = window.__world;
   const enemy = world.units.find((u) => u.id === ${setup.enemyId});
   const scout = world.units.find((u) => u.id === ${setup.scoutId});
   const turret = world.structures.find((s) => s.id === ${setup.turretId});
-  return { enemyVisible: Math.abs(enemy.x - scout.x) <= 340, turretPresent: !!turret, enemyX: enemy.x, scoutX: scout.x };
+  return { enemyVisible: Math.abs(enemy.x - scout.x) <= 340, turretPresent: !!turret, turretVisible: isPositionVisibleToTeam(world, 'player', turret.x, turret.y), turretX: turret.x, enemyX: enemy.x, scoutX: scout.x };
 })()`);
 if (hidden.enemyVisible || !hidden.turretPresent) throw new Error(`Invalid hidden-fog setup: ${JSON.stringify(hidden)}`);
 mkdirSync(outDir, { recursive: true });

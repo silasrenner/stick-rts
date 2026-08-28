@@ -1,3 +1,4 @@
+import { CONFIG } from '../src/config.js';
 import { createVisionMemory, getSustainedVisionSamples, updateVisionMemory } from '../src/render/visionMemory.js';
 
 function expect(condition, message) {
@@ -26,4 +27,23 @@ updateVisionMemory(moving, [{ entityId: 8, x: 500, y: 400, radius: 425 }], 0.25)
 expect(getSustainedVisionSamples(moving, 0.25).some((entry) => entry.x === 100), 'A moving source must preserve its previously revealed area during sustain.');
 expect(getSustainedVisionSamples(moving, 0.25).some((entry) => entry.x === 500), 'A moving source must record its newer revealed area.');
 
-console.log('PASS — presentation-only vision memory sustains 10s, fades for 2s, and retains a moving reveal trail.');
+const stationary = createVisionMemory();
+updateVisionMemory(stationary, [{ entityId: 9, x: 100, y: 400, radius: 425 }], 0);
+updateVisionMemory(stationary, [{ entityId: 9, x: 100, y: 400, radius: 425 }], 0.25);
+expect(stationary.samples.length === 1 && stationary.samples[0].seenAt === 0.25, 'An unmoved source must refresh its retained clearance instead of appending redundant 0.25s samples.');
+
+const bounded = createVisionMemory();
+for (let i = 0; i < CONFIG.VISION_MEMORY_MAX_SAMPLES_PER_SOURCE + 8; i += 1) {
+  updateVisionMemory(bounded, [{ entityId: 10, x: i * 200, y: 400, radius: 425 }], i * 0.25);
+}
+expect(bounded.samples.length === CONFIG.VISION_MEMORY_MAX_SAMPLES_PER_SOURCE, 'A moving source history must be capped so sustained fog work remains bounded.');
+expect(bounded.samples.some((entry) => entry.x === (CONFIG.VISION_MEMORY_MAX_SAMPLES_PER_SOURCE + 7) * 200), 'Bounded moving history must retain the newest reveal position.');
+
+const population = createVisionMemory();
+const populationSources = Array.from({ length: 100 }, (_, i) => ({ entityId: i, x: i * 40, y: 400, radius: 425 }));
+for (let step = 0; step < 48; step += 1) {
+  updateVisionMemory(population, populationSources.map((source) => ({ ...source, x: source.x + step * 200 })), step * 0.25);
+}
+expect(population.samples.length <= 100 * CONFIG.VISION_MEMORY_MAX_SAMPLES_PER_SOURCE, 'Population-scale moving vision history must be bounded by the per-source cap.');
+
+console.log('PASS — presentation-only vision memory sustains 10s, fades for 2s, retains a moving reveal trail, and bounds redundant history.');

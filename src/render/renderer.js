@@ -69,18 +69,26 @@ export function render(ctx, world, camera, uiMessage, uiState) {
     if (visibleToViewer(statue)) drawStatue(ctx, statue);
     else drawKnownBase(ctx, statue);
   }
+  // Static structures remain known in Player view; draw them before the fog so
+  // fog softens their known locations until a player vision source clears them.
+  for (const structure of world.structures) {
+    if (visible(structure.x) && visibleToViewer(structure)) structure.isTurret ? drawTurret(ctx, structure) : drawStructure(ctx, structure);
+  }
   if (spectatorTeam !== null) {
     const visionMemory = uiState.visionMemory ??= createVisionMemory();
     updateVisionMemory(visionMemory, getTeamVisionSources(world, spectatorTeam), world.matchElapsedTime);
     const sustainedSources = getSustainedVisionSamples(visionMemory, world.matchElapsedTime);
     visualVisionSources = [...getTeamVisionSources(world, spectatorTeam), ...sustainedSources, ...combatRevealSources];
     const fogAlpha = watchAiMatch ? CONFIG.SPECTATOR_FOG_ALPHA : CONFIG.PLAYER_FOG_ALPHA;
-    drawVisionFog(ctx, world, spectatorTeam, camera, [...sustainedSources, ...combatRevealSources], fogAlpha);
+    const fogColor = watchAiMatch ? undefined : CONFIG.PLAYER_FOG_COLOR;
+    const fogTop = watchAiMatch ? 0 : CONFIG.GROUND_Y + (CONFIG.PLAYER_FOG_TOP - CONFIG.GROUND_Y) * camera.zoom;
+    const fogBottom = watchAiMatch ? ctx.canvas.height : getBottomBarTop(ctx.canvas);
+    const fogFeather = watchAiMatch ? 0 : CONFIG.PLAYER_FOG_FEATHER * camera.zoom;
+    const fogBoundaryFeather = watchAiMatch ? 0 : CONFIG.PLAYER_FOG_BOUNDARY_FEATHER * camera.zoom;
+    drawVisionFog(ctx, world, spectatorTeam, camera, [...sustainedSources, ...combatRevealSources], fogAlpha, fogColor, fogTop, fogBottom, fogFeather, fogBoundaryFeather);
+    if (!watchAiMatch) drawFoggedKnownStatics(ctx, world, spectatorTeam, visible);
   }
 
-  for (const structure of world.structures) {
-    if (visible(structure.x) && visibleToViewer(structure)) structure.isTurret ? drawTurret(ctx, structure) : drawStructure(ctx, structure);
-  }
   for (const raven of world.ravens) {
     const visibleRaven = spectatorTeam === null || raven.team === spectatorTeam || isPositionVisibleToTeam(world, spectatorTeam, raven.x, raven.y);
     if (!visible(raven.x) || !visibleRaven) continue;
@@ -126,23 +134,74 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   }
 }
 
+// Player view intentionally retains known enemy static locations. With the
+// low-opacity pale fog, redraw a subtle neutral silhouette pass for orientation
+// without exposing mobile enemy state or live objective details.
+function drawFoggedKnownStatics(ctx, world, team, visible) {
+  ctx.save();
+  ctx.globalAlpha = CONFIG.PLAYER_FOGGED_STATIC_ALPHA;
+  for (const statue of Object.values(world.statues)) {
+    if (statue.team !== team && visible(statue.x)) drawKnownBase(ctx, statue);
+  }
+  for (const structure of world.structures) {
+    if (structure.team !== team && visible(structure.x)) {
+      drawFoggedStructureSilhouette(ctx, structure);
+    }
+  }
+  ctx.restore();
+}
+
+function drawFoggedStructureSilhouette(ctx, structure) {
+  ctx.strokeStyle = '#596575';
+  ctx.lineWidth = structure.isTurret ? 3 : 2;
+  if (structure.isTurret) {
+    ctx.strokeRect(structure.x - 16, structure.y - 52, 32, 52);
+    const direction = structure.team === 'player' ? 1 : -1;
+    ctx.beginPath();
+    ctx.moveTo(structure.x, structure.y - 43);
+    ctx.lineTo(structure.x + direction * 28, structure.y - 43);
+    ctx.stroke();
+  } else {
+    ctx.strokeRect(structure.x - 11, structure.y - 34, 22, 34);
+  }
+}
+
 export function isMineVisibleToViewer(world, viewerTeam, mineTeam, deposit) {
   return viewerTeam === null || mineTeam === viewerTeam || isPositionVisibleToTeam(world, viewerTeam, deposit.x, deposit.y);
 }
 
-export function drawVisionFog(ctx, world, team, camera, sustainedSources = [], fogAlpha = CONFIG.SPECTATOR_FOG_ALPHA) {
+export function drawVisionFog(ctx, world, team, camera, sustainedSources = [], fogAlpha = CONFIG.SPECTATOR_FOG_ALPHA, fogColor, fogTop = 0, fogBottom = ctx.canvas.height, feather = 0, boundaryFeather = 0) {
   // Build a screen-space layer: the cost is the visible viewport, never the
   // full world. World-state descriptors remain authoritative; only projection
   // is renderer-owned.
   const fogCtx = getFogLayerContext(ctx.canvas);
   fogCtx.save();
   fogCtx.clearRect(0, 0, fogLayer.width, fogLayer.height);
-  fogCtx.fillStyle = `rgba(10, 12, 20, ${fogAlpha})`;
-  fogCtx.fillRect(0, 0, fogLayer.width, fogLayer.height);
+  const fogFill = fogColor ?? `rgba(10, 12, 20, ${fogAlpha})`;
+  if (boundaryFeather > 0) {
+    const gradient = fogCtx.createLinearGradient(0, fogTop, 0, fogBottom);
+    const fadeRatio = Math.min(0.5, boundaryFeather / Math.max(1, fogBottom - fogTop));
+    gradient.addColorStop(0, 'rgba(225, 232, 240, 0)');
+    gradient.addColorStop(fadeRatio, fogFill);
+    gradient.addColorStop(1 - fadeRatio, fogFill);
+    gradient.addColorStop(1, 'rgba(225, 232, 240, 0)');
+    fogCtx.fillStyle = gradient;
+  } else {
+    fogCtx.fillStyle = fogFill;
+  }
+  fogCtx.fillRect(0, fogTop, fogLayer.width, fogBottom - fogTop);
   fogCtx.globalCompositeOperation = 'destination-out';
   for (const source of [...getTeamVisionSources(world, team), ...sustainedSources]) {
     const projected = projectFogSourceToViewport(source, camera);
     fogCtx.globalAlpha = projected.alpha;
+    if (feather > 0) {
+      const innerRadius = Math.max(0, projected.radius - feather);
+      const gradient = fogCtx.createRadialGradient(projected.x, projected.y, 0, projected.x, projected.y, projected.radius);
+      gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+      gradient.addColorStop(innerRadius / projected.radius, 'rgba(0, 0, 0, 1)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      fogCtx.fillStyle = gradient;
+    }
     fogCtx.beginPath();
     fogCtx.arc(projected.x, projected.y, projected.radius, 0, Math.PI * 2);
     fogCtx.fill();

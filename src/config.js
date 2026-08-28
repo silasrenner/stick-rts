@@ -36,10 +36,20 @@ export const CONFIG = {
     structure: 325,
   },
   SPECTATOR_FOG_ALPHA: 0.42,
+  // Player fog is a light world-space veil; the existing alpha continues to
+  // describe terrain-obscuration semantics while this color defines its look.
   PLAYER_FOG_ALPHA: 0.30,
+  PLAYER_FOG_COLOR: 'rgba(225, 232, 240, 0.075)', // half the prior low veil; background and known statics stay legible
+  PLAYER_FOG_TOP: 220, // lower combat half in world coordinates; leave sky/mountains clear
+  PLAYER_FOG_FEATHER: 36, // world-space inward fade at the Player vision boundary
+  PLAYER_FOG_BOUNDARY_FEATHER: 24, // world-space fade at the combat-area top/bottom
+  PLAYER_FOGGED_STATIC_ALPHA: 0.30, // restrained known-location cue under the low veil
   VISION_SUSTAIN_SECONDS: 10,
   VISION_FADE_SECONDS: 2,
   VISION_MEMORY_SAMPLE_INTERVAL: 0.25,
+  // Each source keeps only its newest moving trail samples. This bounds the
+  // renderer's soft-clearance work even at the population cap.
+  VISION_MEMORY_MAX_SAMPLES_PER_SOURCE: 12,
 
   // Raven is a temporary, non-combat scouting action. It deliberately does
   // not use unit stats, population, formations, or the normal FIFO queue.
@@ -47,7 +57,7 @@ export const CONFIG = {
     cost: 750,
     preparationTime: 2,
     movementSpeed: 560,
-    movingVisionRadius: 375,
+    movingVisionRadius: 562.5, // 50% above the prior 375 while flying
     enemyBaseRevealRadius: 1000,
     revealDuration: 10,
     cooldown: 45,
