@@ -2,9 +2,9 @@
 
 Cross-session context carrier. Keep current scope, recovery state, and dirty-worktree warnings here. Completed work belongs in `HISTORY.md`; detailed durable findings live in focused `docs/analysis/` documents.
 
-## Current approved scope — Player Defend formation and turret/warrior balance
+## Integrated release — Player Defend formation, turret/warrior balance, and player-facing presentation
 
-Owner approval: 2026-08-28. Isolated worktree: `C:\\Users\\simcr\\projects\\stick-rts\\worktrees\\defend-turret-balance` on `agent/defend-turret-balance-local`, based on `main` `3bf3986`.
+Owner-approved 2026-08-28. Fast-forwarded from `agent/defend-turret-balance-local` to local `main` and pushed to `origin/main` in `e3ec6de` on 2026-08-28. The candidate LAN server may continue serving this now-integrated worktree until it is retired.
 
 **Included:** remove the defending archer’s dynamic wait-for-nearby-warrior behavior so an untargeted archer returns to its assigned defensive formation slot like a warrior. Preserve combat targeting, Attack, and Retreat behavior. Keep the first defense anchor at the first buildable turret closest to the mine (`380px`), not the starting/core turret. Player-issued Defend cycles the selected formation anchor across completed buildable turrets (`380 → 900 → 1420 → 380`) and wraps from the furthest completed turret back to inner; a turret completing does not alter the selected anchor. AI-issued Defend remains non-cycling. Apply only the requested constants: turret cost `600 → 780`, turret damage `47.6 → 42.84`, warrior HP `54.6 → 62.79`.
 
@@ -12,7 +12,7 @@ Owner approval: 2026-08-28. Isolated worktree: `C:\\Users\\simcr\\projects\\stic
 
 **Deliberate exclusions:** turret count/placement/build time/range/cooldown/HP; any other unit stat or cost; AI strategy; mine/economy; heroes; formation spacing; Watch-AI end overlay/chart; mobile redesign; remote deployment/push; generated screenshot versioning.
 
-**Validation complete / owner-approved for integration:** focused red→green checks prove stranded defender archers return to assigned slots, Player Defend selects `380, 900, 1420, 380` through actual `W` input and wraps after the third completed turret, AI Defend remains inner, and a completed turret does not move the selected anchor. The requested constants are exact: turret cost `780`, damage `42.84`, warrior HP `62.79`. The two-page Guide, camera-scaled landing Raven, and enlarged/repositioned Player-vs-AI gold chart were LAN-reviewed. Retained defense, formation, turret, queue-cap, and 5,000-tick headless checks pass; `git diff --check` passes. Headless Chrome/CDP loaded the verified LAN candidate with no runtime exceptions. Served candidate modules SHA-256-match this exact worktree. Owner authorized local merge and remote push on 2026-08-28.
+**Validation complete / integrated and pushed:** focused red→green checks prove stranded defender archers return to assigned slots, Player Defend selects `380, 900, 1420, 380` through actual `W` input and wraps after the third completed turret, AI Defend remains inner, and a completed turret does not move the selected anchor. The requested constants are exact: turret cost `780`, damage `42.84`, warrior HP `62.79`. The two-page Guide, camera-scaled landing Raven, and enlarged/repositioned Player-vs-AI gold chart were LAN-reviewed. Retained defense, formation, turret, queue-cap, and 5,000-tick headless checks pass; `git diff --check` passes. Headless Chrome/CDP loaded the verified LAN candidate with no runtime exceptions. Served candidate modules SHA-256-match the reviewed worktree. Source and release ledger are integrated in `e3ec6de`; this documentation reconciliation commit follows it.
 
 ## Current approved scope — deposits, player guide, and miner safety/build time
 
