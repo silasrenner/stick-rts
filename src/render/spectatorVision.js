@@ -1,4 +1,5 @@
-import { isEntityVisibleToTeam } from '../sim/vision.js';
+import { findEntityById, isAliveEntity } from '../sim/world.js';
+import { getVisionRadius, isEntityVisibleToTeam } from '../sim/vision.js';
 
 export const SPECTATOR_VIEWS = ['full', 'left', 'right'];
 
@@ -22,4 +23,15 @@ export function isEntityVisibleInPlayerView(world, entity) {
   if (entity?.team !== 'ai') return true;
   if (entity.isStructure) return true;
   return isEntityVisibleToTeam(world, 'player', entity);
+}
+
+// Renderer-only disclosure: a hostile unit/turret actively attacking this
+// team exposes its ordinary sight bubble to the target team's presentation.
+// It never enters world.visionSources or simulation/AI knowledge.
+export function getCombatRevealSources(world, viewerTeam) {
+  return [...world.units, ...world.structures]
+    .filter((attacker) => attacker.team !== viewerTeam && isAliveEntity(attacker) && attacker.targetId != null && attacker.attackAnimTimer > 0)
+    .filter((attacker) => findEntityById(world, attacker.targetId)?.team === viewerTeam)
+    .map((attacker) => ({ entityId: attacker.id, x: attacker.x, y: attacker.y, radius: getVisionRadius(attacker), combatReveal: true }))
+    .filter((source) => source.radius > 0);
 }

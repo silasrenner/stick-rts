@@ -28,6 +28,7 @@ function createRecordingContext(calls) {
     fillRect: () => calls.push('fillRect'),
     clearRect: () => calls.push('clearRect'),
     translate: (...args) => calls.push(`translate:${args.join(',')}`),
+    setTransform: (...args) => calls.push(`setTransform:${args.join(',')}`),
     drawImage: () => calls.push('drawImage'),
     set fillStyle(value) { calls.push(`fillStyle:${value}`); },
     set globalCompositeOperation(value) { calls.push(`composite:${value}`); },
@@ -50,7 +51,7 @@ globalThis.OffscreenCanvas = class RecordingOffscreenCanvas {
 };
 
 try {
-  drawVisionFog(createRecordingContext(mainCalls), world, 'player', [], CONFIG.PLAYER_FOG_ALPHA);
+  drawVisionFog(createRecordingContext(mainCalls), world, 'player', { x: 0, zoom: 1 }, [], CONFIG.PLAYER_FOG_ALPHA);
 } finally {
   globalThis.OffscreenCanvas = priorOffscreenCanvas;
 }

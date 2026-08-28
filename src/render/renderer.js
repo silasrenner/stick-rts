@@ -2,28 +2,37 @@ import { CONFIG } from '../config.js';
 import { isWatchAiMatch } from '../sim/world.js';
 import { getTeamVisionSources, isPositionVisibleToTeam } from '../sim/vision.js';
 import { drawStickFigure } from './stickFigure.js';
-import { isEntityVisibleInPlayerView, isEntityVisibleInSpectatorView, spectatorViewTeam } from './spectatorVision.js';
+import { getCombatRevealSources, isEntityVisibleInPlayerView, isEntityVisibleInSpectatorView, spectatorViewTeam } from './spectatorVision.js';
 import { drawStatue, drawKnownBase, drawStructure, drawTurret, drawMine, drawHealthBar } from './structures.js';
 import { drawHUD, drawBuildMenu, drawWinLoseOverlay, drawMenuScreen, getBottomBarTop, drawZoomControls, drawTouchCommandControls, drawWatchSpeedButton, drawSpectatorViewSelector, drawPauseButton, drawPauseOverlay } from './ui.js';
 import { drawParallax } from './parallax.js';
 import { drawMatchTelemetry, drawWatchTelemetryOverlay } from './watchTelemetryOverlay.js';
 import { createVisionMemory, getSustainedVisionSamples, updateVisionMemory } from './visionMemory.js';
 
-const FOG_LAYER_TOP = -1000;
-const FOG_LAYER_HEIGHT = 2500;
 let fogLayer = null;
 
-function getFogLayerContext() {
-  if (!fogLayer) {
-    if (typeof OffscreenCanvas !== 'undefined') {
-      fogLayer = new OffscreenCanvas(CONFIG.WORLD_WIDTH, FOG_LAYER_HEIGHT);
-    } else if (typeof document !== 'undefined') {
+export function getFogLayerDimensions(canvas) {
+  return { width: canvas.width, height: canvas.height };
+}
+
+export function projectFogSourceToViewport(source, camera) {
+  return {
+    x: (source.x - camera.x) * camera.zoom,
+    y: CONFIG.GROUND_Y + (source.y - CONFIG.GROUND_Y) * camera.zoom,
+    radius: source.radius * camera.zoom,
+    alpha: source.alpha ?? 1,
+  };
+}
+
+function getFogLayerContext(canvas) {
+  const { width, height } = getFogLayerDimensions(canvas);
+  if (!fogLayer || fogLayer.width !== width || fogLayer.height !== height) {
+    if (typeof OffscreenCanvas !== 'undefined') fogLayer = new OffscreenCanvas(width, height);
+    else if (typeof document !== 'undefined') {
       fogLayer = document.createElement('canvas');
-      fogLayer.width = CONFIG.WORLD_WIDTH;
-      fogLayer.height = FOG_LAYER_HEIGHT;
-    } else {
-      throw new Error('Canvas fog requires OffscreenCanvas or document canvas support.');
-    }
+      fogLayer.width = width;
+      fogLayer.height = height;
+    } else throw new Error('Canvas fog requires OffscreenCanvas or document canvas support.');
   }
   return fogLayer.getContext('2d');
 }
@@ -39,6 +48,9 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   const visibleToViewer = watchAiMatch
     ? (entity) => isEntityVisibleInSpectatorView(world, spectatorView, entity)
     : (entity) => isEntityVisibleInPlayerView(world, entity);
+  const combatRevealSources = spectatorTeam === null ? [] : getCombatRevealSources(world, spectatorTeam);
+  let visualVisionSources = combatRevealSources;
+  const visibleThroughFogClearance = (entity) => visualVisionSources.some((source) => Math.hypot(source.x - entity.x, source.y - entity.y) <= source.radius && (source.alpha ?? 1) > 0);
 
   drawParallax(ctx, camera);
   ctx.save();
@@ -59,8 +71,10 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   if (spectatorTeam !== null) {
     const visionMemory = uiState.visionMemory ??= createVisionMemory();
     updateVisionMemory(visionMemory, getTeamVisionSources(world, spectatorTeam), world.matchElapsedTime);
+    const sustainedSources = getSustainedVisionSamples(visionMemory, world.matchElapsedTime);
+    visualVisionSources = [...getTeamVisionSources(world, spectatorTeam), ...sustainedSources, ...combatRevealSources];
     const fogAlpha = watchAiMatch ? CONFIG.SPECTATOR_FOG_ALPHA : CONFIG.PLAYER_FOG_ALPHA;
-    drawVisionFog(ctx, world, spectatorTeam, getSustainedVisionSamples(visionMemory, world.matchElapsedTime), fogAlpha);
+    drawVisionFog(ctx, world, spectatorTeam, camera, [...sustainedSources, ...combatRevealSources], fogAlpha);
   }
 
   for (const structure of world.structures) {
@@ -72,7 +86,7 @@ export function render(ctx, world, camera, uiMessage, uiState) {
     drawRaven(ctx, raven);
   }
   for (const unit of world.units) {
-    if (!visible(unit.x) || !visibleToViewer(unit)) continue;
+    if (!visible(unit.x) || !(visibleToViewer(unit) || visibleThroughFogClearance(unit))) continue;
     drawStickFigure(ctx, unit);
     if (unit.state !== 'dying') drawHealthBar(ctx, unit.x, unit.y - 80, unit.hp, unit.maxHp, 24);
   }
@@ -114,25 +128,30 @@ export function isMineVisibleToViewer(world, viewerTeam, mineTeam, deposit) {
   return viewerTeam === null || mineTeam === viewerTeam || isPositionVisibleToTeam(world, viewerTeam, deposit.x, deposit.y);
 }
 
-export function drawVisionFog(ctx, world, team, sustainedSources = [], fogAlpha = CONFIG.SPECTATOR_FOG_ALPHA) {
-  // destination-out must act only on a transparent fog layer. Applying it to
-  // the main world canvas removes parallax/background pixels already rendered
-  // below the vision circles. Separate circles preserve the visibility union.
-  const fogCtx = getFogLayerContext();
+export function drawVisionFog(ctx, world, team, camera, sustainedSources = [], fogAlpha = CONFIG.SPECTATOR_FOG_ALPHA) {
+  // Build a screen-space layer: the cost is the visible viewport, never the
+  // full world. World-state descriptors remain authoritative; only projection
+  // is renderer-owned.
+  const fogCtx = getFogLayerContext(ctx.canvas);
   fogCtx.save();
-  fogCtx.clearRect(0, 0, CONFIG.WORLD_WIDTH, FOG_LAYER_HEIGHT);
-  fogCtx.translate(0, -FOG_LAYER_TOP);
+  fogCtx.clearRect(0, 0, fogLayer.width, fogLayer.height);
   fogCtx.fillStyle = `rgba(10, 12, 20, ${fogAlpha})`;
-  fogCtx.fillRect(0, FOG_LAYER_TOP, CONFIG.WORLD_WIDTH, FOG_LAYER_HEIGHT);
+  fogCtx.fillRect(0, 0, fogLayer.width, fogLayer.height);
   fogCtx.globalCompositeOperation = 'destination-out';
   for (const source of [...getTeamVisionSources(world, team), ...sustainedSources]) {
-    fogCtx.globalAlpha = source.alpha ?? 1;
+    const projected = projectFogSourceToViewport(source, camera);
+    fogCtx.globalAlpha = projected.alpha;
     fogCtx.beginPath();
-    fogCtx.arc(source.x, source.y, source.radius, 0, Math.PI * 2);
+    fogCtx.arc(projected.x, projected.y, projected.radius, 0, Math.PI * 2);
     fogCtx.fill();
   }
   fogCtx.restore();
-  ctx.drawImage(fogLayer, 0, FOG_LAYER_TOP);
+  // The caller is in world-space transform while drawing entities; composite
+  // this viewport image in screen space so camera transforms do not scale it.
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(fogLayer, 0, 0);
+  ctx.restore();
 }
 
 function drawRaven(ctx, raven) {
