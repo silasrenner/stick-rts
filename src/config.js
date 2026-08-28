@@ -27,16 +27,18 @@ export const CONFIG = {
   // than this far behind their team's forward-most combat unit are frontline.
   FRONTLINE_COMBAT_DEPTH: 420,
 
-  // Team-vision sources are simulation-query owned but presentation-only for
-  // now. They intentionally do not affect existing AI memory or combat.
+  // Shared team vision — every entity and Raven reveal radius is 25% larger.
   VISION_RANGES: {
-    units: { miner: 260, warrior: 340, archer: 380 },
-    hero: 420,
-    core: 420,
-    turret: 360,
-    structure: 260,
+    units: { miner: 325, warrior: 425, archer: 475 },
+    hero: 525,
+    core: 525,
+    turret: 450,
+    structure: 325,
   },
   SPECTATOR_FOG_ALPHA: 0.42,
+  VISION_SUSTAIN_SECONDS: 10,
+  VISION_FADE_SECONDS: 2,
+  VISION_MEMORY_SAMPLE_INTERVAL: 0.25,
 
   // Raven is a temporary, non-combat scouting action. It deliberately does
   // not use unit stats, population, formations, or the normal FIFO queue.
@@ -44,8 +46,8 @@ export const CONFIG = {
     cost: 750,
     preparationTime: 2,
     movementSpeed: 560,
-    movingVisionRadius: 300,
-    enemyBaseRevealRadius: 800,
+    movingVisionRadius: 375,
+    enemyBaseRevealRadius: 1000,
     revealDuration: 10,
     cooldown: 45,
     flightAltitude: 250,
@@ -96,8 +98,13 @@ export const CONFIG = {
   MINE_DEPOSIT_SPACING: 38, // px either side of the original mine center; visible split without crowding the first turret
   MINE_SLOTS: 4, // team-wide simultaneous extraction cap across all deposits
   MINE_CYCLE_TIME: 3, // seconds to extract one load
-  GOLD_PER_TRIP: 23,
-  UNIT_KILL_REWARD_RATE: 0.10, // killer receives 10% of a defeated unit's invested value
+  GOLD_PER_TRIP: 11.5, // exactly half the former 23-gold completed-trip yield
+  UNIT_KILL_REWARD_RATE: 0.10,
+
+  // Damaged non-core entities wait out this no-damage interval, then recover
+  // linearly from empty to full over the configured duration.
+  REGEN_DELAY_SECONDS: 20,
+  REGEN_FULL_HEAL_SECONDS: 150,
   MINER_ARRIVE_THRESHOLD: 4, // px
 
   // Warriors and archers distribute new/reacquired targets within an existing

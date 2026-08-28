@@ -4,6 +4,7 @@ import { updateMovement } from './systems/movement.js';
 import { updateCombat, updateDeaths } from './systems/combat.js';
 import { updateProjectiles } from './systems/projectiles.js';
 import { updateStructureDeaths } from './systems/supply.js';
+import { updateRegeneration } from './systems/regeneration.js';
 import { updateHeroCooldowns, updateHeroControl } from './systems/heroes.js';
 import { updateProductionQueue } from './systems/production.js';
 import { updateAiDecisions } from './ai/behavior.js';
@@ -32,6 +33,7 @@ export function runTick(world, dt, input = NO_INPUT) {
   updateMovement(world, dt);
   updateCombat(world, dt);
   updateProjectiles(world, dt);
+  updateRegeneration(world, dt);
   updateDeaths(world, dt);
   updateStructureDeaths(world, dt);
 }

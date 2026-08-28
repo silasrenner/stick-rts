@@ -102,6 +102,9 @@ export function resolveAttack(world, unit, target) {
 export function applyDamage(world, entity, amount, killerTeam = null) {
   if (!isAliveEntity(entity)) return;
   if (entity.isStatue) world.teams[entity.team].statueWarningTimer = CONFIG.STATUE_WARNING_DURATION;
+  // Regeneration uses the authoritative hit time rather than a render/combat
+  // state, so projectile and direct attacks reset the same 20-second window.
+  entity.lastDamagedAt = world.matchElapsedTime;
   entity.hp = Math.max(0, entity.hp - amount);
   if (entity.hp > 0) return;
 

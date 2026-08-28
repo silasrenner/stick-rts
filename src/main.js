@@ -6,6 +6,7 @@ import { setTeamCommand } from './sim/systems/commands.js';
 import { buyUnit, buyStructure, buyTurret, buyHero, buyRaven } from './sim/systems/economy.js';
 import { attemptHeroAttack, activateSpecial } from './sim/systems/heroes.js';
 import { render } from './render/renderer.js';
+import { createVisionMemory } from './render/visionMemory.js';
 import {
   getBuildMenuButtons,
   getRematchButtonRect,
@@ -51,6 +52,7 @@ const uiState = {
   spectatorView: 'full', // render-only Watch AI perspective; never part of world.
   paused: false,
   guideOpen: false,
+  visionMemory: createVisionMemory(),
   touchControlsEnabled: window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0,
 };
 
@@ -105,6 +107,7 @@ function resetMatch(difficulty = world.teams.ai.difficulty ?? uiState.settings.d
   uiMessage = { text: '', timer: 0 };
   uiState.speed = DEFAULT_GAME_SPEED;
   uiState.spectatorView = 'full';
+  uiState.visionMemory = createVisionMemory();
   uiState.paused = false;
   camera.x = 0;
   camera.targetX = 0;
@@ -119,6 +122,7 @@ function startWatchAiMatch(playerDifficulty, aiDifficulty, seed) {
   uiMessage = { text: '', timer: 0 };
   uiState.speed = DEFAULT_GAME_SPEED;
   uiState.spectatorView = 'full';
+  uiState.visionMemory = createVisionMemory();
   uiState.paused = false;
   camera.x = 0;
   camera.targetX = 0;

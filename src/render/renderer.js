@@ -2,21 +2,25 @@ import { CONFIG } from '../config.js';
 import { isWatchAiMatch } from '../sim/world.js';
 import { getTeamVisionSources, isPositionVisibleToTeam } from '../sim/vision.js';
 import { drawStickFigure } from './stickFigure.js';
-import { isEntityVisibleInSpectatorView, spectatorViewTeam } from './spectatorVision.js';
+import { isEntityVisibleInPlayerView, isEntityVisibleInSpectatorView, spectatorViewTeam } from './spectatorVision.js';
 import { drawStatue, drawKnownBase, drawStructure, drawTurret, drawMine, drawHealthBar } from './structures.js';
 import { drawHUD, drawBuildMenu, drawWinLoseOverlay, drawMenuScreen, getBottomBarTop, drawZoomControls, drawTouchCommandControls, drawWatchSpeedButton, drawSpectatorViewSelector, drawPauseButton, drawPauseOverlay } from './ui.js';
 import { drawParallax } from './parallax.js';
 import { drawMatchTelemetry, drawWatchTelemetryOverlay } from './watchTelemetryOverlay.js';
+import { createVisionMemory, getSustainedVisionSamples, updateVisionMemory } from './visionMemory.js';
 
 
 
-// Reads world state only; never mutates it. Spectator perspective is uiState
-// only and therefore cannot affect simulation, AI knowledge, or RNG.
+// Reads world state only; never mutates it. Watch perspectives and the Player
+// fog view are presentation-only and cannot affect simulation, AI knowledge, or RNG.
 export function render(ctx, world, camera, uiMessage, uiState) {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  const spectatorView = isWatchAiMatch(world) ? uiState.spectatorView : 'full';
+  const watchAiMatch = isWatchAiMatch(world);
+  const spectatorView = watchAiMatch ? uiState.spectatorView : 'left';
   const spectatorTeam = spectatorViewTeam(spectatorView);
-  const visibleToSpectator = (entity) => isEntityVisibleInSpectatorView(world, spectatorView, entity);
+  const visibleToViewer = watchAiMatch
+    ? (entity) => isEntityVisibleInSpectatorView(world, spectatorView, entity)
+    : (entity) => isEntityVisibleInPlayerView(world, entity);
 
   drawParallax(ctx, camera);
   ctx.save();
@@ -29,23 +33,19 @@ export function render(ctx, world, camera, uiMessage, uiState) {
     return x >= camera.x - CONFIG.CAMERA_CULL_MARGIN && x <= camera.x + visibleWorldWidth + CONFIG.CAMERA_CULL_MARGIN;
   };
 
-  for (const mineField of Object.values(world.mines)) {
-    for (const deposit of mineField.deposits) {
-      if (visible(deposit.x)) drawMine(ctx, deposit);
-    }
-  }
-
-  // General base locations remain known. Outside vision the neutral silhouette
-  // intentionally excludes hp and destroyed/live state.
   for (const statue of Object.values(world.statues)) {
     if (!visible(statue.x)) continue;
-    if (visibleToSpectator(statue)) drawStatue(ctx, statue);
+    if (visibleToViewer(statue)) drawStatue(ctx, statue);
     else drawKnownBase(ctx, statue);
   }
-  if (spectatorTeam !== null) drawVisionFog(ctx, world, spectatorTeam);
+  if (spectatorTeam !== null) {
+    const visionMemory = uiState.visionMemory ??= createVisionMemory();
+    updateVisionMemory(visionMemory, getTeamVisionSources(world, spectatorTeam), world.matchElapsedTime);
+    drawVisionFog(ctx, world, spectatorTeam, getSustainedVisionSamples(visionMemory, world.matchElapsedTime));
+  }
 
   for (const structure of world.structures) {
-    if (visible(structure.x) && visibleToSpectator(structure)) structure.isTurret ? drawTurret(ctx, structure) : drawStructure(ctx, structure);
+    if (visible(structure.x) && visibleToViewer(structure)) structure.isTurret ? drawTurret(ctx, structure) : drawStructure(ctx, structure);
   }
   for (const raven of world.ravens) {
     const visibleRaven = spectatorTeam === null || raven.team === spectatorTeam || isPositionVisibleToTeam(world, spectatorTeam, raven.x, raven.y);
@@ -53,7 +53,7 @@ export function render(ctx, world, camera, uiMessage, uiState) {
     drawRaven(ctx, raven);
   }
   for (const unit of world.units) {
-    if (!visible(unit.x) || !visibleToSpectator(unit)) continue;
+    if (!visible(unit.x) || !visibleToViewer(unit)) continue;
     drawStickFigure(ctx, unit);
     if (unit.state !== 'dying') drawHealthBar(ctx, unit.x, unit.y - 80, unit.hp, unit.maxHp, 24);
   }
@@ -61,6 +61,13 @@ export function render(ctx, world, camera, uiMessage, uiState) {
     const pos = projectilePosition(projectile);
     const visibleProjectile = spectatorTeam === null || projectile.team === spectatorTeam || isPositionVisibleToTeam(world, spectatorTeam, pos.x, pos.y);
     if (visible(pos.x) && visibleProjectile) drawProjectile(ctx, pos);
+  }
+  // Draw mine markers above workers, otherwise a miner standing directly on a
+  // deposit hides the gold diamond. Enemy deposits still obey current vision.
+  for (const [mineTeam, mineField] of Object.entries(world.mines)) {
+    for (const deposit of mineField.deposits) {
+      if (visible(deposit.x) && isMineVisibleToViewer(world, spectatorTeam, mineTeam, deposit)) drawMine(ctx, deposit);
+    }
   }
   ctx.restore();
 
@@ -70,7 +77,7 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   }
   if (!isWatchAiMatch(world)) drawHUD(ctx, world, uiMessage);
   drawWatchTelemetryOverlay(ctx, world, spectatorView);
-  drawMatchTelemetry(ctx, world, { showGoldDifferential: !isWatchAiMatch(world) || spectatorView === 'full' });
+  drawMatchTelemetry(ctx, world, { showGoldDifferential: watchAiMatch && spectatorView === 'full' });
   drawZoomControls(ctx, isWatchAiMatch(world));
   if (isWatchAiMatch(world) && world.matchState === 'playing') drawWatchSpeedButton(ctx, uiState.speed);
   if (isWatchAiMatch(world) && world.matchState === 'playing') drawSpectatorViewSelector(ctx, spectatorView);
@@ -84,17 +91,25 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   }
 }
 
-function drawVisionFog(ctx, world, team) {
+export function isMineVisibleToViewer(world, viewerTeam, mineTeam, deposit) {
+  return viewerTeam === null || mineTeam === viewerTeam || isPositionVisibleToTeam(world, viewerTeam, deposit.x, deposit.y);
+}
+
+export function drawVisionFog(ctx, world, team, sustainedSources = []) {
+  // Subtract each source from one fog layer. destination-out preserves the
+  // union of overlapping circles; the old even-odd clip inverted their overlap
+  // and made shared vision appear dark. Recent presentation-only samples stay
+  // fully clear for 10s, then their subtraction fades across the next 2s.
   ctx.save();
-  ctx.beginPath();
-  ctx.rect(0, -1000, CONFIG.WORLD_WIDTH, 2500);
-  for (const source of getTeamVisionSources(world, team)) {
-    ctx.moveTo(source.x + source.radius, source.y);
-    ctx.arc(source.x, source.y, source.radius, 0, Math.PI * 2);
-  }
-  ctx.clip('evenodd');
   ctx.fillStyle = `rgba(10, 12, 20, ${CONFIG.SPECTATOR_FOG_ALPHA})`;
   ctx.fillRect(0, -1000, CONFIG.WORLD_WIDTH, 2500);
+  ctx.globalCompositeOperation = 'destination-out';
+  for (const source of [...getTeamVisionSources(world, team), ...sustainedSources]) {
+    ctx.globalAlpha = source.alpha ?? 1;
+    ctx.beginPath();
+    ctx.arc(source.x, source.y, source.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
   ctx.restore();
 }
 

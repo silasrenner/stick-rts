@@ -14,3 +14,12 @@ export function isEntityVisibleInSpectatorView(world, view, entity) {
   const team = spectatorViewTeam(view);
   return team === null || isEntityVisibleToTeam(world, team, entity);
 }
+
+// Player-vs-AI intentionally differs from limited Watch views: enemy static
+// defenses are known, while enemy mobile activity still needs current player
+// vision. Statues use the renderer's known-base silhouette path instead.
+export function isEntityVisibleInPlayerView(world, entity) {
+  if (entity?.team !== 'ai') return true;
+  if (entity.isStructure) return true;
+  return isEntityVisibleToTeam(world, 'player', entity);
+}
