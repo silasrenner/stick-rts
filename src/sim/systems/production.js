@@ -31,7 +31,6 @@ function materialize(world, team, item) {
     const sign = team === 'player' ? 1 : -1;
     const x = homeX + sign * CONFIG.TURRET_SLOT_OFFSETS[slotIndex];
     world.structures.push(createTurret(team, x, CONFIG.GROUND_Y));
-    if (slotIndex === 1) world.teams[team].defendAnchor = 'outer';
     return;
   }
 

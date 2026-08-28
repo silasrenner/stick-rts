@@ -18,6 +18,7 @@ import {
   getWatchSetupRects,
   getSettingsRects,
   getUpdateLogBackRect,
+  getGuideTabRects,
   getBackButtonRect,
   getPauseButtonRect,
   getPauseOverlayRects,
@@ -52,6 +53,7 @@ const uiState = {
   spectatorView: 'full', // render-only Watch AI perspective; never part of world.
   paused: false,
   guideOpen: false,
+  guidePage: 'play',
   visionMemory: createVisionMemory(),
   touchControlsEnabled: window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0,
 };
@@ -289,7 +291,10 @@ function handleMenuClick(x, y) {
       return;
     }
     case 'guide': {
-      if (pointInRect(x, y, getBackButtonRect(canvas))) uiState.menuScreen = 'main';
+      if (pointInRect(x, y, getBackButtonRect(canvas))) { uiState.menuScreen = 'main'; return; }
+      const tabs = getGuideTabRects(canvas);
+      if (pointInRect(x, y, tabs.play)) uiState.guidePage = 'play';
+      else if (pointInRect(x, y, tabs.reference)) uiState.guidePage = 'reference';
       return;
     }
     case 'settings': {
@@ -390,6 +395,11 @@ bindClick(canvas, (x, y) => {
     if (uiState.paused) {
       if (uiState.guideOpen) {
         if (pointInRect(x, y, getBackButtonRect(canvas))) uiState.guideOpen = false;
+        else {
+          const tabs = getGuideTabRects(canvas);
+          if (pointInRect(x, y, tabs.play)) uiState.guidePage = 'play';
+          else if (pointInRect(x, y, tabs.reference)) uiState.guidePage = 'reference';
+        }
         return;
       }
       const rects = getPauseOverlayRects(canvas);

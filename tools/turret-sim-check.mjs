@@ -58,7 +58,7 @@ world.units.push(target);
 const hpBeforeShot = target.hp;
 updateCombat(world, 1 / CONFIG.TICK_HZ);
 for (let i = 0; i < 120 && target.hp === hpBeforeShot; i += 1) updateProjectiles(world, 1 / CONFIG.TICK_HZ);
-if (target.hp !== hpBeforeShot - CONFIG.TURRET_DAMAGE) throw new Error(`Turret shot must deal doubled 56 damage: before=${hpBeforeShot} after=${target.hp}`);
+if (target.hp !== hpBeforeShot - CONFIG.TURRET_DAMAGE) throw new Error(`Turret shot must deal configured ${CONFIG.TURRET_DAMAGE} damage: before=${hpBeforeShot} after=${target.hp}`);
 if (turret.x !== CONFIG.PLAYER_HOME_X + CONFIG.TURRET_SLOT_OFFSETS[0]) throw new Error('Turret moved while attacking.');
 
-console.log('PASS — turret cost, queue time, automatic slot, max-three limit, zero population use, and doubled 56-damage stationary shot are correct.');
+console.log('PASS — turret cost, queue time, automatic slot, max-three limit, zero population use, and configured stationary-shot damage are correct.');

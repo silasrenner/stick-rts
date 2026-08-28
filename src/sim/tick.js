@@ -9,6 +9,7 @@ import { updateHeroCooldowns, updateHeroControl } from './systems/heroes.js';
 import { updateProductionQueue } from './systems/production.js';
 import { updateAiDecisions } from './ai/behavior.js';
 import { updateRavens } from './systems/raven.js';
+import { recordGoldHistory } from './goldHistory.js';
 
 const NO_INPUT = { player: { moveLeft: false, moveRight: false } };
 
@@ -20,6 +21,7 @@ export function runTick(world, dt, input = NO_INPUT) {
   if (world.matchState !== 'playing') return;
 
   world.matchElapsedTime += dt;
+  recordGoldHistory(world);
 
   // Update temporary vision before AI decisions so Raven visibility naturally
   // reaches the existing current-observation/memory path on this tick.

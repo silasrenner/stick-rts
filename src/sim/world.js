@@ -37,7 +37,8 @@ export function createWorld(seed = Date.now()) {
         goldSpent: 0,
         losses: 0,
                 command: 'defend',
-        defendAnchor: 'inner',
+        defendAnchorIndex: 0, // first buildable turret, closest to the mine
+        defendCycleStarted: false, // first Player Defend confirms inner; later presses advance outward
         heroDeathCount: 0,
         heroCooldownTimer: 0,
         statueWarningTimer: 0,
@@ -56,7 +57,8 @@ export function createWorld(seed = Date.now()) {
         goldSpent: 0,
         losses: 0,
                 command: 'defend',
-        defendAnchor: 'inner',
+        defendAnchorIndex: 0, // first buildable turret, closest to the mine
+        defendCycleStarted: false, // first Player Defend confirms inner; later presses advance outward
         heroDeathCount: 0,
         heroCooldownTimer: 0,
         statueWarningTimer: 0,
@@ -81,6 +83,8 @@ export function createWorld(seed = Date.now()) {
     },
     matchState: 'menu',
     matchElapsedTime: 0,
+    // Presentation telemetry sampled by simulation time; never read by rules or AI.
+    goldHistory: { nextSampleAt: 0, samples: [] },
     // Optional temporary/non-entity sources consumed only by sim/vision.js.
     // Empty by default; future reveals can add { team, x, y, radius, active }.
     visionSources: [],

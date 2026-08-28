@@ -59,7 +59,8 @@ function assignTeamSlots(world, team) {
     // movement.js): a screening line past the mine zone, toward the
     // enemy. Overflow columns thicken the guard line outward, toward the
     // enemy, per the confirmed multi-column direction.
-    anchorX = homeX + sign * CONFIG.TURRET_SLOT_OFFSETS[world.teams[team].defendAnchor === 'outer' ? 1 : 0];
+    const anchorIndex = Math.min(world.teams[team].defendAnchorIndex ?? 0, CONFIG.TURRET_SLOT_OFFSETS.length - 1);
+    anchorX = homeX + sign * CONFIG.TURRET_SLOT_OFFSETS[anchorIndex];
     growthSign = sign;
   }
 

@@ -3,6 +3,7 @@ import { UPDATE_LOG } from '../updateLog.js';
 import { canAfford, getOccupiedCap, getPopulationState, countQueued } from '../sim/systems/economy.js';
 import { getCap, livingStructures, livingTurrets } from '../sim/systems/supply.js';
 import { isAliveEntity, isWatchAiMatch } from '../sim/world.js';
+import { getGoldChartSegments } from '../sim/goldHistory.js';
 import { drawStickFigure, TEAM_COLORS } from './stickFigure.js';
 
 const BUILD_MENU_ITEMS = [
@@ -654,6 +655,26 @@ export function getExitToMenuButtonRect(canvas) {
   return { x: canvas.width / 2 - 70, y: canvas.height / 2 + 104, w: 140, h: 30 };
 }
 
+export function drawGoldDifferenceChart(ctx, world) {
+  const { samples } = world.goldHistory;
+  if (samples.length < 2) return;
+  const x = 260; const y = 70; const width = 880; const height = 140;
+  const zeroY = y + height / 2;
+  ctx.fillStyle = '#17171d'; ctx.fillRect(x, y, width, height);
+  ctx.strokeStyle = '#555565'; ctx.strokeRect(x, y, width, height);
+  ctx.strokeStyle = '#8a8a96'; ctx.beginPath(); ctx.moveTo(x, zeroY); ctx.lineTo(x + width, zeroY); ctx.stroke();
+  for (const segment of getGoldChartSegments(samples, x, y, width, height)) {
+    const color = segment.team === 'player' ? '#5c9be0' : '#e0605c';
+    ctx.fillStyle = `${color}55`;
+    ctx.beginPath(); ctx.moveTo(segment.from.x, zeroY); ctx.lineTo(segment.from.x, segment.from.y); ctx.lineTo(segment.to.x, segment.to.y); ctx.lineTo(segment.to.x, zeroY); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(segment.from.x, segment.from.y); ctx.lineTo(segment.to.x, segment.to.y); ctx.stroke();
+  }
+  const difference = samples.at(-1).difference;
+  ctx.textAlign = 'center'; ctx.font = '12px monospace'; ctx.fillStyle = difference >= 0 ? '#8fc8ff' : '#ff9a91';
+  ctx.fillText(`${difference >= 0 ? 'BLUE' : 'RED'} GOLD LEAD: ${Math.abs(difference).toFixed(0)}`, x + width / 2, y - 10);
+  ctx.fillStyle = '#a8a8b4'; ctx.font = '10px monospace'; ctx.textAlign = 'left'; ctx.fillText('00:00', x, y + height + 14); ctx.textAlign = 'right'; ctx.fillText(`${Math.floor(samples.at(-1).time / 60)}:${String(samples.at(-1).time % 60).padStart(2, '0')}`, x + width, y + height + 14); ctx.textAlign = 'center';
+}
+
 export function drawWinLoseOverlay(ctx, world) {
   if (world.matchState !== 'won' && world.matchState !== 'lost') return;
 
@@ -671,6 +692,8 @@ export function drawWinLoseOverlay(ctx, world) {
     ctx.restore();
     return;
   }
+
+  drawGoldDifferenceChart(ctx, world);
 
   const rect = getRematchButtonRect(ctx.canvas);
   ctx.fillStyle = '#2c2c33';
@@ -833,35 +856,53 @@ function drawGuideKeycap(ctx, x, y, key, description) {
   ctx.restore();
 }
 
-function drawGameGuideScreen(ctx) {
+export function getGuideReferenceRows() {
+  const dps = (stats) => stats.damage === 0 ? 0 : Number((stats.damage / stats.attackCooldown).toFixed(1));
+  return [
+    { label: 'Miner', cost: CONFIG.UNIT_STATS.miner.cost, hp: CONFIG.UNIT_STATS.miner.hp, dps: dps(CONFIG.UNIT_STATS.miner) },
+    { label: 'Warrior', cost: CONFIG.UNIT_STATS.warrior.cost, hp: CONFIG.UNIT_STATS.warrior.hp, dps: dps(CONFIG.UNIT_STATS.warrior) },
+    { label: 'Archer', cost: CONFIG.UNIT_STATS.archer.cost, hp: CONFIG.UNIT_STATS.archer.hp, dps: dps(CONFIG.UNIT_STATS.archer) },
+    { label: 'Structure', cost: CONFIG.STRUCTURE_COST, hp: CONFIG.STRUCTURE_HP, dps: 0 },
+    { label: 'Turret', cost: CONFIG.TURRET_COST, hp: CONFIG.TURRET_HP, dps: Number((CONFIG.TURRET_DAMAGE / CONFIG.TURRET_ATTACK_COOLDOWN).toFixed(1)) },
+    { label: 'Raven', cost: CONFIG.RAVEN.cost, hp: null, dps: null },
+  ];
+}
+
+export function getGuideTabRects(canvas) {
+  return { play: { x: canvas.width / 2 - 190, y: 96, w: 180, h: 28 }, reference: { x: canvas.width / 2 + 10, y: 96, w: 180, h: 28 } };
+}
+
+function drawGuideTabs(ctx, page) {
+  const tabs = getGuideTabRects(ctx.canvas);
+  drawMenuButton(ctx, tabs.play, 'How to Play', page === 'play');
+  drawMenuButton(ctx, tabs.reference, 'Units & Buildings', page === 'reference');
+}
+
+function drawGameGuideScreen(ctx, uiState) {
+  const page = uiState.guidePage ?? 'play';
   ctx.fillStyle = '#1f1f27'; ctx.fillRect(64, 54, 1272, 432);
   ctx.textAlign = 'center'; ctx.fillStyle = '#e8e8ee'; ctx.font = 'bold 24px monospace'; ctx.fillText('Game Guide', ctx.canvas.width / 2, 84);
-  ctx.textAlign = 'left'; ctx.font = 'bold 14px monospace';
-
-  ctx.fillStyle = '#8fd1e0'; ctx.fillText('Controls', 100, 132);
-  drawGuideKeycap(ctx, 100, 162, 'Q', 'Attack: rally your army toward the enemy core');
-  drawGuideKeycap(ctx, 100, 190, 'W', 'Defend: hold the line around your home');
-  drawGuideKeycap(ctx, 100, 218, 'E', 'Retreat: pull your fighters back to safety');
-  ctx.fillStyle = '#d0d0d8'; ctx.font = '12px monospace';
-  ctx.fillText('P / Escape: catch your breath and pause', 100, 252);
-  ctx.fillText('Mouse / touch: build, command, and explore', 100, 280);
-  ctx.fillText('Zoom buttons: survey the battlefield', 100, 308);
-
-  ctx.fillStyle = '#8fd1e0'; ctx.font = 'bold 14px monospace'; ctx.fillText('Interface', 480, 132);
-  ctx.fillStyle = '#d0d0d8'; ctx.font = '12px monospace';
-  ['Gold: fuel your growing warband', 'Population: living troops + queued recruits', 'Queue: watch your next reinforcements arrive', 'Clock and kills: follow the battle’s momentum'].forEach((line, index) => ctx.fillText(line, 480, 162 + index * 28));
-
-  ctx.fillStyle = '#8fd1e0'; ctx.font = 'bold 14px monospace'; ctx.fillText('Units', 900, 132);
-  const units = [
-    [{ kind: 'miner', action: 'unit' }, 'Miner: hauls gold and runs for the core'],
-    [{ kind: 'warrior', action: 'unit' }, 'Warrior: fearless close-range brawler'],
-    [{ kind: 'archer', action: 'unit' }, 'Archer: sharp-eyed long-range striker'],
-    [{ kind: 'structure', action: 'structure' }, 'Structure: raises your population cap'],
-    [{ kind: 'turret', action: 'turret' }, 'Turret: steadfast fortress defense'],
-    [{ kind: 'raven', action: 'raven' }, 'Raven: scout the unknown and reveal the way'],
-  ];
-  ctx.fillStyle = '#d0d0d8'; ctx.font = '12px monospace';
-  units.forEach(([item, line], index) => { const y = 162 + index * 28; drawKindGlyph(ctx, 908, y + 4, item); ctx.fillText(line, 924, y); });
+  drawGuideTabs(ctx, page);
+  if (page === 'reference') {
+    ctx.textAlign = 'left'; ctx.font = 'bold 16px monospace'; ctx.fillStyle = '#8fd1e0'; ctx.fillText('Units & Buildings', 100, 166);
+    for (const [index, row] of getGuideReferenceRows().entries()) {
+      const col = index % 3; const rowIndex = Math.floor(index / 3); const x = 100 + col * 410; const y = 194 + rowIndex * 130;
+      ctx.fillStyle = '#292b35'; ctx.fillRect(x, y, 370, 108); ctx.strokeStyle = '#4b596c'; ctx.strokeRect(x, y, 370, 108);
+      ctx.fillStyle = '#f6d68a'; ctx.font = 'bold 16px monospace'; ctx.fillText(row.label, x + 18, y + 30);
+      ctx.fillStyle = '#d0d0d8'; ctx.font = '12px monospace'; ctx.fillText(`Cost: ${row.cost}g`, x + 18, y + 58); ctx.fillText(`HP: ${row.hp ?? '—'}`, x + 145, y + 58); ctx.fillText(`DPS: ${row.dps ?? 'Scout'}`, x + 240, y + 58);
+      ctx.fillStyle = '#8a8a96'; ctx.font = '11px monospace'; ctx.fillText(row.dps === null ? 'Temporary enemy-base vision' : row.label === 'Turret' ? 'Stationary defensive fire' : row.label === 'Structure' ? 'Raises population capacity' : 'Battlefield role', x + 18, y + 84);
+    }
+  } else {
+    ctx.textAlign = 'left'; ctx.fillStyle = '#8fd1e0'; ctx.font = 'bold 16px monospace'; ctx.fillText('Commands', 110, 166);
+    drawGuideKeycap(ctx, 110, 204, 'Q', 'Attack: rally toward the enemy core');
+    drawGuideKeycap(ctx, 110, 242, 'W', 'Defend: press again for the next completed turret');
+    drawGuideKeycap(ctx, 110, 280, 'E', 'Retreat: pull fighters back to safety');
+    ctx.fillStyle = '#d0d0d8'; ctx.font = '12px monospace'; ctx.fillText('P / Escape: pause', 110, 322); ctx.fillText('Game Speed: 1× → 5× → 10× → 20×', 110, 348);
+    ctx.fillStyle = '#8fd1e0'; ctx.font = 'bold 16px monospace'; ctx.fillText('Vision & scouting', 720, 166);
+    ctx.fillStyle = '#d0d0d8'; ctx.font = '12px monospace';
+    ['Vision: friendly units and defenses reveal nearby enemies.', 'Unseen enemies disappear from view.', 'Ravens temporarily reveal the enemy base.'].forEach((line, index) => ctx.fillText(line, 720, 204 + index * 32));
+    ctx.strokeStyle = '#5c9be0'; ctx.strokeRect(760, 320, 120, 70); ctx.fillStyle = '#5c9be0'; ctx.fillText('BLUE VISION', 774, 360); ctx.strokeStyle = '#e0605c'; ctx.strokeRect(1020, 320, 120, 70); ctx.fillStyle = '#e0605c'; ctx.fillText('UNSEEN RED', 1032, 360);
+  }
   drawMenuButton(ctx, getBackButtonRect(ctx.canvas), '< Back');
 }
 
@@ -878,7 +919,7 @@ export function drawMenuScreen(ctx, uiState) {
       drawUpdateLogScreen(ctx);
       break;
     case 'guide':
-      drawGameGuideScreen(ctx);
+      drawGameGuideScreen(ctx, uiState);
       break;
     case 'settings':
       drawSettingsScreen(ctx, uiState);

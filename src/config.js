@@ -74,11 +74,11 @@ export const CONFIG = {
   PRODUCTION_QUEUE_LIMIT: 10, // paid FIFO items per team; applies to all production kinds
 
   STRUCTURE_COST: 300, // S8: doubled from 150
-  TURRET_COST: 600,
+  TURRET_COST: 780, // +30%
   TURRET_BUILD_TIME: 15,
   MAX_TURRETS: 4,
   TURRET_HP: 450,
-  TURRET_DAMAGE: 47.6,
+  TURRET_DAMAGE: 42.84, // -10%
   TURRET_RANGE: 700,
   TURRET_ATTACK_COOLDOWN: 1.8,
   TURRET_PROJECTILE_SPEED: 320,
@@ -185,7 +185,7 @@ export const CONFIG = {
     },
     warrior: {
       cost: 137.5,
-      hp: 54.6,
+      hp: 62.79, // +15%
       damage: 7.5,
       range: 22,
       attackCooldown: 0.5,

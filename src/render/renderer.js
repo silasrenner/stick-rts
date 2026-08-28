@@ -6,6 +6,7 @@ import { getCombatRevealSources, isEntityVisibleInPlayerView, isEntityVisibleInS
 import { drawStatue, drawKnownBase, drawStructure, drawTurret, drawMine, drawHealthBar } from './structures.js';
 import { drawHUD, drawBuildMenu, drawWinLoseOverlay, drawMenuScreen, getBottomBarTop, drawZoomControls, drawTouchCommandControls, drawWatchSpeedButton, drawSpectatorViewSelector, drawPauseButton, drawPauseOverlay } from './ui.js';
 import { drawParallax } from './parallax.js';
+import { drawLandingRaven, drawRaven as drawSharedRaven } from './landingRaven.js';
 import { drawMatchTelemetry, drawWatchTelemetryOverlay } from './watchTelemetryOverlay.js';
 import { createVisionMemory, getSustainedVisionSamples, updateVisionMemory } from './visionMemory.js';
 
@@ -83,7 +84,7 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   for (const raven of world.ravens) {
     const visibleRaven = spectatorTeam === null || raven.team === spectatorTeam || isPositionVisibleToTeam(world, spectatorTeam, raven.x, raven.y);
     if (!visible(raven.x) || !visibleRaven) continue;
-    drawRaven(ctx, raven);
+    drawSharedRaven(ctx, raven);
   }
   for (const unit of world.units) {
     if (!visible(unit.x) || !(visibleToViewer(unit) || visibleThroughFogClearance(unit))) continue;
@@ -102,6 +103,7 @@ export function render(ctx, world, camera, uiMessage, uiState) {
       if (visible(deposit.x) && isMineVisibleToViewer(world, spectatorTeam, mineTeam, deposit)) drawMine(ctx, deposit);
     }
   }
+  if (world.matchState === 'menu') drawLandingRaven(ctx, performance.now() / 1000);
   ctx.restore();
 
   if (world.matchState === 'menu') {

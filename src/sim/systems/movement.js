@@ -2,21 +2,6 @@ import { CONFIG } from '../../config.js';
 import { findNearestEnemyWithin, findEntityById, isAliveEntity } from '../world.js';
 import { getMinerDesiredX } from './mining.js';
 
-// Nearest living friendly warrior to `unit`, by x distance, or Infinity if
-// none exist — used by the archer-cohesion check below. Deliberately
-// checked fresh every tick (not a latched flag) so cohesion holds resume
-// correctly once a warrior exists again after hitting zero.
-function nearestFriendlyWarriorDistance(world, unit) {
-  let nearest = Infinity;
-  for (const other of world.units) {
-    if (other.team !== unit.team || other.kind !== 'warrior' || !isAliveEntity(other)) continue;
-    const dist = Math.abs(other.x - unit.x);
-    if (dist < nearest) nearest = dist;
-  }
-  return nearest;
-}
-
-// Acts on the target/command decisions from the previous combat tick.
 // Sets state to 'idle'/'walking'; combat.js may override to 'attacking'
 // afterward in this same tick. Controlled heroes are skipped entirely —
 // their movement is player-driven (see heroes.js's updateHeroControl).
@@ -75,21 +60,9 @@ export function updateMovement(world, dt) {
       } else if (unit.command === 'retreat') {
         // Get home; no formation slot — retreat isn't a battle line.
         desiredX = unit.homeX;
-      } else if (unit.kind === 'archer') {
-        // A newly spawned defender must first reach its own mine-side slot.
-        // Cohesion prevents an already-positioned archer from advancing
-        // unsupported, but must not freeze it at home when no warrior exists.
-        const sign = unit.team === 'player' ? 1 : -1;
-        const behindAssignedSlot = sign * unit.x < sign * (unit.slotX ?? unit.homeX) - 2;
-        if (behindAssignedSlot || nearestFriendlyWarriorDistance(world, unit) <= CONFIG.ARCHER_COHESION_DISTANCE) {
-          desiredX = unit.slotX ?? unit.homeX;
-          desiredY = unit.slotY ?? unit.y;
-        } else {
-          desiredX = unit.x;
-          holding = true;
-        }
       } else {
-        // Defend, everyone else: the screening line formation.js computed.
+        // Defend: every untargeted combat unit, including archers, returns
+        // directly to the screening-line slot formation.js assigned.
         desiredX = unit.slotX ?? unit.homeX;
         desiredY = unit.slotY ?? unit.y;
       }
