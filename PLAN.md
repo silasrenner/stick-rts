@@ -4,13 +4,13 @@ Cross-session context carrier. Keep current scope, recovery state, and dirty-wor
 
 ## Current approved scope — deposits, player guide, and miner safety/build time
 
-Owner approval: 2026-08-27. Candidate worktree: `C:\\Users\\simcr\\projects\\stick-rts\\worktrees\\miner-three-deposits` on `agent/miner-three-deposits-local`, based on synchronized `main` `fc70266`.
+Owner approval: 2026-08-27. Source/test integration is on `main` in `10f5eda`; the reviewed candidate worktree remains available only for local generated evidence.
 
 **Included:** retain the already-validated three mirrored gold deposits centered at the existing mine (±`38px`) and deterministic stable miner allocation while preserving the four-worker team-wide extraction cap, mine-cycle timing, and gold per trip. Add an opaque Game Guide reachable from the landing page and Player-vs-AI pause menu, returning to the originating menu/state and covering current controls, UI, Miner/Warrior/Archer/Structure/Turret/Raven references, matching glyphs, and Q/W/E command keycaps. Increase authoritative miner build time from `5s` to `5.75s` (+15%). First diagnose the owner-reported miner non-retreat through a deterministic red reproduction and real browser path; trace the threat query, movement intent, tick order, and render state before applying only the necessary source fix so threatened miners reliably retreat to their core.
 
-**Deliberate exclusions:** changes to miner cost/speed, gold amount/cycle, AI production policy, tower placement and defense formation, combat balance/targeting, hero re-enablement, deployment/push, and generated screenshot versioning.
+**Deliberate exclusions:** changes to miner cost/speed, gold amount/cycle, AI production policy, tower placement and defense formation, combat balance/targeting, hero re-enablement, and generated screenshot versioning.
 
-**Evidence gates:** preserve the completed mine-deposit regression/browser evidence. New guide/navigation, miner-build-time, and miner-retreat tests must be red first; the retreat test must demonstrate the reported failure before any fix. Retain relevant pause/menu, mining/deposit, turret/defense, and headless checks. Real Chrome/CDP must exercise landing → Guide → Back and paused match → Guide → Back, plus a concrete miner-threat scenario. Serve and hash-verify the exact candidate at `http://192.168.0.83:8861/`; do not commit until owner review. External-device LAN reachability remains unverified unless the elevation-required firewall rule for port `8861` is added.
+**Evidence complete:** focused Node regressions passed red→green; retained mining/defense/saturation/turret/headless checks pass; real Chrome/CDP exercised landing → Guide → Back, paused match → Guide → Back, guide keycaps/glyph visual rendering, and mine allocation. Exact candidate source was LAN/hash-verified before review. The approved source/test release was fast-forwarded to `main` and pushed to `origin/main` as `10f5eda`; generated screenshots remain local-only.
 
 ## Current status — 2026-08-27
 
