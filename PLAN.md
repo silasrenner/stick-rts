@@ -2,6 +2,32 @@
 
 Cross-session context carrier. Keep current scope, recovery state, and dirty-worktree warnings here. Completed work belongs in `HISTORY.md`; detailed durable findings live in focused `docs/analysis/` documents.
 
+## Current status — fog diagnostics complete; no active implementation scope
+
+Completed 2026-08-28. The root `main` checkout contains the owner-approved Player-vs-AI fog source in `702256f` plus the follow-up diagnostic ledger being prepared for local/remote promotion. The established LAN preview remains `http://192.168.0.83:8811/`.
+
+### Completed diagnostic — 20× late-battle frame attribution
+
+**Included:** add a diagnostic-only seeded Player-vs-AI late-battle trace harness. It uses the production browser game loop and a deterministic high-population setup at 20×, records frame intervals/ticks per frame, named simulation and render phases, and frame-synchronous unit/projectile/vision/history counts, with concise durable and raw local-only evidence.
+
+**Deliberate exclusions:** gameplay mechanics, fixed-timestep semantics, tick dropping/capping, fog styling, production optimization, balance, commit, push, and deployment. A headed local browser trace is diagnostic evidence, not user LAN-review proof.
+
+**Evidence gates:** the browser is headed and uses a fresh explicit profile; cache is disabled; LAN source hashes match; the same seeded fixture is replayed twice; frame/tick accounting is reported; conclusions identify a measured dominant phase or explicitly state that none was established. No behavioral correction without a new owner-approved scope.
+
+**Diagnostic result / stop:** two headed-Chrome 600-frame captures of the stable 100-unit/20× battle held `18.4–18.5ms` median, `18.7ms` P95, and `18.9ms` max frame cadence. Each frame advanced a stable `22–23` exact fixed ticks—expected at `20×` and an ~`18.5ms` display frame—with no measured runaway catch-up. Named CPU samples ranked repeated `getTeamVisionSources` ahead of `drawVisionFog`, movement, combat, and vision memory, but none corresponded to a frame-time spike. The trace therefore does not reproduce the reported end-game hitch and does not authorize fog, combat, or tick-semantic changes. The plausible remaining owner-visible effect is expected 20× temporal stepping (about 22 simulation states per drawn frame), a presentation/product decision rather than a measured regression. Evidence: `docs/analysis/late-battle-frame-attribution-2026-08-28.md`; raw trace remains local-only. Reproduce on the owner's interactive browser at the reported moment before a new correction scope.
+
+### Completed diagnostic — Player-vs-AI fog residual lag
+
+Owner approval: 2026-08-28. Work directly in the root `main` checkout and use the established LAN preview at `http://192.168.0.83:8811/`, which must be hash-verified against this worktree before any browser claim.
+
+**Included:** add a diagnostic-only, external browser/CDP profiling harness and concise local evidence. Exercise one fixed high-population Player-vs-AI fixture at 5×, 10×, and 20× with four equal-input render controls: no Player fog, current sources only, current+sustained flat clearance, and current+sustained current radial/vertical styling. Record frame median/P95/max plus renderer-phase timings/counts for source construction, memory update, sustained-sample derivation, fog raster/composite, current visibility, sustained-clearance visibility, and source/sample/enemy-unit cardinality. Compare the exact current source against the four controls; preserve raw local-only output.
+
+**Deliberate exclusions:** game mechanics, simulation/team vision, AI knowledge, combat-reveal semantics, fog visual behavior, configuration tuning, production renderer optimization, deployment/push, and generated artifact versioning. Do not characterize a synthetic fixture as gameplay-health proof.
+
+**Evidence gates:** the harness uses the real LAN-served module and actual render path, disables cache, confirms the served module hash, makes equal-input controls explicit, reports 5×/10×/20× results, and leaves the root source behavior unchanged other than the diagnostic harness. First conclusion names the dominant measured phase or declares it unestablished. No production change, commit, or push without a separately approved correction scope.
+
+**Diagnostic result / stop:** `artifacts/fog-residual-lag-profile.mjs` ran against the LAN-hash-matched renderer at a synthetic peak of 160 units, 81 Player vision sources, and 961 bounded retained samples. All 5×/10×/20× controls stayed at `16.8–17.2ms` RAF P95 in headless Chrome, so it did not reproduce the owner-reported desktop lag. The current radial/vertical fog path added sampled `drawVisionFog` CPU relative to flat sustained circles, but no dropped-frame evidence. The harness cannot separately attribute the private `visibleThroughFogClearance` arrow path, and headless timing cannot establish visible desktop responsiveness. Preserve the result and stop: no fog tuning/optimization is authorized. Evidence: `docs/analysis/fog-residual-lag-diagnostic-2026-08-28.md`; raw output is local-only at `artifacts/fog-residual-lag-profile-result.json`. A separately approved real visible-browser seeded replay trace is required before a correction scope.
+
 ## Current approved scope — light Player-vs-AI combat fog
 
 Owner approval: 2026-08-28. Work directly in the root `main` checkout; the established LAN preview at `http://192.168.0.83:8811/` serves this exact worktree.
