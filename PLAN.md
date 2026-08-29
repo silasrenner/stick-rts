@@ -4,7 +4,7 @@ Cross-session context carrier. Keep current scope, recovery state, and dirty-wor
 
 ## Current status — fog diagnostics complete; no active implementation scope
 
-Completed 2026-08-28. The root `main` checkout contains the owner-approved Player-vs-AI fog source in `702256f` plus the follow-up diagnostic ledger being prepared for local/remote promotion. The established LAN preview remains `http://192.168.0.83:8811/`.
+Completed 2026-08-28. The root `main` checkout contains the owner-approved Player-vs-AI fog source in `702256f` and the diagnostic ledger in `047fe90`; both are integrated and pushed to `origin/main`. The established LAN preview remains `http://192.168.0.83:8811/`.
 
 ### Completed diagnostic — 20× late-battle frame attribution
 
