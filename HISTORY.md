@@ -7,7 +7,8 @@ This is a compact index, not default session context. Start with `PLAN.md`; read
 - The Team Vision → Raven → Frontline → Build/Scout/Adapt/Mass/Attack V1 work was owner-approved, fast-forwarded to local `main`, and pushed to `origin/main` on 2026-08-20 in `2d05003`.
 - The 2026-08-27 telemetry, warrior/archer target-saturation, truthful population/persistent queue-icon, mobile/player UI polish, and dated Update Log passes are integrated on `main`; the current release evidence and synchronization status are recorded in `PLAN.md`. Generated browser screenshots remain local-only.
 - The 2026-08-28 approved mine-field, guide, and miner-safety release is recorded below. It preserves the shared mining cap and contains no generated browser screenshots.
-- The 2026-08-29 approved Raven preparation progress and Player fog-static presentation release is recorded below; it remains locally validated pending its requested merge/push.
+- The 2026-08-29 approved Raven preparation and Player fog-static presentation release is integrated on `main` in `77094a5` / `9094a21`.
+- The 2026-08-29 approved landing Raven fog-clearance and elevated Canvas UI release is recorded below, locally validated, and ready for the requested main merge/push.
 - `PLAN.md` is the authoritative current-state and recovery handoff.
 - The former `agent/team-vision-spectator` worktree retains only generated local browser/raw diagnostic evidence that was intentionally excluded from the repository; its source changes are integrated.
 - Durable vision architecture and validation are in [`docs/analysis/team-vision-spectator-foundation-2026-08-16.md`](docs/analysis/team-vision-spectator-foundation-2026-08-16.md).

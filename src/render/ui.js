@@ -48,6 +48,42 @@ const BUTTON_REASON_TEXT = {
   ravenCooldown: 'Raven cooling',
 };
 
+// Shared canvas hierarchy palette. Every interactive surface uses a darker
+// card than the battlefield plus a readable rim; active/disabled states remain
+// unambiguous without relying on transparency.
+export function getControlSurfaceStyle({ active = false, disabled = false, primary = false } = {}) {
+  if (disabled) return { fill: '#161b23', border: '#3b4655', label: '#778394', shadow: '#080b10' };
+  if (active || primary) return { fill: '#203d53', border: '#80d5f4', label: '#f4fbff', shadow: '#071017' };
+  return { fill: '#202b38', border: '#71869b', label: '#eef5fb', shadow: '#0a1018' };
+}
+
+export function drawControlSurface(ctx, rect, options = {}) {
+  const style = getControlSurfaceStyle(options);
+  ctx.fillStyle = style.shadow;
+  ctx.fillRect(rect.x + 2, rect.y + 3, rect.w, rect.h);
+  ctx.fillStyle = style.fill;
+  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.strokeStyle = style.border;
+  ctx.lineWidth = options.active || options.primary ? 2 : 1;
+  ctx.strokeRect(rect.x + 0.5, rect.y + 0.5, rect.w - 1, rect.h - 1);
+  return style;
+}
+
+function drawScreenTitle(ctx, text, y, { accent = '#80d5f4', size = 22 } = {}) {
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = `bold ${size}px monospace`;
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = '#081018';
+  ctx.strokeText(text, ctx.canvas.width / 2 + 2, y + 3);
+  ctx.fillStyle = accent;
+  ctx.fillText(text, ctx.canvas.width / 2, y);
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = '#e8f8ff';
+  ctx.strokeText(text, ctx.canvas.width / 2, y);
+  ctx.restore();
+}
+
 // unit.x/unit.y is normally a world position; here we treat (x, feetY) as
 // an icon-space anchor (the glyph's feet) and rely on drawStickFigure's own
 // geometry (stickFigure.js) — an outer translate+scale shrinks it to icon
@@ -171,11 +207,8 @@ export function getZoomButtonRects(canvas, spectator = false) {
 export function drawZoomControls(ctx, spectator = false) {
   const rects = getZoomButtonRects(ctx.canvas, spectator);
   for (const [action, rect] of Object.entries(rects)) {
-    ctx.fillStyle = '#24242c';
-    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-    ctx.strokeStyle = '#777783';
-    ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
-    ctx.fillStyle = '#f0f0f4';
+    const style = drawControlSurface(ctx, rect);
+    ctx.fillStyle = style.label;
     ctx.font = `bold ${spectator ? 18 : 24}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.fillText(action === 'in' ? '+' : '−', rect.x + rect.w / 2, rect.y + rect.h * 0.75);
@@ -467,11 +500,7 @@ export function drawBuildMenu(ctx, world) {
     // camera/ground-plane geometry, out of S11's scope), and a translucent
     // disabled-button background let it bleed through. "Disabled" reads via
     // color choice instead: muted fill/border/label, not transparency.
-    ctx.fillStyle = reason ? '#232328' : button.action === 'hero' ? '#3a3320' : '#2c2c33';
-    ctx.fillRect(x, y, w, h);
-    ctx.strokeStyle = reason ? '#7a3a3a' : '#55555f';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x, y, w, h);
+    drawControlSurface(ctx, { x, y, w, h }, { active: isActive, disabled: Boolean(reason), primary: isActive });
 
     drawKindGlyph(ctx, x + 12, y + h - 9, button);
 
@@ -628,24 +657,18 @@ export function getDifficultyButtonRects(canvas) {
 function drawDifficultyButtons(ctx, rects, activeDifficulty) {
   for (const { difficulty, rect } of rects) {
     const active = difficulty === activeDifficulty;
-    ctx.fillStyle = active ? '#3a4d3a' : '#2c2c33';
-    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-    ctx.strokeStyle = active ? '#4caf50' : '#55555f';
-    ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
-    ctx.fillStyle = '#e8e8ee';
-    ctx.font = '12px monospace';
+    const style = drawControlSurface(ctx, rect, { active, primary: active });
+    ctx.fillStyle = style.label;
+    ctx.font = 'bold 12px monospace';
     ctx.fillText(difficulty[0].toUpperCase() + difficulty.slice(1), rect.x + rect.w / 2, rect.y + rect.h / 2 + 4);
   }
 }
 
 function drawMenuButton(ctx, rect, label, active = false) {
   ctx.save();
-  ctx.fillStyle = active ? '#3a4d3a' : '#2c2c33';
-  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-  ctx.strokeStyle = active ? '#4caf50' : '#55555f';
-  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
-  ctx.fillStyle = '#e8e8ee';
-  ctx.font = '14px monospace';
+  const style = drawControlSurface(ctx, rect, { active, primary: active });
+  ctx.fillStyle = style.label;
+  ctx.font = 'bold 14px monospace';
   ctx.textAlign = 'center';
   ctx.fillText(label, rect.x + rect.w / 2, rect.y + rect.h / 2 + 5);
   ctx.restore();
@@ -694,10 +717,7 @@ export function drawWinLoseOverlay(ctx, world) {
   ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-  ctx.textAlign = 'center';
-  ctx.fillStyle = world.matchState === 'won' ? '#4caf50' : '#e03030';
-  ctx.font = 'bold 32px monospace';
-  ctx.fillText(world.matchState === 'won' ? 'Victory!' : 'Defeat', ctx.canvas.width / 2, ctx.canvas.height / 2 - 20);
+  drawScreenTitle(ctx, world.matchState === 'won' ? 'Victory!' : 'Defeat', ctx.canvas.height / 2 - 20, { accent: world.matchState === 'won' ? '#79e6b0' : '#ff817a', size: 32 });
 
   if (isWatchAiMatch(world)) {
     drawMenuButton(ctx, getBackToMenuButtonRect(ctx.canvas), 'Back to Menu');
@@ -708,13 +728,7 @@ export function drawWinLoseOverlay(ctx, world) {
   drawGoldDifferenceChart(ctx, world);
 
   const rect = getRematchButtonRect(ctx.canvas);
-  ctx.fillStyle = '#2c2c33';
-  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-  ctx.strokeStyle = '#e8e8ee';
-  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
-  ctx.fillStyle = '#e8e8ee';
-  ctx.font = '14px monospace';
-  ctx.fillText('Rematch', rect.x + rect.w / 2, rect.y + rect.h / 2 + 5);
+  drawMenuButton(ctx, rect, 'Rematch', true);
 
   ctx.font = '11px monospace';
   ctx.fillStyle = '#8a8a96';
@@ -754,9 +768,7 @@ export function getMainMenuButtonRects(canvas) {
 
 function drawMainMenu(ctx) {
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#e8e8ee';
-  ctx.font = 'bold 40px monospace';
-  ctx.fillText('STICK RTS', ctx.canvas.width / 2, 110);
+  drawScreenTitle(ctx, 'STICK RTS', 110, { size: 40 });
 
   for (const { label, rect } of getMainMenuButtonRects(ctx.canvas)) {
     drawMenuButton(ctx, rect, label);
@@ -769,9 +781,7 @@ export function getPlayDifficultyRects(canvas) {
 
 function drawPlayDifficultyScreen(ctx) {
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#e8e8ee';
-  ctx.font = 'bold 22px monospace';
-  ctx.fillText('Select Difficulty', ctx.canvas.width / 2, ctx.canvas.height / 2 - 40);
+  drawScreenTitle(ctx, 'Select Difficulty', ctx.canvas.height / 2 - 40, { size: 22 });
 
   const rects = getPlayDifficultyRects(ctx.canvas);
   drawDifficultyButtons(ctx, rects.difficulty, null);
@@ -795,9 +805,7 @@ function drawWatchAiSetupScreen(ctx, uiState) {
   const rects = getWatchSetupRects(ctx.canvas);
 
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#e8e8ee';
-  ctx.font = 'bold 20px monospace';
-  ctx.fillText('Watch AI', ctx.canvas.width / 2, 80);
+  drawScreenTitle(ctx, 'Watch AI', 80, { size: 20 });
 
   ctx.font = '12px monospace';
   ctx.fillStyle = '#8a8a96';
@@ -827,9 +835,7 @@ function drawSettingsScreen(ctx, uiState) {
   const rects = getSettingsRects(ctx.canvas);
 
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#e8e8ee';
-  ctx.font = 'bold 20px monospace';
-  ctx.fillText('Settings', ctx.canvas.width / 2, 80);
+  drawScreenTitle(ctx, 'Settings', 80, { size: 20 });
 
   ctx.font = '12px monospace';
   ctx.fillStyle = '#8a8a96';
@@ -849,9 +855,7 @@ function drawUpdateLogScreen(ctx) {
   ctx.fillStyle = '#1f1f27';
   ctx.fillRect(64, 86, 1272, 372);
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#e8e8ee';
-  ctx.font = 'bold 20px monospace';
-  ctx.fillText('Update Log', ctx.canvas.width / 2, 74);
+  drawScreenTitle(ctx, 'Update Log', 74, { size: 20 });
   ctx.textAlign = 'left';
   ctx.font = '12px monospace';
   ctx.fillStyle = '#d0d0d8';

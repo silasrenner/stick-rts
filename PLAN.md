@@ -2,15 +2,15 @@
 
 Cross-session context carrier. Keep current scope, recovery state, and dirty-worktree warnings here. Completed work belongs in `HISTORY.md`; detailed durable findings live in focused `docs/analysis/` documents.
 
-## Current approved scope — Raven preparation indicator and Player core disclosure
+## Current approved scope — landing Raven fog clearance and elevated Canvas UI
 
-Owner approval: 2026-08-29. Isolated worktree: `C:/Users/simcr/projects/stick-rts/worktrees/raven-prep-core-visibility` on `agent/raven-prep-core-visibility-local`, based on `main` `1a61d43`.
+Owner approval: 2026-08-29. Isolated worktree: `C:/Users/simcr/projects/stick-rts/worktrees/landing-raven-fog-ui` on `agent/landing-raven-fog-ui-local`, based on pushed `main` `9094a21`.
 
-**Included:** render a preparation-progress bar on the Player Raven build button from `0%` to `100%` during the existing two-second `preparing` lifecycle only; it remains outside the FIFO production queue. In Player-vs-AI presentation, fully render the known enemy core while a living Player unit has it as the active target, including an archer attacking from its `520px` range beyond the ordinary `475px` unit vision radius. Keep that disclosure renderer-owned and limited to the core targeted by Player action.
+**Included:** add a menu-only, gameplay-style lower-battlefield fog layer (sky/mountains remain clear) that uses the decorative landing Raven as a renderer-only moving clearance source. Its bubble lingers for two seconds after flight before fog restores. Strengthen Canvas UI hierarchy with shared elevated button/control treatments across landing/menu/navigation, pause/Watch/zoom, build cards, queue chips, and panel framing.
 
-**Deliberate exclusions:** Raven cost, preparation/cooldown/flight/reveal timing, queue/population mechanics, simulation vision, AI knowledge, combat/targeting behavior, all other fog styling/disclosure, deployment/push, and generated screenshot versioning.
+**Deliberate exclusions:** gameplay fog behavior, Raven gameplay lifecycle/configuration, simulation/AI/RNG state, combat/balance, external deployment/push, and generated screenshots.
 
-**Evidence gates:** focused red→green UI checks prove preparation start/mid/complete progress and no bar while Raven is flying/cooling; visibility checks prove the targeted core is fully rendered at the archer-only `475–520px` band and retains the known-location silhouette when not targeted. Run retained Raven/vision/UI checks, a cache-busted real browser Player-vs-AI path, LAN-hash verification of each changed served module, and `git diff --check`. Commit the approved source/test/ledger files locally only after LAN review; do not push.
+**Evidence gates:** focused red→green landing-fog lifecycle and UI drawing contracts; retained gameplay fog/Raven/UI checks; a real browser proof against a hash-matched LAN candidate URL; `git diff --check`. Commit locally only after owner LAN approval; do not merge/push.
 
 Completed 2026-08-28. The root `main` checkout contains the owner-approved Player-vs-AI fog source in `702256f` and the diagnostic ledger in `047fe90`; both are integrated and pushed to `origin/main`. The established LAN preview remains `http://192.168.0.83:8811/`.
 

@@ -6,7 +6,7 @@ import { getCombatRevealSources, getPlayerAttackTargetRevealSources, isEntityVis
 import { drawStatue, drawKnownBase, drawStructure, drawTurret, drawMine, drawHealthBar } from './structures.js';
 import { drawHUD, drawBuildMenu, drawWinLoseOverlay, drawMenuScreen, getBottomBarTop, drawZoomControls, drawTouchCommandControls, drawWatchSpeedButton, drawSpectatorViewSelector, drawPauseButton, drawPauseOverlay } from './ui.js';
 import { drawParallax } from './parallax.js';
-import { drawLandingRaven, drawRaven as drawSharedRaven } from './landingRaven.js';
+import { drawLandingRaven, getLandingRavenFogSource, drawRaven as drawSharedRaven } from './landingRaven.js';
 import { drawMatchTelemetry, drawWatchTelemetryOverlay } from './watchTelemetryOverlay.js';
 import { createVisionMemory, getSustainedVisionSamples, updateVisionMemory } from './visionMemory.js';
 
@@ -41,6 +41,45 @@ function getFogLayerContext(canvas) {
 
 // Reads world state only; never mutates it. Watch perspectives and the Player
 // fog view are presentation-only and cannot affect simulation, AI knowledge, or RNG.
+export function drawLandingFog(ctx, camera, elapsedSeconds) {
+  const fogCtx = getFogLayerContext(ctx.canvas);
+  const fogTop = CONFIG.GROUND_Y + (CONFIG.PLAYER_FOG_TOP - CONFIG.GROUND_Y) * camera.zoom;
+  const fogBottom = getBottomBarTop(ctx.canvas);
+  const boundaryFeather = CONFIG.PLAYER_FOG_BOUNDARY_FEATHER * camera.zoom;
+  const fogFill = CONFIG.PLAYER_FOG_COLOR;
+  fogCtx.save();
+  fogCtx.clearRect(0, 0, fogLayer.width, fogLayer.height);
+  const gradient = fogCtx.createLinearGradient(0, fogTop, 0, fogBottom);
+  const fadeRatio = Math.min(0.5, boundaryFeather / Math.max(1, fogBottom - fogTop));
+  gradient.addColorStop(0, 'rgba(225, 232, 240, 0)');
+  gradient.addColorStop(fadeRatio, fogFill);
+  gradient.addColorStop(1 - fadeRatio, fogFill);
+  gradient.addColorStop(1, 'rgba(225, 232, 240, 0)');
+  fogCtx.fillStyle = gradient;
+  fogCtx.fillRect(0, fogTop, fogLayer.width, fogBottom - fogTop);
+  const sources = [
+    { x: CONFIG.PLAYER_HOME_X, y: CONFIG.GROUND_Y, radius: CONFIG.VISION_RANGES.core, alpha: 1 },
+    getLandingRavenFogSource(elapsedSeconds),
+  ].filter(Boolean);
+  for (const source of sources) {
+    const projected = projectFogSourceToViewport(source, camera);
+    const feather = CONFIG.PLAYER_FOG_FEATHER * camera.zoom;
+    const innerRadius = Math.max(0, projected.radius - feather);
+    const clear = fogCtx.createRadialGradient(projected.x, projected.y, 0, projected.x, projected.y, projected.radius);
+    clear.addColorStop(0, 'rgba(0, 0, 0, 1)');
+    clear.addColorStop(innerRadius / projected.radius, 'rgba(0, 0, 0, 1)');
+    clear.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    fogCtx.globalCompositeOperation = 'destination-out';
+    fogCtx.globalAlpha = projected.alpha;
+    fogCtx.fillStyle = clear;
+    fogCtx.beginPath();
+    fogCtx.arc(projected.x, projected.y, projected.radius, 0, Math.PI * 2);
+    fogCtx.fill();
+  }
+  fogCtx.restore();
+  ctx.drawImage(fogLayer, 0, 0);
+}
+
 export function render(ctx, world, camera, uiMessage, uiState) {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   const watchAiMatch = isWatchAiMatch(world);
@@ -54,7 +93,9 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   let visualVisionSources = [...combatRevealSources, ...playerAttackTargetRevealSources];
   const visibleThroughFogClearance = (entity) => visualVisionSources.some((source) => Math.hypot(source.x - entity.x, source.y - entity.y) <= source.radius && (source.alpha ?? 1) > 0);
 
+  const landingElapsedSeconds = world.matchState === 'menu' ? performance.now() / 1000 : null;
   drawParallax(ctx, camera);
+  if (landingElapsedSeconds !== null) drawLandingFog(ctx, camera, landingElapsedSeconds);
   ctx.save();
   ctx.translate(0, CONFIG.GROUND_Y);
   ctx.scale(camera.zoom, camera.zoom);
@@ -82,7 +123,7 @@ export function render(ctx, world, camera, uiMessage, uiState) {
     }
   }
 
-  if (spectatorTeam !== null) {
+  if (spectatorTeam !== null && world.matchState !== 'menu') {
     const visionMemory = uiState.visionMemory ??= createVisionMemory();
     updateVisionMemory(visionMemory, getTeamVisionSources(world, spectatorTeam), world.matchElapsedTime);
     const sustainedSources = getSustainedVisionSamples(visionMemory, world.matchElapsedTime);
@@ -119,7 +160,7 @@ export function render(ctx, world, camera, uiMessage, uiState) {
       if (visible(deposit.x) && isMineVisibleToViewer(world, spectatorTeam, mineTeam, deposit)) drawMine(ctx, deposit);
     }
   }
-  if (world.matchState === 'menu') drawLandingRaven(ctx, performance.now() / 1000);
+  if (landingElapsedSeconds !== null) drawLandingRaven(ctx, landingElapsedSeconds);
   ctx.restore();
 
   if (world.matchState === 'menu') {
