@@ -2,7 +2,7 @@ import { CONFIG } from '../config.js';
 import { isWatchAiMatch } from '../sim/world.js';
 import { getTeamVisionSources, isPositionVisibleToTeam } from '../sim/vision.js';
 import { drawStickFigure } from './stickFigure.js';
-import { getCombatRevealSources, isEntityVisibleInPlayerView, isEntityVisibleInSpectatorView, spectatorViewTeam } from './spectatorVision.js';
+import { getCombatRevealSources, getPlayerAttackTargetRevealSources, isEntityVisibleInPlayerView, isEntityVisibleInSpectatorView, spectatorViewTeam } from './spectatorVision.js';
 import { drawStatue, drawKnownBase, drawStructure, drawTurret, drawMine, drawHealthBar } from './structures.js';
 import { drawHUD, drawBuildMenu, drawWinLoseOverlay, drawMenuScreen, getBottomBarTop, drawZoomControls, drawTouchCommandControls, drawWatchSpeedButton, drawSpectatorViewSelector, drawPauseButton, drawPauseOverlay } from './ui.js';
 import { drawParallax } from './parallax.js';
@@ -50,7 +50,8 @@ export function render(ctx, world, camera, uiMessage, uiState) {
     ? (entity) => isEntityVisibleInSpectatorView(world, spectatorView, entity)
     : (entity) => isEntityVisibleInPlayerView(world, entity);
   const combatRevealSources = spectatorTeam === null ? [] : getCombatRevealSources(world, spectatorTeam);
-  let visualVisionSources = combatRevealSources;
+  const playerAttackTargetRevealSources = watchAiMatch ? [] : getPlayerAttackTargetRevealSources(world);
+  let visualVisionSources = [...combatRevealSources, ...playerAttackTargetRevealSources];
   const visibleThroughFogClearance = (entity) => visualVisionSources.some((source) => Math.hypot(source.x - entity.x, source.y - entity.y) <= source.radius && (source.alpha ?? 1) > 0);
 
   drawParallax(ctx, camera);
@@ -66,26 +67,33 @@ export function render(ctx, world, camera, uiMessage, uiState) {
 
   for (const statue of Object.values(world.statues)) {
     if (!visible(statue.x)) continue;
-    if (visibleToViewer(statue)) drawStatue(ctx, statue);
+    const statueVisible = visibleToViewer(statue) || visibleThroughFogClearance(statue);
+    if (statueVisible) drawStatue(ctx, statue, { showHealth: watchAiMatch || statue.team === spectatorTeam });
     else drawKnownBase(ctx, statue);
   }
-  // Static structures remain known in Player view; draw them before the fog so
-  // fog softens their known locations until a player vision source clears them.
+  // Enemy static locations retain only a fogged silhouette until normal vision
+  // or an active Player attack-target bubble reveals their full art.
   for (const structure of world.structures) {
-    if (visible(structure.x) && visibleToViewer(structure)) structure.isTurret ? drawTurret(ctx, structure) : drawStructure(ctx, structure);
+    if (!visible(structure.x)) continue;
+    const structureVisible = visibleToViewer(structure) || visibleThroughFogClearance(structure);
+    if (structureVisible) {
+      const options = { showHealth: watchAiMatch || structure.team === spectatorTeam };
+      structure.isTurret ? drawTurret(ctx, structure, options) : drawStructure(ctx, structure, options);
+    }
   }
+
   if (spectatorTeam !== null) {
     const visionMemory = uiState.visionMemory ??= createVisionMemory();
     updateVisionMemory(visionMemory, getTeamVisionSources(world, spectatorTeam), world.matchElapsedTime);
     const sustainedSources = getSustainedVisionSamples(visionMemory, world.matchElapsedTime);
-    visualVisionSources = [...getTeamVisionSources(world, spectatorTeam), ...sustainedSources, ...combatRevealSources];
+    visualVisionSources = [...getTeamVisionSources(world, spectatorTeam), ...sustainedSources, ...combatRevealSources, ...playerAttackTargetRevealSources];
     const fogAlpha = watchAiMatch ? CONFIG.SPECTATOR_FOG_ALPHA : CONFIG.PLAYER_FOG_ALPHA;
     const fogColor = watchAiMatch ? undefined : CONFIG.PLAYER_FOG_COLOR;
     const fogTop = watchAiMatch ? 0 : CONFIG.GROUND_Y + (CONFIG.PLAYER_FOG_TOP - CONFIG.GROUND_Y) * camera.zoom;
     const fogBottom = watchAiMatch ? ctx.canvas.height : getBottomBarTop(ctx.canvas);
     const fogFeather = watchAiMatch ? 0 : CONFIG.PLAYER_FOG_FEATHER * camera.zoom;
     const fogBoundaryFeather = watchAiMatch ? 0 : CONFIG.PLAYER_FOG_BOUNDARY_FEATHER * camera.zoom;
-    drawVisionFog(ctx, world, spectatorTeam, camera, [...sustainedSources, ...combatRevealSources], fogAlpha, fogColor, fogTop, fogBottom, fogFeather, fogBoundaryFeather);
+    drawVisionFog(ctx, world, spectatorTeam, camera, [...sustainedSources, ...combatRevealSources, ...playerAttackTargetRevealSources], fogAlpha, fogColor, fogTop, fogBottom, fogFeather, fogBoundaryFeather);
     if (!watchAiMatch) drawFoggedKnownStatics(ctx, world, spectatorTeam, visible);
   }
 

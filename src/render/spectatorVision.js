@@ -21,8 +21,22 @@ export function isEntityVisibleInSpectatorView(world, view, entity) {
 // vision. Statues use the renderer's known-base silhouette path instead.
 export function isEntityVisibleInPlayerView(world, entity) {
   if (entity?.team !== 'ai') return true;
-  if (entity.isStructure) return true;
   return isEntityVisibleToTeam(world, 'player', entity);
+}
+
+// Renderer-only disclosure: Player attacks against enemy static objectives
+// reveal the target's ordinary vision bubble in Player presentation. This is
+// not a simulation vision source and cannot affect AI knowledge.
+export function getPlayerAttackTargetRevealSources(world) {
+  const targets = new Map();
+  for (const unit of world.units) {
+    if (unit.team !== 'player' || !isAliveEntity(unit) || unit.targetId == null) continue;
+    const target = findEntityById(world, unit.targetId);
+    if (target?.team === 'ai' && (target.isStatue || target.isStructure) && isAliveEntity(target)) targets.set(target.id, target);
+  }
+  return [...targets.values()]
+    .map((target) => ({ entityId: target.id, x: target.x, y: target.y, radius: getVisionRadius(target), playerAttackReveal: true }))
+    .filter((source) => source.radius > 0);
 }
 
 // Renderer-only disclosure: a hostile unit/turret actively attacking this

@@ -20,8 +20,8 @@ world.units.push(playerScout, hiddenEnemy);
 world.structures.push(enemyStructure, enemyTurret);
 
 expect(!isEntityVisibleInPlayerView(world, hiddenEnemy), 'Player view must hide enemy mobile units outside current vision.');
-expect(isEntityVisibleInPlayerView(world, enemyStructure), 'Player view must retain enemy structures outside current vision.');
-expect(isEntityVisibleInPlayerView(world, enemyTurret), 'Player view must retain enemy turrets outside current vision.');
+expect(!isEntityVisibleInPlayerView(world, enemyStructure), 'Enemy structures outside current vision must use the renderer fog-silhouette path.');
+expect(!isEntityVisibleInPlayerView(world, enemyTurret), 'Enemy turrets outside current vision must use the renderer fog-silhouette path.');
 expect(!isEntityVisibleInPlayerView(world, enemyRaven), 'Player view must hide enemy Ravens outside current vision.');
 expect(!isPositionVisibleToTeam(world, 'player', 1600, 0), 'Enemy projectile position fixture must begin outside player vision.');
 

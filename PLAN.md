@@ -2,7 +2,15 @@
 
 Cross-session context carrier. Keep current scope, recovery state, and dirty-worktree warnings here. Completed work belongs in `HISTORY.md`; detailed durable findings live in focused `docs/analysis/` documents.
 
-## Current status — fog diagnostics complete; no active implementation scope
+## Current approved scope — Raven preparation indicator and Player core disclosure
+
+Owner approval: 2026-08-29. Isolated worktree: `C:/Users/simcr/projects/stick-rts/worktrees/raven-prep-core-visibility` on `agent/raven-prep-core-visibility-local`, based on `main` `1a61d43`.
+
+**Included:** render a preparation-progress bar on the Player Raven build button from `0%` to `100%` during the existing two-second `preparing` lifecycle only; it remains outside the FIFO production queue. In Player-vs-AI presentation, fully render the known enemy core while a living Player unit has it as the active target, including an archer attacking from its `520px` range beyond the ordinary `475px` unit vision radius. Keep that disclosure renderer-owned and limited to the core targeted by Player action.
+
+**Deliberate exclusions:** Raven cost, preparation/cooldown/flight/reveal timing, queue/population mechanics, simulation vision, AI knowledge, combat/targeting behavior, all other fog styling/disclosure, deployment/push, and generated screenshot versioning.
+
+**Evidence gates:** focused red→green UI checks prove preparation start/mid/complete progress and no bar while Raven is flying/cooling; visibility checks prove the targeted core is fully rendered at the archer-only `475–520px` band and retains the known-location silhouette when not targeted. Run retained Raven/vision/UI checks, a cache-busted real browser Player-vs-AI path, LAN-hash verification of each changed served module, and `git diff --check`. Commit the approved source/test/ledger files locally only after LAN review; do not push.
 
 Completed 2026-08-28. The root `main` checkout contains the owner-approved Player-vs-AI fog source in `702256f` and the diagnostic ledger in `047fe90`; both are integrated and pushed to `origin/main`. The established LAN preview remains `http://192.168.0.83:8811/`.
 

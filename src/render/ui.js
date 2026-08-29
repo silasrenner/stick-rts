@@ -348,6 +348,16 @@ export function isBuildQueueItemActive(item, button) {
   return item.kind === button.kind || (item.kind === null && button.kind === item.action);
 }
 
+// Raven is deliberately not a FIFO production item, but its short preparation
+// lifecycle is still player-facing build work. Expose only that state as a
+// button progress value; flight, reveal, exit, and cooldown retain their
+// existing status labels without pretending to be queued production.
+export function getRavenPreparationProgress(world, team = 'player') {
+  const raven = world.ravens.find((entry) => entry.team === team && entry.state === 'preparing');
+  if (!raven) return null;
+  return Math.max(0, Math.min(1, 1 - raven.preparationRemaining / CONFIG.RAVEN.preparationTime));
+}
+
 // Groups consecutive identical (action, kind) queue entries into stacked
 // chips — e.g. [warrior,warrior,archer] -> [{warrior,count:2},{archer,count:1}].
 // Consecutive (not global) grouping preserves the queue's actual build order.
@@ -448,7 +458,9 @@ export function drawBuildMenu(ctx, world) {
     const reason = getBuildButtonDisabledReason(world, button);
     const cost = button.costFn(world);
     const { x, y, w, h } = button.rect;
-    const isActive = isBuildQueueItemActive(activeItem, button);
+    const queueItemIsActive = isBuildQueueItemActive(activeItem, button);
+    const ravenPreparationProgress = button.action === 'raven' ? getRavenPreparationProgress(world) : null;
+    const isActive = queueItemIsActive || ravenPreparationProgress !== null;
 
     // Solid fills throughout (never ctx.globalAlpha) — at CAMERA_ZOOM_MAX
     // world content can reach into the footer band (pre-existing S10
@@ -475,7 +487,7 @@ export function drawBuildMenu(ctx, world) {
     ctx.fillText(reason ? (BUTTON_REASON_TEXT[reason] ?? 'Unavailable') : `${cost}g`, x + 24, y + 23);
 
     if (isActive) {
-      const progress = Math.max(0, Math.min(1, 1 - activeItem.remaining / activeItem.total));
+      const progress = ravenPreparationProgress ?? Math.max(0, Math.min(1, 1 - activeItem.remaining / activeItem.total));
       const barH = CONFIG.BUILD_PROGRESS_BAR_HEIGHT;
       ctx.fillStyle = '#1a1a1f';
       ctx.fillRect(x, y + h - barH, w, barH);
