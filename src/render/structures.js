@@ -55,13 +55,15 @@ export function drawStructure(ctx, structure, { showHealth = true } = {}) {
 
 export function drawTurret(ctx, turret, { showHealth = true } = {}) {
   const destroyed = turret.state === 'destroyed';
+  const scale = CONFIG.TURRET_RENDER_SCALE;
+  const width = 32 * scale; const height = 52 * scale; const barrelLength = 28 * scale;
   ctx.save(); ctx.globalAlpha = destroyed ? Math.max(0, turret.destroyTimer / CONFIG.STRUCTURE_DESTROY_DURATION) : 1;
-  ctx.fillStyle = '#303744'; ctx.fillRect(turret.x - 16, turret.y - 52, 32, 52);
-  ctx.strokeStyle = TEAM_COLORS[turret.team] ?? '#cccccc'; ctx.lineWidth = 3; ctx.strokeRect(turret.x - 16, turret.y - 52, 32, 52);
+  ctx.fillStyle = '#303744'; ctx.fillRect(turret.x - width / 2, turret.y - height, width, height);
+  ctx.strokeStyle = TEAM_COLORS[turret.team] ?? '#cccccc'; ctx.lineWidth = 3; ctx.strokeRect(turret.x - width / 2, turret.y - height, width, height);
   const direction = turret.team === 'player' ? 1 : -1;
-  ctx.fillStyle = '#9aa0aa'; ctx.fillRect(turret.x, turret.y - 43, direction * 28, 8);
+  ctx.fillStyle = '#9aa0aa'; ctx.fillRect(turret.x, turret.y - height + 9 * scale, direction * barrelLength, 8 * scale);
   ctx.restore();
-  if (showHealth && !destroyed) drawHealthBar(ctx, turret.x, turret.y - 64, turret.hp, turret.maxHp, 34);
+  if (showHealth && !destroyed) drawHealthBar(ctx, turret.x, turret.y - height - 12, turret.hp, turret.maxHp, 34 * scale);
 }
 
 export function drawMine(ctx, mine) {

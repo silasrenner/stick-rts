@@ -1,6 +1,6 @@
 import { CONFIG } from '../../config.js';
 
-const UNIT_KINDS = ['miner', 'warrior', 'archer'];
+const UNIT_KINDS = ['miner', 'warrior', 'archer', 'catapult'];
 const HERO_KINDS = ['forgemaster', 'hawkeye', 'vanguard'];
 
 export function createPurchaseCandidate(action, kind = null) {

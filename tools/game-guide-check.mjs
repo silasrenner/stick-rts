@@ -38,14 +38,15 @@ expect(paused.text.some(({ value }) => value === 'Game Guide'), 'Pause overlay m
 
 const referencePage = capture();
 drawMenuScreen(referencePage.ctx, { menuScreen: 'guide', guidePage: 'reference', paused: false, touchControlsEnabled: false, spectatorView: 'full' });
-for (const required of ['Miner', 'Warrior', 'Archer', 'Structure', 'Turret', 'Raven', 'Cost', 'HP', 'DPS']) {
+for (const required of ['Miner', 'Warrior', 'Archer', 'Catapult', 'Structure', 'Turret', 'Raven', 'Cost', 'HP', 'DPS']) {
   expect(referencePage.text.some(({ value }) => value === required || value.startsWith(`${required}:`)), `Reference page must render ${required}.`);
 }
 
 const reference = Object.fromEntries(getGuideReferenceRows().map((row) => [row.label, row]));
-for (const label of ['Miner', 'Warrior', 'Archer', 'Structure', 'Turret', 'Raven']) expect(reference[label], `Guide reference must include ${label}.`);
+for (const label of ['Miner', 'Warrior', 'Archer', 'Catapult', 'Structure', 'Turret', 'Raven']) expect(reference[label], `Guide reference must include ${label}.`);
+expect(reference.Catapult.cost === 700 && reference.Catapult.hp === 90 && reference.Catapult.dps === 18.3 && reference.Catapult.population === 4, `Catapult guide stats/role must derive from current config: ${JSON.stringify(reference.Catapult)}.`);
 expect(reference.Warrior.cost === 137.5 && reference.Warrior.hp === 62.79 && reference.Warrior.dps === 15, `Warrior guide stats must derive from current config: ${JSON.stringify(reference.Warrior)}.`);
-expect(reference.Turret.cost === 780 && reference.Turret.hp === 450 && reference.Turret.dps === 23.8, `Turret guide stats must derive from current config: ${JSON.stringify(reference.Turret)}.`);
+expect(reference.Turret.cost === 1560 && reference.Turret.hp === 900 && reference.Turret.dps === 23.8, `Turret guide stats must derive from current config: ${JSON.stringify(reference.Turret)}.`);
 expect(reference.Raven.cost === 750 && reference.Raven.hp === null && reference.Raven.dps === null, `Raven guide stats must communicate a non-combat scout: ${JSON.stringify(reference.Raven)}.`);
 expect(labels.some((value) => value.includes('Vision:')), `Guide must explain team vision; got ${labels.join(' | ')}.`);
 expect(labels.some((value) => value.includes('next completed turret')), `Guide must explain repeated Player Defend; got ${labels.join(' | ')}.`);

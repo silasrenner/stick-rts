@@ -1,0 +1,27 @@
+import { CONFIG } from '../src/config.js';
+import { createStructure, createUnit, createWorld } from '../src/sim/world.js';
+import { updateFormationSlots } from '../src/sim/systems/formation.js';
+import { findAttackTarget } from '../src/sim/systems/supply.js';
+import { updateCombat } from '../src/sim/systems/combat.js';
+import { updateProjectiles } from '../src/sim/systems/projectiles.js';
+
+const expect = (condition, message) => { if (!condition) throw new Error(message); };
+const world = createWorld(721);
+world.matchState = 'playing';
+const catapult = createUnit('catapult', 'player', 600, CONFIG.GROUND_Y);
+const archer = createUnit('archer', 'player', 200, CONFIG.GROUND_Y);
+const warrior = createUnit('warrior', 'player', 180, CONFIG.GROUND_Y);
+const enemyTurret = world.structures.find((s) => s.team === 'ai' && s.isStartingTurret);
+enemyTurret.x = 1000;
+const splashVictim = createUnit('warrior', 'ai', 1040, CONFIG.GROUND_Y);
+world.units.push(catapult, archer, warrior, splashVictim);
+updateFormationSlots(world);
+expect(catapult.slotX < archer.slotX && archer.slotX < warrior.slotX, `Catapult must form behind Archer and front line: ${JSON.stringify({ catapult: catapult.slotX, archer: archer.slotX, warrior: warrior.slotX })}`);
+expect(findAttackTarget(world, catapult)?.id === enemyTurret.id, 'Catapult must prioritize a turret over enemy units.');
+const turretBefore = enemyTurret.hp;
+const unitBefore = splashVictim.hp;
+updateCombat(world, 1 / CONFIG.TICK_HZ);
+for (let i = 0; i < 600 && world.projectiles.length; i += 1) updateProjectiles(world, 1 / CONFIG.TICK_HZ);
+expect(enemyTurret.hp === turretBefore - CONFIG.UNIT_STATS.catapult.damage * CONFIG.UNIT_STATS.catapult.staticDamageMultiplier, `Catapult direct static hit must use multiplier: ${enemyTurret.hp}.`);
+expect(splashVictim.hp === unitBefore - CONFIG.UNIT_STATS.catapult.splashDamage, `Catapult must damage nearby enemy units once with splash: ${splashVictim.hp}.`);
+console.log('PASS — Catapult holds a siege line, prioritizes turrets, and resolves static/direct plus unit splash damage.');

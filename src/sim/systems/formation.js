@@ -3,7 +3,8 @@ import { isAliveEntity } from '../world.js';
 
 // Melee-ish kinds hold the outer/front line; ranged kinds hold the
 // inner/back line, kept strictly behind it (see assignTeamSlots).
-const BACK_LINE_KINDS = new Set(['archer', 'hawkeye']);
+const RANGED_LINE_KINDS = new Set(['archer', 'hawkeye']);
+const SIEGE_LINE_KINDS = new Set(['catapult']);
 
 // Runs before movement.js each tick: assigns every living, non-miner,
 // non-directly-controlled unit a deterministic (slotX, slotY) formation
@@ -37,8 +38,9 @@ function assignTeamSlots(world, team) {
     )
     .sort((a, b) => a.id - b.id);
 
-  const frontLine = eligible.filter((u) => !BACK_LINE_KINDS.has(u.kind));
-  const backLine = eligible.filter((u) => BACK_LINE_KINDS.has(u.kind));
+  const frontLine = eligible.filter((u) => !RANGED_LINE_KINDS.has(u.kind) && !SIEGE_LINE_KINDS.has(u.kind));
+  const rangedLine = eligible.filter((u) => RANGED_LINE_KINDS.has(u.kind));
+  const siegeLine = eligible.filter((u) => SIEGE_LINE_KINDS.has(u.kind));
 
   const targetAnchor = world.teams[team].commanderTargetAnchor;
   let anchorX;
@@ -78,8 +80,14 @@ function assignTeamSlots(world, team) {
   // the two lines occupy strictly disjoint halves of the x-axis around
   // that point, regardless of which direction the front line itself grew.
   const frontMinExposure = frontLine.length > 0 ? Math.min(...frontLine.map((u) => sign * u.slotX)) : sign * anchorX;
-  const backAnchorX = sign * (frontMinExposure - CONFIG.FORMATION_SLOT_SPACING_X);
-  assignLine(backLine, backAnchorX, -sign);
+  const rangedAnchorX = sign * (frontMinExposure - CONFIG.FORMATION_SLOT_SPACING_X);
+  assignLine(rangedLine, rangedAnchorX, -sign);
+
+  // Siege always trails the rearmost Archer/Hawkeye column. If no ranged
+  // units exist, it still trails the front line by two deliberate columns.
+  const rangedMinExposure = rangedLine.length > 0 ? Math.min(...rangedLine.map((u) => sign * u.slotX)) : sign * rangedAnchorX;
+  const siegeAnchorX = sign * (rangedMinExposure - CONFIG.FORMATION_SLOT_SPACING_X);
+  assignLine(siegeLine, siegeAnchorX, -sign);
 }
 
 function assignLine(units, lineAnchorX, growthSign) {

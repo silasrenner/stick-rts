@@ -88,6 +88,17 @@ function findPriorityUnitWithin(world, unit) {
 // whole of the statue-gating rule.
 export function findAttackTarget(world, unit) {
   const enemyTeam = unit.team === 'player' ? 'ai' : 'player';
+  if (unit.kind === 'catapult') {
+    const inRange = (entity) => isAliveEntity(entity) && Math.abs(entity.x - unit.x) <= unit.acquireRange;
+    const turrets = world.structures.filter((structure) => structure.team === enemyTeam && structure.isTurret && inRange(structure));
+    if (turrets.length > 0) return selectTargetWithinTier(world, unit, turrets);
+    const structures = world.structures.filter((structure) => structure.team === enemyTeam && !structure.isTurret && inRange(structure));
+    if (structures.length > 0) return selectTargetWithinTier(world, unit, structures);
+    const statue = world.statues[enemyTeam];
+    if (inRange(statue)) return statue;
+    return findPriorityUnitWithin(world, unit);
+  }
+
   const coreTurret = world.structures.find((structure) =>
     structure.team === enemyTeam && structure.isStartingTurret && isAliveEntity(structure)
       && Math.abs(structure.x - unit.x) <= unit.acquireRange

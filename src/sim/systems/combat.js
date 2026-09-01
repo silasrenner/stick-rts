@@ -79,8 +79,11 @@ export function resolveAttack(world, unit, target) {
   unit.state = 'attacking';
 
   if (unit.projectileSpeed > 0) {
+    const impact = unit.kind === 'catapult'
+      ? { splashRadius: unit.splashRadius, splashDamage: unit.splashDamage, staticDamageMultiplier: unit.staticDamageMultiplier }
+      : null;
     world.projectiles.push(
-      createProjectile(unit.team, unit.x, unit.y, target.x, target.y, target.id, unit.damage, unit.projectileSpeed)
+      createProjectile(unit.team, unit.x, unit.y, target.x, target.y, target.id, unit.damage, unit.projectileSpeed, impact)
     );
     return; // knockback is a melee-only reaction; a fired arrow can't be pushed back
   }

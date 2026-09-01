@@ -13,9 +13,16 @@ function getBuildTime(action, kind) {
   if (action === 'structure') return CONFIG.STRUCTURE_BUILD_TIME;
   if (action === 'turret') return CONFIG.TURRET_BUILD_TIME;
   if (action === 'hero') return CONFIG.HERO_BUILD_TIME;
-  if (kind === 'miner') return CONFIG.MINER_BUILD_TIME;
-  if (kind === 'warrior') return CONFIG.WARRIOR_BUILD_TIME;
-  return CONFIG.ARCHER_BUILD_TIME;
+  const stats = CONFIG.UNIT_STATS[kind];
+  return stats?.buildTime ?? (kind === 'miner' ? CONFIG.MINER_BUILD_TIME : kind === 'warrior' ? CONFIG.WARRIOR_BUILD_TIME : CONFIG.ARCHER_BUILD_TIME);
+}
+
+function getPopulationCost(kind) { return CONFIG.UNIT_STATS[kind]?.populationCost ?? 1; }
+function getLivingPopulationCost(world, team) {
+  return world.units.filter((unit) => unit.team === team && !unit.isHero && isAliveEntity(unit)).reduce((sum, unit) => sum + getPopulationCost(unit.kind), 0);
+}
+function getQueuedPopulationCost(world, team) {
+  return world.teams[team].productionQueue.filter((item) => item.action === 'unit').reduce((sum, item) => sum + getPopulationCost(item.kind), 0);
 }
 
 function enqueue(world, team, action, kind) {
@@ -27,12 +34,13 @@ function queueHasCapacity(world, team) { return world.teams[team].productionQueu
 export function getQueuedUnitCount(world, team) { return countQueued(world, team, 'unit'); }
 export function getPopulationState(world, team) {
   const living = getUnitCount(world, team);
-  const queued = getQueuedUnitCount(world, team);
-  return { living, queued, reserved: living + queued };
+  const queued = getQueuedPopulationCost(world, team);
+  return { living, queued, reserved: getLivingPopulationCost(world, team) + queued };
 }
 // Reserved cap is authoritative purchase accounting. The player-facing
-// Population value is getPopulationState(...).living; queued units are shown
-// separately, while structures and turrets reserve no population at all.
+// Population value is a literal living-unit count; queued reservations are
+// explicit and may be weighted (for example, one Catapult uses four spaces).
+// Structures and turrets reserve no population at all.
 export function getOccupiedCap(world, team) { return getPopulationState(world, team).reserved; }
 function spend(world, team, cost) { world.teams[team].gold -= cost; world.teams[team].goldSpent += cost; }
 
@@ -50,7 +58,7 @@ export function getPurchaseFeasibility(world, team, candidate) {
     const stats = CONFIG.UNIT_STATS[kind];
     if (!stats) return infeasible('invalidKind');
     if (!canAfford(world, team, stats.cost)) return infeasible('gold');
-    if (getOccupiedCap(world, team) + 1 > getCap(world, team)) return infeasible('cap');
+    if (getOccupiedCap(world, team) + getPopulationCost(kind) > getCap(world, team)) return infeasible('cap');
     return feasible();
   }
 

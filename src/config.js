@@ -2,7 +2,7 @@ export const CONFIG = {
   TICK_HZ: 60,
 
   VIEWPORT_WIDTH: 1400, // what the canvas element actually renders
-  WORLD_WIDTH: 5000, // longer battlefield; travel and reinforcement time scale with this
+  WORLD_WIDTH: 6200, // longer battlefield; travel and reinforcement time scale with this
   CANVAS_HEIGHT: 540,
   GROUND_Y: 440, // shared baseline for units, statues, structures, mines — leaves room below for legend/build menu
 
@@ -10,9 +10,9 @@ export const CONFIG = {
   IDLE_ANIM_HZ: 0.6,
 
   PLAYER_HOME_X: 100,
-  AI_HOME_X: 4900, // WORLD_WIDTH - 100
+  AI_HOME_X: 6200 - 100, // WORLD_WIDTH - 100
   PLAYER_FLEE_X: 40,
-  AI_FLEE_X: 4960, // WORLD_WIDTH - 40
+  AI_FLEE_X: 6200 - 40, // WORLD_WIDTH - 40
 
   EDGE_SCROLL_MARGIN: 60, // px from viewport edge that triggers camera scroll
   EDGE_SCROLL_SPEED: 900, // px/s
@@ -84,16 +84,17 @@ export const CONFIG = {
   PRODUCTION_QUEUE_LIMIT: 10, // paid FIFO items per team; applies to all production kinds
 
   STRUCTURE_COST: 300, // S8: doubled from 150
-  TURRET_COST: 780, // +30%
-  TURRET_BUILD_TIME: 15,
-  MAX_TURRETS: 4,
-  TURRET_HP: 450,
+  TURRET_COST: 1560, // doubled from 780
+  TURRET_BUILD_TIME: 30,
+  MAX_TURRETS: 5, // one starting + four buildable
+  TURRET_HP: 900,
   TURRET_DAMAGE: 42.84, // -10%
   TURRET_RANGE: 700,
   TURRET_ATTACK_COOLDOWN: 1.8,
   TURRET_PROJECTILE_SPEED: 320,
+  TURRET_RENDER_SCALE: 1.5, // visual-only: larger silhouette and health bar, unchanged combat geometry
   STARTING_TURRET_OFFSET: 20,
-  TURRET_SLOT_OFFSETS: [380, 900, 1420],
+  TURRET_SLOT_OFFSETS: [380, 900, 1420, 1940],
   HARD_TURRET_FIRST_TIME: 5.5 * 60,
   HARD_TURRET_SECOND_TIME: 13 * 60,
   HARD_TURRET_THIRD_TIME: 20 * 60,
@@ -214,6 +215,24 @@ export const CONFIG = {
       acquireRange: 520,
       threatRange: 0,
       projectileSpeed: 300,
+    },
+    // Heavy back-line siege. Population is weighted at the authoritative
+    // economy seam: one Catapult occupies four normal unit reservations.
+    catapult: {
+      cost: 700,
+      buildTime: 24,
+      populationCost: 4,
+      hp: 90,
+      damage: 55,
+      range: 800,
+      attackCooldown: 3,
+      speed: 55,
+      acquireRange: 900,
+      threatRange: 0,
+      projectileSpeed: 220,
+      splashRadius: 110,
+      splashDamage: 24,
+      staticDamageMultiplier: 2,
     },
   },
 

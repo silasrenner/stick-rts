@@ -127,6 +127,9 @@ export function createUnit(kind, team, x, y) {
     threatRange: stats.threatRange,
     speed: stats.speed,
     projectileSpeed: stats.projectileSpeed,
+    splashRadius: stats.splashRadius ?? 0,
+    splashDamage: stats.splashDamage ?? 0,
+    staticDamageMultiplier: stats.staticDamageMultiplier ?? 1,
     isMiner: kind === 'miner', // never fights, flees on threat
     minesGold: kind === 'miner' || kind === 'forgemaster', // works the mine cycle; forgemaster still fights back
     isHero,
@@ -199,7 +202,7 @@ export function createStatue(team, x, y) {
   };
 }
 
-export function createProjectile(team, x, y, targetX, targetY, targetId, damage, speed) {
+export function createProjectile(team, x, y, targetX, targetY, targetId, damage, speed, impact = null) {
   const dist = Math.hypot(targetX - x, targetY - y);
   return {
     id: nextId++,
@@ -210,6 +213,7 @@ export function createProjectile(team, x, y, targetX, targetY, targetId, damage,
     targetY,
     targetId,
     damage,
+    impact,
     duration: Math.max(0.05, dist / speed),
     elapsed: 0,
   };

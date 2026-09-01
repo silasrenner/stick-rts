@@ -10,6 +10,7 @@ const BUILD_MENU_ITEMS = [
   { kind: 'miner', action: 'unit', label: 'Miner', costFn: () => CONFIG.UNIT_STATS.miner.cost },
   { kind: 'warrior', action: 'unit', label: 'Warrior', costFn: () => CONFIG.UNIT_STATS.warrior.cost },
   { kind: 'archer', action: 'unit', label: 'Archer', costFn: () => CONFIG.UNIT_STATS.archer.cost },
+  { kind: 'catapult', action: 'unit', label: 'Catapult', costFn: () => CONFIG.UNIT_STATS.catapult.cost },
   { kind: 'structure', action: 'structure', label: 'Structure', costFn: () => CONFIG.STRUCTURE_COST },
   { kind: 'turret', action: 'turret', label: 'Turret', costFn: () => CONFIG.TURRET_COST },
   { kind: 'forgemaster', action: 'hero', label: 'Forgemaster', costFn: () => CONFIG.BASE_HERO_COST },
@@ -352,7 +353,8 @@ export function getBuildButtonDisabledReason(world, button) {
 
   if (button.action === 'unit') {
     if (!canAfford(world, 'player', cost)) return 'gold';
-    if (getOccupiedCap(world, 'player') >= getCap(world, 'player')) return 'cap';
+    const populationCost = CONFIG.UNIT_STATS[button.kind]?.populationCost ?? 1;
+    if (getOccupiedCap(world, 'player') + populationCost > getCap(world, 'player')) return 'cap';
     return null;
   }
   if (button.action === 'structure') {
@@ -513,7 +515,8 @@ export function drawBuildMenu(ctx, world) {
 
     ctx.fillStyle = reason ? '#e0704a' : isActive ? '#8fd1e0' : '#d8c67a';
     ctx.font = '8px monospace';
-    ctx.fillText(reason ? (BUTTON_REASON_TEXT[reason] ?? 'Unavailable') : `${cost}g`, x + 24, y + 23);
+    const populationCost = button.action === 'unit' ? (CONFIG.UNIT_STATS[button.kind]?.populationCost ?? 1) : null;
+    ctx.fillText(reason ? (BUTTON_REASON_TEXT[reason] ?? 'Unavailable') : `${cost}g${populationCost > 1 ? ` · ${populationCost} pop` : ''}`, x + 24, y + 23);
 
     if (isActive) {
       const progress = ravenPreparationProgress ?? Math.max(0, Math.min(1, 1 - activeItem.remaining / activeItem.total));
@@ -878,6 +881,7 @@ export function getGuideReferenceRows() {
     { label: 'Miner', cost: CONFIG.UNIT_STATS.miner.cost, hp: CONFIG.UNIT_STATS.miner.hp, dps: dps(CONFIG.UNIT_STATS.miner) },
     { label: 'Warrior', cost: CONFIG.UNIT_STATS.warrior.cost, hp: CONFIG.UNIT_STATS.warrior.hp, dps: dps(CONFIG.UNIT_STATS.warrior) },
     { label: 'Archer', cost: CONFIG.UNIT_STATS.archer.cost, hp: CONFIG.UNIT_STATS.archer.hp, dps: dps(CONFIG.UNIT_STATS.archer) },
+    { label: 'Catapult', cost: CONFIG.UNIT_STATS.catapult.cost, hp: CONFIG.UNIT_STATS.catapult.hp, dps: dps(CONFIG.UNIT_STATS.catapult), population: CONFIG.UNIT_STATS.catapult.populationCost, description: '4 pop siege: splash, favors defenses' },
     { label: 'Structure', cost: CONFIG.STRUCTURE_COST, hp: CONFIG.STRUCTURE_HP, dps: 0 },
     { label: 'Turret', cost: CONFIG.TURRET_COST, hp: CONFIG.TURRET_HP, dps: Number((CONFIG.TURRET_DAMAGE / CONFIG.TURRET_ATTACK_COOLDOWN).toFixed(1)) },
     { label: 'Raven', cost: CONFIG.RAVEN.cost, hp: null, dps: null },
@@ -902,11 +906,11 @@ function drawGameGuideScreen(ctx, uiState) {
   if (page === 'reference') {
     ctx.textAlign = 'left'; ctx.font = 'bold 16px monospace'; ctx.fillStyle = '#8fd1e0'; ctx.fillText('Units & Buildings', 100, 166);
     for (const [index, row] of getGuideReferenceRows().entries()) {
-      const col = index % 3; const rowIndex = Math.floor(index / 3); const x = 100 + col * 410; const y = 194 + rowIndex * 130;
-      ctx.fillStyle = '#292b35'; ctx.fillRect(x, y, 370, 108); ctx.strokeStyle = '#4b596c'; ctx.strokeRect(x, y, 370, 108);
-      ctx.fillStyle = '#f6d68a'; ctx.font = 'bold 16px monospace'; ctx.fillText(row.label, x + 18, y + 30);
-      ctx.fillStyle = '#d0d0d8'; ctx.font = '12px monospace'; ctx.fillText(`Cost: ${row.cost}g`, x + 18, y + 58); ctx.fillText(`HP: ${row.hp ?? '—'}`, x + 145, y + 58); ctx.fillText(`DPS: ${row.dps ?? 'Scout'}`, x + 240, y + 58);
-      ctx.fillStyle = '#8a8a96'; ctx.font = '11px monospace'; ctx.fillText(row.dps === null ? 'Temporary enemy-base vision' : row.label === 'Turret' ? 'Stationary defensive fire' : row.label === 'Structure' ? 'Raises population capacity' : 'Battlefield role', x + 18, y + 84);
+      const col = index % 4; const rowIndex = Math.floor(index / 4); const x = 100 + col * 300; const y = 184 + rowIndex * 126;
+      ctx.fillStyle = '#292b35'; ctx.fillRect(x, y, 280, 108); ctx.strokeStyle = '#4b596c'; ctx.strokeRect(x, y, 280, 108);
+      ctx.fillStyle = '#f6d68a'; ctx.font = 'bold 14px monospace'; ctx.fillText(row.label, x + 14, y + 26);
+      ctx.fillStyle = '#d0d0d8'; ctx.font = '11px monospace'; ctx.fillText(`Cost: ${row.cost}g`, x + 14, y + 52); ctx.fillText(`HP: ${row.hp ?? '—'}`, x + 106, y + 52); ctx.fillText(`DPS: ${row.dps ?? 'Scout'}`, x + 178, y + 52);
+      ctx.fillStyle = '#8a8a96'; ctx.font = '10px monospace'; ctx.fillText(row.description ?? (row.dps === null ? 'Temporary enemy-base vision' : row.label === 'Turret' ? 'Stationary defensive fire' : row.label === 'Structure' ? 'Raises population capacity' : 'Battlefield role'), x + 14, y + 80);
     }
   } else {
     ctx.textAlign = 'left'; ctx.fillStyle = '#8fd1e0'; ctx.font = 'bold 16px monospace'; ctx.fillText('Commands', 110, 166);

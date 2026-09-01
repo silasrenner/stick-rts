@@ -28,6 +28,10 @@ const KIND_COLORS = {
 
 // unit.x/unit.y is the ground point between the figure's feet.
 export function drawStickFigure(ctx, unit) {
+  if (unit.kind === 'catapult') {
+    drawCatapult(ctx, unit);
+    return;
+  }
   const isWalking = unit.state === 'walking';
   const isAttacking = unit.attackAnimTimer > 0;
   const isDying = unit.state === 'dying';
@@ -103,6 +107,26 @@ export function drawStickFigure(ctx, unit) {
     drawStar(ctx, 0, headCenterY - HEAD_RADIUS - STAR_RADIUS - 4, STAR_RADIUS);
   }
 
+  ctx.restore();
+}
+
+function drawCatapult(ctx, unit) {
+  const direction = unit.facing || (unit.team === 'player' ? 1 : -1);
+  ctx.save();
+  ctx.translate(unit.x, unit.y);
+  ctx.scale(direction, 1);
+  ctx.fillStyle = '#54402b';
+  ctx.fillRect(-18, -20, 36, 12);
+  ctx.strokeStyle = TEAM_COLORS[unit.team] ?? '#cccccc';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(-18, -20, 36, 12);
+  ctx.fillStyle = '#2b2b31';
+  ctx.beginPath(); ctx.arc(-11, -5, 6, 0, Math.PI * 2); ctx.arc(11, -5, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#d8c67a';
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(-7, -20); ctx.lineTo(18, -48); ctx.stroke();
+  ctx.fillStyle = '#9a7650'; ctx.fillRect(14, -51, 10, 7);
+  if (unit.attackAnimTimer > 0) { ctx.fillStyle = '#f2d24b'; ctx.beginPath(); ctx.arc(26, -54, 4, 0, Math.PI * 2); ctx.fill(); }
   ctx.restore();
 }
 

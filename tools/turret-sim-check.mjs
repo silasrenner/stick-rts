@@ -22,19 +22,22 @@ if (!turret) throw new Error('Turret did not materialize after its 20-second bui
 if (turret.x !== CONFIG.PLAYER_HOME_X + CONFIG.TURRET_SLOT_OFFSETS[0]) throw new Error(`Turret used wrong automatic slot: ${turret.x}`);
 
 world.structures.push(createStructure('player', CONFIG.PLAYER_HOME_X + CONFIG.STRUCTURE_SLOT_OFFSETS[0]));
-world.teams.player.gold = CONFIG.TURRET_COST * 3;
+world.teams.player.gold = CONFIG.TURRET_COST * 5;
 const second = buyTurret(world, 'player');
 if (!second.ok) throw new Error(`Expected second turret purchase to succeed: ${JSON.stringify(second)}`);
 const third = buyTurret(world, 'player');
 if (!third.ok) throw new Error(`Expected third buildable turret purchase to succeed: ${JSON.stringify(third)}`);
 const fourth = buyTurret(world, 'player');
-if (fourth.ok || fourth.reason !== 'maxTurrets') throw new Error(`Fourth buildable turret must be rejected: ${JSON.stringify(fourth)}`);
+if (!fourth.ok) throw new Error(`Expected fourth buildable turret purchase to succeed: ${JSON.stringify(fourth)}`);
+const fifth = buyTurret(world, 'player');
+if (fifth.ok || fifth.reason !== 'maxTurrets') throw new Error(`Fifth buildable turret must be rejected: ${JSON.stringify(fifth)}`);
 
 world.teams.player.gold = 10_000;
 updateProductionQueue(world, CONFIG.TURRET_BUILD_TIME);
 updateProductionQueue(world, CONFIG.TURRET_BUILD_TIME);
+updateProductionQueue(world, CONFIG.TURRET_BUILD_TIME);
 const buildableTurrets = world.structures.filter((entity) => entity.isTurret && !entity.isStartingTurret);
-if (buildableTurrets.length !== 3) throw new Error(`Expected three buildable turrets, got ${buildableTurrets.length}.`);
+if (buildableTurrets.length !== 4) throw new Error(`Expected four buildable turrets, got ${buildableTurrets.length}.`);
 for (const [index, builtTurret] of buildableTurrets.entries()) {
   const expectedX = CONFIG.PLAYER_HOME_X + CONFIG.TURRET_SLOT_OFFSETS[index];
   if (builtTurret.x !== expectedX) throw new Error(`Buildable turret ${index + 1} used wrong automatic slot: ${builtTurret.x}, expected ${expectedX}.`);
