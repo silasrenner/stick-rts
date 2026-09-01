@@ -2,7 +2,7 @@ import { CONFIG } from '../config.js';
 import { isWatchAiMatch } from '../sim/world.js';
 import { getTeamVisionSources, isPositionVisibleToTeam } from '../sim/vision.js';
 import { drawStickFigure } from './stickFigure.js';
-import { getCombatRevealSources, getPlayerAttackTargetRevealSources, isEntityVisibleInPlayerView, isEntityVisibleInSpectatorView, spectatorViewTeam } from './spectatorVision.js';
+import { getCombatRevealSources, getPlayerAttackTargetRevealSources, isEntityVisibleInPlayerView, isEntityVisibleInSpectatorView, isPlayerStaticHealthVisible, spectatorViewTeam } from './spectatorVision.js';
 import { drawStatue, drawKnownBase, drawStructure, drawTurret, drawMine, drawHealthBar } from './structures.js';
 import { drawHUD, drawBuildMenu, drawWinLoseOverlay, drawMenuScreen, getBottomBarTop, drawZoomControls, drawTouchCommandControls, drawWatchSpeedButton, drawSpectatorViewSelector, drawPauseButton, drawPauseOverlay } from './ui.js';
 import { drawParallax } from './parallax.js';
@@ -109,7 +109,7 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   for (const statue of Object.values(world.statues)) {
     if (!visible(statue.x)) continue;
     const statueVisible = visibleToViewer(statue) || visibleThroughFogClearance(statue);
-    if (statueVisible) drawStatue(ctx, statue, { showHealth: watchAiMatch || statue.team === spectatorTeam });
+    if (statueVisible) drawStatue(ctx, statue, { showHealth: watchAiMatch || statue.team === spectatorTeam || isPlayerStaticHealthVisible(world, statue) });
     else drawKnownBase(ctx, statue);
   }
   // Enemy static locations retain only a fogged silhouette until normal vision
@@ -118,7 +118,7 @@ export function render(ctx, world, camera, uiMessage, uiState) {
     if (!visible(structure.x)) continue;
     const structureVisible = visibleToViewer(structure) || visibleThroughFogClearance(structure);
     if (structureVisible) {
-      const options = { showHealth: watchAiMatch || structure.team === spectatorTeam };
+      const options = { showHealth: watchAiMatch || structure.team === spectatorTeam || isPlayerStaticHealthVisible(world, structure) };
       structure.isTurret ? drawTurret(ctx, structure, options) : drawStructure(ctx, structure, options);
     }
   }

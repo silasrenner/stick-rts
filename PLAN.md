@@ -2,6 +2,18 @@
 
 Cross-session context carrier. Keep current scope, recovery state, and dirty-worktree warnings here. Completed work belongs in `HISTORY.md`; detailed durable findings live in focused `docs/analysis/` documents.
 
+## Current approved scope — Player static attack disclosure and health bars
+
+Owner approval: 2026-08-30. Isolated worktree: `C:/Users/simcr/projects/stick-rts/worktrees/static-attack-disclosure` on `agent/static-attack-disclosure-local`, based on synchronized `main` `a68aa2e`.
+
+**Included:** Player-vs-AI presentation for an enemy core, structure, and turret that is currently revealed either by normal Player vision or a Player-owned active attack target: render its live art and health bar; ensure the target's ordinary configured vision radius clears the Player fog while the Player attack target remains active. Add a focused red→green deterministic/Canvas regression for all three static types and a real cache-busted browser/LAN fixture that exercises the actual target/attack path and visually verifies fog clearance plus health-bar visibility.
+
+**Deliberate exclusions:** simulation/team vision and AI knowledge, combat targeting/statistics, fog color/bounds/history, global hidden-static HP disclosure, Watch-AI presentation, unrelated artifacts/worktrees, remote push, and generated screenshot versioning.
+
+**Evidence gates:** focused regression must fail on the exact missing health-bar/disclosure behavior before source change, then prove all three static classes through normal vision and Player attack disclosure while an unattacked hidden static remains a state-free silhouette. Retain relevant fog/combat checks, run `git diff --check`, and serve/hash-verify the exact candidate from a new LAN server before owner review. Commit locally only after owner approval; do not push.
+
+**Implementation checkpoint — awaiting owner LAN review:** added renderer-only Player static-health disclosure. The pre-change focused check failed because `isPlayerStaticHealthVisible` did not exist; it now passes for the core, a normal structure, and a turret, including removal once targeting ends. Retained core/fog/Canvas checks pass. Cache-disabled Chrome loaded the LAN-hash-matched candidate and exercised real Archer target acquisition for each static class: each target created its configured renderer-only reveal source and its exact health-bar Canvas geometry was drawn. Screenshot: `artifacts/screenshots/static-attack-disclosure-browser.png` (local-only). Verified preview: `http://192.168.86.75:8811/?review=static-attack-disclosure-final`; server binds `0.0.0.0:8811`, the Public inbound TCP 8811 rule is enabled, and served hashes match `renderer.js`, `spectatorVision.js`, and the browser check. No commit or push yet.
+
 ## Current approved scope — landing Raven fog clearance and elevated Canvas UI
 
 Owner approval: 2026-08-29. Isolated worktree: `C:/Users/simcr/projects/stick-rts/worktrees/landing-raven-fog-ui` on `agent/landing-raven-fog-ui-local`, based on pushed `main` `9094a21`.

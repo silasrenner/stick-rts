@@ -39,6 +39,15 @@ export function getPlayerAttackTargetRevealSources(world) {
     .filter((source) => source.radius > 0);
 }
 
+// Health is live state, so the Player may see it only while the static enemy
+// objective is currently visible or is the active target of a Player attack.
+// This stays renderer-owned and never changes simulation/team vision.
+export function isPlayerStaticHealthVisible(world, entity) {
+  if (entity?.team !== 'ai' || !(entity.isStatue || entity.isStructure) || !isAliveEntity(entity)) return false;
+  return isEntityVisibleInPlayerView(world, entity)
+    || getPlayerAttackTargetRevealSources(world).some((source) => source.entityId === entity.id);
+}
+
 // Renderer-only disclosure: a hostile unit/turret actively attacking this
 // team exposes its ordinary sight bubble to the target team's presentation.
 // It never enters world.visionSources or simulation/AI knowledge.
