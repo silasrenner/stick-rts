@@ -62,7 +62,11 @@ function assignTeamSlots(world, team) {
     // enemy. Overflow columns thicken the guard line outward, toward the
     // enemy, per the confirmed multi-column direction.
     const anchorIndex = Math.min(world.teams[team].defendAnchorIndex ?? 0, CONFIG.TURRET_SLOT_OFFSETS.length - 1);
-    anchorX = homeX + sign * CONFIG.TURRET_SLOT_OFFSETS[anchorIndex];
+    const turretX = homeX + sign * CONFIG.TURRET_SLOT_OFFSETS[anchorIndex];
+    const troopColumns = anchorIndex === 0
+      ? CONFIG.DEFEND_FIRST_BUILD_TURRET_FRONT_COLUMNS
+      : -CONFIG.DEFEND_LATER_BUILD_TURRET_BACK_COLUMNS;
+    anchorX = turretX + sign * troopColumns * CONFIG.FORMATION_SLOT_SPACING_X;
     growthSign = sign;
   }
 

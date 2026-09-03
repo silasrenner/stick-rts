@@ -1,11 +1,13 @@
 import { CONFIG } from '../src/config.js';
 
 const expected = {
-  turret: { cost: 780, hp: 450, damage: 42.84, range: 700, cooldown: 1.8, offsets: [380, 900, 1420] },
+  turret: { cost: 1560, hp: 900, damage: 42.84, range: 700, cooldown: 1.8, offsets: [700, 1220, 1740, 2260] },
+  catapult: { cost: 1050, speed: 90, attackCooldown: 4.5, projectileSpeed: 110, projectileRadius: 9, renderScale: 3 },
   archer: { cost: 280, hp: 42, damage: 16, range: 520, acquireRange: 520, cooldown: 1.5 },
   warrior: { cost: 137.5, hp: 62.79, damage: 7.5 },
 };
 if (CONFIG.TURRET_COST !== expected.turret.cost || CONFIG.TURRET_HP !== expected.turret.hp || CONFIG.TURRET_DAMAGE !== expected.turret.damage || CONFIG.TURRET_RANGE !== expected.turret.range || CONFIG.TURRET_ATTACK_COOLDOWN !== expected.turret.cooldown || JSON.stringify(CONFIG.TURRET_SLOT_OFFSETS) !== JSON.stringify(expected.turret.offsets)) throw new Error('Turret balance contract failed');
 for (const [key, value] of Object.entries(expected.archer)) if (CONFIG.UNIT_STATS.archer[key === 'cooldown' ? 'attackCooldown' : key] !== value) throw new Error(`Archer ${key} failed`);
 for (const [key, value] of Object.entries(expected.warrior)) if (CONFIG.UNIT_STATS.warrior[key] !== value) throw new Error(`Warrior ${key} failed`);
-console.log('PASS — requested turret, archer, and warrior balance values are configured.');
+for (const [key, value] of Object.entries(expected.catapult)) if (CONFIG.UNIT_STATS.catapult[key] !== value) throw new Error(`Catapult ${key} failed`);
+console.log('PASS — requested turret, Catapult, archer, and warrior balance values are configured.');

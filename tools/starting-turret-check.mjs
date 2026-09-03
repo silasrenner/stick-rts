@@ -15,5 +15,5 @@ for (const team of ['player', 'ai']) {
     updateProductionQueue(world, CONFIG.MINER_BUILD_TIME);
   }
 }
-if (CONFIG.WORLD_WIDTH !== 5000 || CONFIG.AI_HOME_X !== 4900) throw new Error('Extended map endpoints are inconsistent.');
-console.log('PASS — teams start with a free base turret and full starting population on the longer map.');
+if (CONFIG.WORLD_WIDTH !== 7000 || CONFIG.AI_HOME_X !== 6900 || CONFIG.AI_FLEE_X !== 6960) throw new Error('7000px map endpoints are inconsistent.');
+console.log('PASS — teams start with a free base turret and full starting population on the 7000px map.');

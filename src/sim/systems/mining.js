@@ -1,4 +1,5 @@
 import { CONFIG } from '../../config.js';
+import { getCoreDeliveryX } from '../world.js';
 
 function assignMineDeposits(world) {
   for (const team of ['player', 'ai']) {
@@ -39,7 +40,7 @@ export function updateMining(world, dt) {
 
     const mineField = world.mines[unit.team];
     const deposit = assignedDeposit(world, unit);
-    const statue = world.statues[unit.team];
+    const deliveryX = getCoreDeliveryX(unit.team);
 
     if (unit.miningState === 'mining') {
       unit.mineTimer -= dt;
@@ -49,7 +50,7 @@ export function updateMining(world, dt) {
         unit.miningState = 'toBase';
       }
     } else if (unit.miningState === 'toBase') {
-      if (Math.abs(unit.x - statue.x) <= CONFIG.MINER_ARRIVE_THRESHOLD) {
+      if (Math.abs(unit.x - deliveryX) <= CONFIG.MINER_ARRIVE_THRESHOLD) {
         world.teams[unit.team].gold += unit.carrying;
         unit.carrying = 0;
         unit.miningState = 'toMine';
@@ -73,6 +74,6 @@ export function updateMining(world, dt) {
 
 export function getMinerDesiredX(unit, world) {
   if (unit.miningState === 'mining') return { desiredX: unit.x, holding: true };
-  if (unit.miningState === 'toBase') return { desiredX: world.statues[unit.team].x, holding: false };
+  if (unit.miningState === 'toBase') return { desiredX: getCoreDeliveryX(unit.team), holding: false };
   return { desiredX: assignedDeposit(world, unit).x, holding: false };
 }

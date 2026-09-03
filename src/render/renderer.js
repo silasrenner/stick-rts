@@ -146,12 +146,13 @@ export function render(ctx, world, camera, uiMessage, uiState) {
   for (const unit of world.units) {
     if (!visible(unit.x) || !(visibleToViewer(unit) || visibleThroughFogClearance(unit))) continue;
     drawStickFigure(ctx, unit);
-    if (unit.state !== 'dying') drawHealthBar(ctx, unit.x, unit.y - 80, unit.hp, unit.maxHp, 24);
+    const healthBarY = unit.kind === 'catapult' ? unit.y - 60 * CONFIG.UNIT_STATS.catapult.renderScale : unit.y - 80;
+    if (unit.state !== 'dying') drawHealthBar(ctx, unit.x, healthBarY, unit.hp, unit.maxHp, 24);
   }
   for (const projectile of world.projectiles) {
     const pos = projectilePosition(projectile);
     const visibleProjectile = spectatorTeam === null || projectile.team === spectatorTeam || isPositionVisibleToTeam(world, spectatorTeam, pos.x, pos.y);
-    if (visible(pos.x) && visibleProjectile) drawProjectile(ctx, pos);
+    if (visible(pos.x) && visibleProjectile) drawProjectile(ctx, pos, projectile.radius);
   }
   // Draw mine markers above workers, otherwise a miner standing directly on a
   // deposit hides the gold diamond. Enemy deposits still obey current vision.
@@ -290,7 +291,7 @@ function projectilePosition(projectile) {
   const baseY = lerp(projectile.startY, projectile.targetY, t);
   return { x, y: baseY - Math.sin(Math.PI * t) * CONFIG.PROJECTILE_ARC_HEIGHT };
 }
-function drawProjectile(ctx, pos) {
-  ctx.fillStyle = '#f2d24b'; ctx.beginPath(); ctx.arc(pos.x, pos.y, 3, 0, Math.PI * 2); ctx.fill();
+function drawProjectile(ctx, pos, radius = 3) {
+  ctx.fillStyle = '#f2d24b'; ctx.beginPath(); ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2); ctx.fill();
 }
 function lerp(a, b, t) { return a + (b - a) * t; }

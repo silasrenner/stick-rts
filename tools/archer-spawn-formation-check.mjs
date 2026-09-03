@@ -1,3 +1,4 @@
+import { CONFIG } from '../src/config.js';
 import { createWorld, createUnit } from '../src/sim/world.js';
 import { updateFormationSlots } from '../src/sim/systems/formation.js';
 import { updateMovement } from '../src/sim/systems/movement.js';
@@ -5,7 +6,7 @@ import { updateMovement } from '../src/sim/systems/movement.js';
 for (const team of ['player', 'ai']) {
   const world = createWorld(42);
   world.matchState = 'playing';
-  const archer = createUnit('archer', team, team === 'player' ? 100 : 4900, 440);
+  const archer = createUnit('archer', team, team === 'player' ? CONFIG.PLAYER_HOME_X : CONFIG.AI_HOME_X, CONFIG.GROUND_Y);
   archer.command = 'defend';
   world.units.push(archer);
   updateFormationSlots(world);

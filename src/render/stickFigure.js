@@ -112,9 +112,10 @@ export function drawStickFigure(ctx, unit) {
 
 function drawCatapult(ctx, unit) {
   const direction = unit.facing || (unit.team === 'player' ? 1 : -1);
+  const scale = CONFIG.UNIT_STATS.catapult.renderScale;
   ctx.save();
   ctx.translate(unit.x, unit.y);
-  ctx.scale(direction, 1);
+  ctx.scale(direction * scale, scale);
   ctx.fillStyle = '#54402b';
   ctx.fillRect(-18, -20, 36, 12);
   ctx.strokeStyle = TEAM_COLORS[unit.team] ?? '#cccccc';

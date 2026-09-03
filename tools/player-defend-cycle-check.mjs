@@ -18,31 +18,34 @@ function addBuildableTurrets(world, team, count) {
   }
 }
 
-function expectedAnchor(team, offset) {
-  return team === 'player'
-    ? CONFIG.PLAYER_HOME_X + offset
-    : CONFIG.AI_HOME_X - offset;
+function expectedAnchor(team, turretIndex) {
+  const sign = team === 'player' ? 1 : -1;
+  const homeX = team === 'player' ? CONFIG.PLAYER_HOME_X : CONFIG.AI_HOME_X;
+  const formationColumns = turretIndex === 0
+    ? CONFIG.DEFEND_FIRST_BUILD_TURRET_FRONT_COLUMNS
+    : -CONFIG.DEFEND_LATER_BUILD_TURRET_BACK_COLUMNS;
+  return homeX + sign * (CONFIG.TURRET_SLOT_OFFSETS[turretIndex] + formationColumns * CONFIG.FORMATION_SLOT_SPACING_X);
 }
 
 {
   const team = 'player';
   const world = createWorld(117);
   world.matchState = 'playing';
-  addBuildableTurrets(world, team, 3);
+  addBuildableTurrets(world, team, 4);
   const warrior = createUnit('warrior', team, CONFIG.PLAYER_HOME_X, CONFIG.GROUND_Y);
   const archer = createUnit('archer', team, warrior.x, CONFIG.GROUND_Y);
   world.units.push(warrior, archer);
 
-  for (const [press, offset] of CONFIG.TURRET_SLOT_OFFSETS.entries()) {
+  for (const [press] of CONFIG.TURRET_SLOT_OFFSETS.entries()) {
     setTeamCommand(world, team, 'defend', { userInitiated: true });
     updateFormationSlots(world);
-    expect(warrior.slotX === expectedAnchor(team, offset), `Player Defend press ${press + 1} should anchor warriors at turret offset ${offset}; got ${warrior.slotX}.`);
+    expect(warrior.slotX === expectedAnchor(team, press), `Player Defend press ${press + 1} should place warriors on the approved side of buildable turret ${press + 1}; got ${warrior.slotX}.`);
     expect(archer.slotX < warrior.slotX, `Player Defend press ${press + 1} should keep archers behind warriors.`);
   }
 
   setTeamCommand(world, team, 'defend', { userInitiated: true });
   updateFormationSlots(world);
-  expect(warrior.slotX === expectedAnchor(team, CONFIG.TURRET_SLOT_OFFSETS[0]), 'Player Defend must wrap from the furthest completed turret back to the inner completed turret.');
+  expect(warrior.slotX === expectedAnchor(team, 0), 'Player Defend must wrap from the furthest completed turret back to the inner completed turret placement.');
 }
 
 {
@@ -55,8 +58,8 @@ function expectedAnchor(team, offset) {
   for (let press = 0; press < 3; press += 1) {
     setTeamCommand(world, team, 'defend');
     updateFormationSlots(world);
-    expect(warrior.slotX === expectedAnchor(team, CONFIG.TURRET_SLOT_OFFSETS[0]), 'AI Defend must remain at its inner turret.');
+    expect(warrior.slotX === expectedAnchor(team, 0), 'AI Defend must remain at the first built turret placement.');
   }
 }
 
-console.log('PASS — Player Defend advances one completed turret at a time and wraps to inner; AI Defend stays at its inner turret.');
+console.log('PASS — first-turret defense screens ahead, later Player selections hold behind, and AI stays at its first buildable-turret placement.');

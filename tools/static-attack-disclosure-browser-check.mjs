@@ -71,7 +71,6 @@ for (const kind of ['core', 'structure', 'turret']) {
     world.structures = [];
     world.projectiles = [];
     world.ravens = [];
-    world.statues.ai.x = 4900;
     let target;
     if ('${kind}' === 'core') {
       target = world.statues.ai;

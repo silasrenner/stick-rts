@@ -1,5 +1,5 @@
 const VIEWPORT_WIDTH = 1400;
-const WORLD_WIDTH = 6200;
+const WORLD_WIDTH = 7000;
 
 export const CONFIG = {
   TICK_HZ: 60,
@@ -15,7 +15,7 @@ export const CONFIG = {
   PLAYER_HOME_X: 100,
   AI_HOME_X: WORLD_WIDTH - 100,
   PLAYER_FLEE_X: 40,
-  AI_FLEE_X: 6200 - 40, // WORLD_WIDTH - 40
+  AI_FLEE_X: WORLD_WIDTH - 40,
 
   EDGE_SCROLL_MARGIN: 60, // px from viewport edge that triggers camera scroll
   EDGE_SCROLL_SPEED: 900, // px/s
@@ -96,8 +96,12 @@ export const CONFIG = {
   TURRET_ATTACK_COOLDOWN: 1.8,
   TURRET_PROJECTILE_SPEED: 320,
   TURRET_RENDER_SCALE: 1.5, // visual-only: larger silhouette and health bar, unchanged combat geometry
-  STARTING_TURRET_OFFSET: 20,
-  TURRET_SLOT_OFFSETS: [380, 900, 1420, 1940],
+  // Keep the enlarged core, its starting turret, and mining traffic as
+  // separate readable base landmarks.
+  STARTING_TURRET_OFFSET: 140,
+  // Buildable turrets start beyond the miner delivery/deposit line and keep
+  // the established 520px spacing outward from the first built tower.
+  TURRET_SLOT_OFFSETS: [700, 1220, 1740, 2260],
   HARD_TURRET_FIRST_TIME: 5.5 * 60,
   HARD_TURRET_SECOND_TIME: 13 * 60,
   HARD_TURRET_THIRD_TIME: 20 * 60,
@@ -110,7 +114,11 @@ export const CONFIG = {
   STATUE_HP: 2000,
   CORE_RENDER_SCALE: 3, // visual-only: does not change core mechanics or vision
   STATUE_WARNING_DURATION: 3, // seconds the "statue under attack" signal stays lit after the last hit
-  MINE_OFFSET: 240, // px from homeX, toward the battlefield, past the last structure slot
+  // Core-owned miner traffic starts/delivers beyond the starting turret so
+  // miners do not occupy the core/turret artwork. It preserves the same
+  // completed-trip economy contract as the former core-to-mine route.
+  MINER_CORE_DELIVERY_OFFSET: 260,
+  MINE_OFFSET: 500, // px from homeX, toward the battlefield, beyond the clear miner delivery lane
   MINE_DEPOSIT_SPACING: 38, // px either side of the original mine center; visible split without crowding the first turret
   MINE_SLOTS: 4, // team-wide simultaneous extraction cap across all deposits
   MINE_CYCLE_TIME: 3, // seconds to extract one load
@@ -132,12 +140,16 @@ export const CONFIG = {
 
   // S7 formation system (sim/systems/formation.js): deterministic per-unit
   // slot assignment so groups read as ranks/files, not stacked blobs.
-  DEFEND_SCREEN_OFFSET: 380, // legacy inner-turret reference; formation uses TURRET_SLOT_OFFSETS directly
+  DEFEND_SCREEN_OFFSET: 700, // legacy inner-turret reference; formation uses TURRET_SLOT_OFFSETS directly
   FORMATION_SLOT_SPACING_X: 60, // px between successive columns, and between the warrior/archer lines
   FORMATION_SLOT_SPACING_Y: 40, // px between file positions within one rank
   FORMATION_SLOTS_PER_RANK: 6, // unit count before a rank overflows into a new column
   FORMATION_Y_BAND: 200, // px of vertical spread a full rank occupies — (SLOTS_PER_RANK - 1) * SPACING_Y, fits within GROUND_Y's ~240px of headroom above the HUD
   ARCHER_COHESION_DISTANCE: 150, // px — archers under Defend hold rather than advance ahead of/without a warrior escort this close
+  // First built turret is screened from the enemy side by every troop line;
+  // later built turrets hold all lines on their homeward side.
+  DEFEND_FIRST_BUILD_TURRET_FRONT_COLUMNS: 4,
+  DEFEND_LATER_BUILD_TURRET_BACK_COLUMNS: 1,
 
   // S9 parallax background (render/parallax.js) — render-only, no sim impact.
   // Speeds are fractions of camera.x; farther/slower layers listed first.
@@ -223,17 +235,19 @@ export const CONFIG = {
     // Heavy back-line siege. Population is weighted at the authoritative
     // economy seam: one Catapult occupies four normal unit reservations.
     catapult: {
-      cost: 700,
+      cost: 1050,
       buildTime: 24,
       populationCost: 4,
       hp: 90,
       damage: 55,
       range: 800,
-      attackCooldown: 3,
-      speed: 55,
+      attackCooldown: 4.5,
+      speed: 90,
       acquireRange: 900,
       threatRange: 0,
-      projectileSpeed: 220,
+      projectileSpeed: 110,
+      projectileRadius: 9,
+      renderScale: 3,
       splashRadius: 110,
       splashDamage: 24,
       staticDamageMultiplier: 2,

@@ -1,3 +1,4 @@
+import { CONFIG } from '../src/config.js';
 import { createWorld, createUnit, createStatue, createStructure, createTurret } from '../src/sim/world.js';
 import {
   getTeamVisionSources,
@@ -12,8 +13,8 @@ function createVisionWorld() {
   world.units = [];
   world.structures = [];
   world.statues = {
-    player: createStatue('player', 100, 0),
-    ai: createStatue('ai', 4900, 0),
+    player: createStatue('player', CONFIG.PLAYER_HOME_X, 0),
+    ai: createStatue('ai', CONFIG.AI_HOME_X, 0),
   };
   world.visionSources = [];
   return world;

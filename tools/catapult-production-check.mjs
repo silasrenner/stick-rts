@@ -11,7 +11,7 @@ function expect(condition, message) {
 const stats = CONFIG.UNIT_STATS.catapult;
 expect(stats, 'Catapult must be an authoritative normal-unit stat entry.');
 expect(stats.populationCost === 4, `Catapult must reserve exactly four population; got ${stats?.populationCost}.`);
-expect(stats.cost === 700, `Catapult cost must start at 700g; got ${stats?.cost}.`);
+expect(stats.cost === 1050, `Catapult cost must be 1050g after the approved 50% increase; got ${stats?.cost}.`);
 expect(stats.buildTime === 24, `Catapult build time must start at 24s; got ${stats?.buildTime}.`);
 
 const world = createWorld(381);

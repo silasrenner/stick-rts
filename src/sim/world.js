@@ -92,6 +92,15 @@ export function createWorld(seed = Date.now()) {
   };
 }
 
+// Mining remains a core-owned economic action, but its materialized workers
+// use a clear delivery lane beyond the starting turret rather than standing
+// inside the core/turret artwork every trip.
+export function getCoreDeliveryX(team) {
+  const homeX = team === 'player' ? CONFIG.PLAYER_HOME_X : CONFIG.AI_HOME_X;
+  const sign = team === 'player' ? 1 : -1;
+  return homeX + sign * CONFIG.MINER_CORE_DELIVERY_OFFSET;
+}
+
 // Watch AI mode: both teams are AI-controlled (a normal PvE match only ever
 // sets the 'ai' team's difficulty, never 'player's). Single source of truth
 // reused by camera/main/ui to gate input suppression and free-pan.
@@ -127,6 +136,7 @@ export function createUnit(kind, team, x, y) {
     threatRange: stats.threatRange,
     speed: stats.speed,
     projectileSpeed: stats.projectileSpeed,
+    projectileRadius: stats.projectileRadius ?? 3,
     splashRadius: stats.splashRadius ?? 0,
     splashDamage: stats.splashDamage ?? 0,
     staticDamageMultiplier: stats.staticDamageMultiplier ?? 1,
@@ -202,7 +212,7 @@ export function createStatue(team, x, y) {
   };
 }
 
-export function createProjectile(team, x, y, targetX, targetY, targetId, damage, speed, impact = null) {
+export function createProjectile(team, x, y, targetX, targetY, targetId, damage, speed, impact = null, radius = 3) {
   const dist = Math.hypot(targetX - x, targetY - y);
   return {
     id: nextId++,
@@ -214,6 +224,7 @@ export function createProjectile(team, x, y, targetX, targetY, targetId, damage,
     targetId,
     damage,
     impact,
+    radius,
     duration: Math.max(0.05, dist / speed),
     elapsed: 0,
   };

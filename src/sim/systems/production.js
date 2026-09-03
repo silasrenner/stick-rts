@@ -1,5 +1,5 @@
 import { CONFIG } from '../../config.js';
-import { createUnit, createStructure, createTurret } from '../world.js';
+import { createUnit, createStructure, createTurret, getCoreDeliveryX } from '../world.js';
 import { getUnitCount } from './economy.js';
 import { livingStructures, livingTurrets } from './supply.js';
 
@@ -44,7 +44,8 @@ function materialize(world, team, item) {
 
   // unit or hero
   const y = CONFIG.GROUND_Y - (getUnitCount(world, team) % 4) * 30;
-  const unit = createUnit(item.kind, team, homeX, y);
+  const spawnX = item.kind === 'miner' ? getCoreDeliveryX(team) : homeX;
+  const unit = createUnit(item.kind, team, spawnX, y);
   unit.command = world.teams[team].command;
   world.units.push(unit);
 }

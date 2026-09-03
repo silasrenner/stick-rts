@@ -1,5 +1,5 @@
 import { CONFIG } from '../src/config.js';
-import { createUnit, createWorld } from '../src/sim/world.js';
+import { createUnit, createWorld, getCoreDeliveryX } from '../src/sim/world.js';
 import { updateMining } from '../src/sim/systems/mining.js';
 
 function expect(condition, message) {
@@ -61,10 +61,10 @@ expect(blocked.miningState === 'toMine', 'A fifth miner must wait when the share
 
 assigned.miningState = 'toBase';
 assigned.carrying = CONFIG.GOLD_PER_TRIP;
-assigned.x = world.statues.player.x;
+assigned.x = getCoreDeliveryX('player');
 const goldBeforeDelivery = world.teams.player.gold;
 updateMining(world, 0);
-expect(assigned.miningState === 'toMine' && assigned.mineDepositIndex === null, 'A miner must clear its assignment only after returning home.');
+expect(assigned.miningState === 'toMine' && assigned.mineDepositIndex === null, 'A miner must clear its assignment only after returning to the core-owned delivery lane.');
 expect(world.teams.player.gold === goldBeforeDelivery + 23, `A completed normal mining trip must credit 23 gold; got ${world.teams.player.gold - goldBeforeDelivery}.`);
 
-console.log('PASS — three mirrored deposits deterministically distribute miners while preserving stable trips and the shared extraction cap.');
+console.log('PASS — three mirrored deposits deterministically distribute miners while preserving core-owned delivery, stable trips, and the shared extraction cap.');

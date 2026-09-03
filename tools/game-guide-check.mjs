@@ -44,7 +44,7 @@ for (const required of ['Miner', 'Warrior', 'Archer', 'Catapult', 'Structure', '
 
 const reference = Object.fromEntries(getGuideReferenceRows().map((row) => [row.label, row]));
 for (const label of ['Miner', 'Warrior', 'Archer', 'Catapult', 'Structure', 'Turret', 'Raven']) expect(reference[label], `Guide reference must include ${label}.`);
-expect(reference.Catapult.cost === 700 && reference.Catapult.hp === 90 && reference.Catapult.dps === 18.3 && reference.Catapult.population === 4, `Catapult guide stats/role must derive from current config: ${JSON.stringify(reference.Catapult)}.`);
+expect(reference.Catapult.cost === 1050 && reference.Catapult.hp === 90 && reference.Catapult.dps === 12.2 && reference.Catapult.population === 4, `Catapult guide stats/role must derive from current config: ${JSON.stringify(reference.Catapult)}.`);
 expect(reference.Warrior.cost === 137.5 && reference.Warrior.hp === 62.79 && reference.Warrior.dps === 15, `Warrior guide stats must derive from current config: ${JSON.stringify(reference.Warrior)}.`);
 expect(reference.Turret.cost === 1560 && reference.Turret.hp === 900 && reference.Turret.dps === 23.8, `Turret guide stats must derive from current config: ${JSON.stringify(reference.Turret)}.`);
 expect(reference.Raven.cost === 750 && reference.Raven.hp === null && reference.Raven.dps === null, `Raven guide stats must communicate a non-combat scout: ${JSON.stringify(reference.Raven)}.`);
