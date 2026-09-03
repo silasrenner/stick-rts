@@ -585,7 +585,7 @@ export function drawHUD(ctx, world, uiMessage) {
   ctx.font = '13px monospace';
   ctx.fillText(`Gold: ${gold}`, 10, y);
   y += lineHeight;
-  ctx.fillText(`Population: ${population.living}/${cap}${population.queued > 0 ? ` (+${population.queued} queued)` : ''}`, 10, y);
+  ctx.fillText(`Population: ${population.reserved}/${cap}${population.queued > 0 ? ` (+${population.queued} queued)` : ''}`, 10, y);
   y += lineHeight;
   ctx.fillText(`Command: ${command[0].toUpperCase()}${command.slice(1)}`, 10, y);
   y += lineHeight;
@@ -921,7 +921,6 @@ function drawGameGuideScreen(ctx, uiState) {
     ctx.fillStyle = '#8fd1e0'; ctx.font = 'bold 16px monospace'; ctx.fillText('Vision & scouting', 720, 166);
     ctx.fillStyle = '#d0d0d8'; ctx.font = '12px monospace';
     ['Vision: friendly units and defenses reveal nearby enemies.', 'Unseen enemies disappear from view.', 'Ravens temporarily reveal the enemy base.'].forEach((line, index) => ctx.fillText(line, 720, 204 + index * 32));
-    ctx.strokeStyle = '#5c9be0'; ctx.strokeRect(760, 320, 120, 70); ctx.fillStyle = '#5c9be0'; ctx.fillText('BLUE VISION', 774, 360); ctx.strokeStyle = '#e0605c'; ctx.strokeRect(1020, 320, 120, 70); ctx.fillStyle = '#e0605c'; ctx.fillText('UNSEEN RED', 1032, 360);
   }
   drawMenuButton(ctx, getBackButtonRect(ctx.canvas), '< Back');
 }

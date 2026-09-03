@@ -180,7 +180,13 @@ export function createRaven(team) {
 }
 
 export function createTurret(team, x, y) {
-  return { id: nextId++, team, x, y, isStructure: true, isTurret: true, state: 'idle', hp: CONFIG.TURRET_HP, maxHp: CONFIG.TURRET_HP, range: CONFIG.TURRET_RANGE, acquireRange: CONFIG.TURRET_RANGE, damage: CONFIG.TURRET_DAMAGE, attackCooldown: CONFIG.TURRET_ATTACK_COOLDOWN, attackTimer: 0, attackAnimTimer: 0, projectileSpeed: CONFIG.TURRET_PROJECTILE_SPEED, targetId: null };
+  return {
+    id: nextId++, team, x, y, isStructure: true, isTurret: true, state: 'idle', hp: CONFIG.TURRET_HP, maxHp: CONFIG.TURRET_HP,
+    range: CONFIG.TURRET_RANGE, acquireRange: CONFIG.TURRET_RANGE, damage: CONFIG.TURRET_DAMAGE,
+    attackCooldown: CONFIG.TURRET_ATTACK_COOLDOWN, attackTimer: 0, attackAnimTimer: 0, projectileSpeed: CONFIG.TURRET_PROJECTILE_SPEED,
+    splashRadius: CONFIG.TURRET_SPLASH_RADIUS, splashDamage: CONFIG.TURRET_SPLASH_DAMAGE,
+    staticDamageMultiplier: CONFIG.TURRET_STATIC_DAMAGE_MULTIPLIER, targetId: null,
+  };
 }
 
 export function createStructure(team, x, y) {

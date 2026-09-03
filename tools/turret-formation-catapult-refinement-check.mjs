@@ -13,9 +13,9 @@ expect(JSON.stringify(CONFIG.TURRET_SLOT_OFFSETS) === JSON.stringify([700, 1220,
 expect(catapult.cost === 1050, `Catapult cost must be 1050 after the approved 50% increase; got ${catapult.cost}.`);
 expect(catapult.speed === 90, `Catapult speed must match the main army at 90; got ${catapult.speed}.`);
 expect(catapult.attackCooldown === 4.5, `Catapult firing cooldown must be 4.5s; got ${catapult.attackCooldown}.`);
-expect(catapult.projectileSpeed === 110, `Catapult projectile speed must be 110; got ${catapult.projectileSpeed}.`);
-expect(catapult.projectileRadius === 9, `Catapult projectile radius must be 9px; got ${catapult.projectileRadius}.`);
-expect(catapult.renderScale === 3, `Catapult render scale must be 3×; got ${catapult.renderScale}.`);
+expect(catapult.projectileSpeed === 180, `Catapult projectile speed must be 180px/s; got ${catapult.projectileSpeed}.`);
+expect(catapult.projectileRadius === 9, `Catapult projectile radius must remain 9px; got ${catapult.projectileRadius}.`);
+expect(catapult.renderScale === 2.25, `Catapult render scale must be 2.25× after the approved 25% reduction; got ${catapult.renderScale}.`);
 
 for (const team of ['player', 'ai']) {
   const sign = team === 'player' ? 1 : -1;
@@ -32,13 +32,13 @@ for (const team of ['player', 'ai']) {
   updateFormationSlots(world);
   const firstTurretX = homeX + sign * CONFIG.TURRET_SLOT_OFFSETS[0];
   expect([warrior, archer, siege].every((unit) => sign * (unit.slotX - firstTurretX) > 0), `${team} first-built-turret defense must place every troop line ahead of the turret.`);
-  expect(sign * warrior.slotX > sign * archer.slotX && sign * archer.slotX > sign * siege.slotX, `${team} first-turret defense must retain Warrior → Archer → Catapult order.`);
+  expect(sign * siege.slotX > sign * warrior.slotX && sign * warrior.slotX > sign * archer.slotX, `${team} first-turret defense must retain Catapult → Warrior → Archer order.`);
 
   world.teams[team].defendAnchorIndex = 1;
   updateFormationSlots(world);
   const laterTurretX = homeX + sign * CONFIG.TURRET_SLOT_OFFSETS[1];
   expect([warrior, archer, siege].every((unit) => sign * (unit.slotX - laterTurretX) < 0), `${team} later-built-turret defense must place every troop line behind the turret.`);
-  expect(sign * warrior.slotX > sign * archer.slotX && sign * archer.slotX > sign * siege.slotX, `${team} later-turret defense must retain Warrior → Archer → Catapult order.`);
+  expect(sign * siege.slotX > sign * warrior.slotX && sign * warrior.slotX > sign * archer.slotX, `${team} later-turret defense must retain Catapult → Warrior → Archer order.`);
 }
 
 for (const kind of ['turret', 'structure', 'core']) {
@@ -61,7 +61,7 @@ for (const kind of ['turret', 'structure', 'core']) {
   expect(findAttackTarget(world, siege)?.id === staticTarget.id, `Catapult must prioritize an in-range ${kind} over an enemy combat unit.`);
   resolveAttack(world, siege, staticTarget);
   const projectile = world.projectiles.at(-1);
-  expect(projectile?.radius === 9 && projectile.duration === Math.abs(staticTarget.x - siege.x) / 110, `Catapult must emit a larger, slower projectile for ${kind}: ${JSON.stringify(projectile)}.`);
+  expect(projectile?.radius === 9 && projectile.duration === Math.abs(staticTarget.x - siege.x) / 180, `Catapult must retain its 9px projectile while using the approved faster travel speed for ${kind}: ${JSON.stringify(projectile)}.`);
 }
 
 console.log('PASS — buildable turrets clear miner traffic, defend formations switch sides by built-turret ordinal, and Catapult stats/static targeting/projectiles meet the approved contract.');

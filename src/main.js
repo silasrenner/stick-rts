@@ -169,7 +169,23 @@ function toggleFpsOverlay() {
 
 function togglePause() {
   if (world.matchState !== 'playing') return;
-  uiState.paused = !uiState.paused;
+  if (!uiState.paused) {
+    uiState.paused = true;
+    uiState.guideOpen = false;
+    uiState.guidePage = 'play';
+    return;
+  }
+  uiState.paused = false;
+}
+
+function handleEscape() {
+  if (world.matchState !== 'playing') return;
+  if (uiState.paused && uiState.guideOpen) {
+    uiState.guideOpen = false;
+    uiState.guidePage = 'play';
+    return;
+  }
+  togglePause();
 }
 
 function cycleGameSpeed() {
@@ -237,7 +253,7 @@ bindDebugKeys({
   f: () => toggleFpsOverlay(),
   s: () => spawnStressTest(),
   p: () => togglePause(),
-  escape: () => togglePause(),
+  escape: () => handleEscape(),
 });
 
 function handleMenuClick(x, y) {

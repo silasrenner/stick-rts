@@ -52,6 +52,16 @@ function infeasible(reason) { return { feasible: false, reason }; }
 // cannot drift from the rules that execute a real purchase.
 export function getPurchaseFeasibility(world, team, candidate) {
   const { action, kind = null } = candidate ?? {};
+
+  // Raven deliberately bypasses normal FIFO capacity and population: it is a
+  // temporary scouting action with its own lifecycle, not queued production.
+  if (action === 'raven') {
+    if (world.ravens.some((raven) => raven.team === team)) return infeasible('ravenActive');
+    if (world.teams[team].ravenCooldownTimer > 0) return infeasible('ravenCooldown');
+    if (!canAfford(world, team, CONFIG.RAVEN.cost)) return infeasible('gold');
+    return feasible();
+  }
+
   if (!queueHasCapacity(world, team)) return infeasible('queueFull');
 
   if (action === 'unit') {
@@ -80,15 +90,6 @@ export function getPurchaseFeasibility(world, team, candidate) {
   if (action === 'structure') {
     if (livingStructures(world, team).length + countQueued(world, team, 'structure') >= CONFIG.MAX_STRUCTURES) return infeasible('maxStructures');
     if (!canAfford(world, team, CONFIG.STRUCTURE_COST)) return infeasible('gold');
-    return feasible();
-  }
-
-  // Raven is deliberately outside the FIFO/cap architecture: it is a
-  // temporary scouting action, not a produced combat/population entity.
-  if (action === 'raven') {
-    if (world.ravens.some((raven) => raven.team === team)) return infeasible('ravenActive');
-    if (world.teams[team].ravenCooldownTimer > 0) return infeasible('ravenCooldown');
-    if (!canAfford(world, team, CONFIG.RAVEN.cost)) return infeasible('gold');
     return feasible();
   }
 

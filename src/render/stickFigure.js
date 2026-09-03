@@ -125,9 +125,11 @@ function drawCatapult(ctx, unit) {
   ctx.beginPath(); ctx.arc(-11, -5, 6, 0, Math.PI * 2); ctx.arc(11, -5, 6, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = '#d8c67a';
   ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.moveTo(-7, -20); ctx.lineTo(18, -48); ctx.stroke();
-  ctx.fillStyle = '#9a7650'; ctx.fillRect(14, -51, 10, 7);
-  if (unit.attackAnimTimer > 0) { ctx.fillStyle = '#f2d24b'; ctx.beginPath(); ctx.arc(26, -54, 4, 0, Math.PI * 2); ctx.fill(); }
+  // Arm and sling lean to local negative X; the outer team-facing transform
+  // mirrors this cleanly for the opposing side without changing chassis facing.
+  ctx.beginPath(); ctx.moveTo(7, -20); ctx.lineTo(-18, -48); ctx.stroke();
+  ctx.fillStyle = '#9a7650'; ctx.fillRect(-24, -51, 10, 7);
+  if (unit.attackAnimTimer > 0) { ctx.fillStyle = '#f2d24b'; ctx.beginPath(); ctx.arc(-26, -54, 4, 0, Math.PI * 2); ctx.fill(); }
   ctx.restore();
 }
 

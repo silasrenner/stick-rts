@@ -57,7 +57,7 @@ export const CONFIG = {
   // Raven is a temporary, non-combat scouting action. It deliberately does
   // not use unit stats, population, formations, or the normal FIFO queue.
   RAVEN: {
-    cost: 750,
+    cost: 1200,
     preparationTime: 2,
     movementSpeed: 560,
     movingVisionRadius: 562.5, // 50% above the prior 375 while flying
@@ -86,15 +86,19 @@ export const CONFIG = {
   HERO_BUILD_TIME: 30, // independent of HERO_RESPAWN_COOLDOWN below — see sim/systems/production.js
   PRODUCTION_QUEUE_LIMIT: 10, // paid FIFO items per team; applies to all production kinds
 
-  STRUCTURE_COST: 300, // S8: doubled from 150
-  TURRET_COST: 1560, // doubled from 780
+  STRUCTURE_COST: 450, // +50%
+  TURRET_COST: 2340, // +50%
   TURRET_BUILD_TIME: 30,
   MAX_TURRETS: 5, // one starting + four buildable
-  TURRET_HP: 900,
-  TURRET_DAMAGE: 42.84, // -10%
+  TURRET_HP: 1260, // +40%
+  TURRET_DAMAGE: 42.84, // unchanged direct-shot damage
   TURRET_RANGE: 700,
-  TURRET_ATTACK_COOLDOWN: 1.8,
+  TURRET_ATTACK_COOLDOWN: 2.25, // +25% slower
   TURRET_PROJECTILE_SPEED: 320,
+  TURRET_SPLASH_RADIUS: 110, // Catapult-equivalent impact radius
+  TURRET_SPLASH_DAMAGE: 24, // Catapult-equivalent area damage
+  TURRET_STATIC_DAMAGE_MULTIPLIER: 1, // Towers retain ordinary static damage
+  TURRET_KILL_REWARD: 1170, // 50% of the approved 2340g Tower cost
   TURRET_RENDER_SCALE: 1.5, // visual-only: larger silhouette and health bar, unchanged combat geometry
   // Keep the enlarged core, its starting turret, and mining traffic as
   // separate readable base landmarks.
@@ -143,6 +147,8 @@ export const CONFIG = {
   DEFEND_SCREEN_OFFSET: 700, // legacy inner-turret reference; formation uses TURRET_SLOT_OFFSETS directly
   FORMATION_SLOT_SPACING_X: 60, // px between successive columns, and between the warrior/archer lines
   FORMATION_SLOT_SPACING_Y: 40, // px between file positions within one rank
+  CATAPULT_FORMATION_SLOT_SPACING_Y: 52, // Catapult-only file spacing for readable siege stacks
+  CATAPULT_FORMATION_SLOTS_PER_RANK: 4, // Catapult-only rank capacity; other lines retain six
   FORMATION_SLOTS_PER_RANK: 6, // unit count before a rank overflows into a new column
   FORMATION_Y_BAND: 200, // px of vertical spread a full rank occupies — (SLOTS_PER_RANK - 1) * SPACING_Y, fits within GROUND_Y's ~240px of headroom above the HUD
   ARCHER_COHESION_DISTANCE: 150, // px — archers under Defend hold rather than advance ahead of/without a warrior escort this close
@@ -176,10 +182,10 @@ export const CONFIG = {
   BUILD_BUTTON_HEIGHT: 30,
   BUILD_BUTTON_GAP: 8,
   BUILD_BUTTON_MARGIN_BOTTOM: 6,
-  BUILD_BUTTON_ICON_SCALE: 0.3,
+  BUILD_BUTTON_ICON_SCALE: 0.24,
   BUILD_PROGRESS_BAR_HEIGHT: 3,
-  QUEUE_CHIP_WIDTH: 46,
-  QUEUE_CHIP_HEIGHT: 28,
+  QUEUE_CHIP_WIDTH: 40,
+  QUEUE_CHIP_HEIGHT: 24,
   QUEUE_CHIP_GAP: 4,
   BOTTOM_BAR_ROW_GAP: 4, // gap between the queue-chip row and the build-button row
 
@@ -212,8 +218,8 @@ export const CONFIG = {
     },
     warrior: {
       cost: 137.5,
-      hp: 62.79, // +15%
-      damage: 7.5,
+      hp: 78.4875, // +25%
+      damage: 8.625, // +15%
       range: 22,
       attackCooldown: 0.5,
       speed: 90,
@@ -245,9 +251,9 @@ export const CONFIG = {
       speed: 90,
       acquireRange: 900,
       threatRange: 0,
-      projectileSpeed: 110,
+      projectileSpeed: 180,
       projectileRadius: 9,
-      renderScale: 3,
+      renderScale: 2.25,
       splashRadius: 110,
       splashDamage: 24,
       staticDamageMultiplier: 2,

@@ -79,8 +79,8 @@ export function resolveAttack(world, unit, target) {
   unit.state = 'attacking';
 
   if (unit.projectileSpeed > 0) {
-    const impact = unit.kind === 'catapult'
-      ? { splashRadius: unit.splashRadius, splashDamage: unit.splashDamage, staticDamageMultiplier: unit.staticDamageMultiplier }
+    const impact = unit.splashRadius > 0
+      ? { splashRadius: unit.splashRadius, splashDamage: unit.splashDamage, staticDamageMultiplier: unit.staticDamageMultiplier ?? 1 }
       : null;
     world.projectiles.push(
       createProjectile(unit.team, unit.x, unit.y, target.x, target.y, target.id, unit.damage, unit.projectileSpeed, impact, unit.projectileRadius ?? 3)
@@ -111,8 +111,9 @@ export function applyDamage(world, entity, amount, killerTeam = null) {
   entity.hp = Math.max(0, entity.hp - amount);
   if (entity.hp > 0) return;
 
-  if (!entity.isStructure && !entity.isStatue && killerTeam && killerTeam !== entity.team) {
-    world.teams[killerTeam].gold += Math.round(entity.goldValue * CONFIG.UNIT_KILL_REWARD_RATE);
+  if (killerTeam && killerTeam !== entity.team) {
+    if (entity.isTurret) world.teams[killerTeam].gold += CONFIG.TURRET_KILL_REWARD;
+    else if (!entity.isStructure && !entity.isStatue) world.teams[killerTeam].gold += Math.round(entity.goldValue * CONFIG.UNIT_KILL_REWARD_RATE);
   }
 
   if (entity.isStatue) {

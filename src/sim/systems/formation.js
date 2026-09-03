@@ -70,38 +70,31 @@ function assignTeamSlots(world, team) {
     growthSign = sign;
   }
 
-  assignLine(frontLine, anchorX, growthSign);
+  // Siege is the leading line. Its overflow follows the command's ordinary
+  // growth direction; Warriors anchor one full column behind its least-exposed
+  // column and grow farther back, so a large Warrior stack never overtakes it.
+  assignLine(siegeLine, anchorX, growthSign, CONFIG.CATAPULT_FORMATION_SLOT_SPACING_Y, CONFIG.CATAPULT_FORMATION_SLOTS_PER_RANK);
+  const siegeMinExposure = siegeLine.length > 0 ? Math.min(...siegeLine.map((u) => sign * u.slotX)) : null;
+  const frontAnchorX = siegeMinExposure === null ? anchorX : sign * (siegeMinExposure - CONFIG.FORMATION_SLOT_SPACING_X);
+  assignLine(frontLine, frontAnchorX, siegeMinExposure === null ? growthSign : -sign);
 
-  // Archers always sit strictly behind (less exposed toward the enemy
-  // than) every front-line position this tick, and their own overflow
-  // columns extend further behind still — never toward home *or* toward
-  // the enemy, since either of those can catch up to a front-line column
-  // once both lines grow past one rank. `sign * x` is a position's
-  // "exposure" (larger = more toward the enemy); anchoring the back line
-  // one spacing step beyond the front line's *least*-exposed occupied
-  // column, then always growing further in the -sign direction from
-  // there, guarantees zero collision for any front/back column count —
-  // the two lines occupy strictly disjoint halves of the x-axis around
-  // that point, regardless of which direction the front line itself grew.
-  const frontMinExposure = frontLine.length > 0 ? Math.min(...frontLine.map((u) => sign * u.slotX)) : sign * anchorX;
+  // Archers trail the rearmost Warrior column; if Warriors are absent they
+  // trail the rearmost Catapult column, preserving Catapult → Warrior → Archer.
+  const frontMinExposure = frontLine.length > 0
+    ? Math.min(...frontLine.map((u) => sign * u.slotX))
+    : (siegeMinExposure ?? sign * anchorX);
   const rangedAnchorX = sign * (frontMinExposure - CONFIG.FORMATION_SLOT_SPACING_X);
   assignLine(rangedLine, rangedAnchorX, -sign);
 
-  // Siege always trails the rearmost Archer/Hawkeye column. If no ranged
-  // units exist, it still trails the front line by two deliberate columns.
-  const rangedMinExposure = rangedLine.length > 0 ? Math.min(...rangedLine.map((u) => sign * u.slotX)) : sign * rangedAnchorX;
-  const siegeAnchorX = sign * (rangedMinExposure - CONFIG.FORMATION_SLOT_SPACING_X);
-  assignLine(siegeLine, siegeAnchorX, -sign);
 }
 
-function assignLine(units, lineAnchorX, growthSign) {
-  const perRank = CONFIG.FORMATION_SLOTS_PER_RANK;
+function assignLine(units, lineAnchorX, growthSign, fileSpacingY = CONFIG.FORMATION_SLOT_SPACING_Y, perRank = CONFIG.FORMATION_SLOTS_PER_RANK) {
 
   units.forEach((unit, index) => {
     const column = Math.floor(index / perRank);
     const file = index % perRank;
 
     unit.slotX = lineAnchorX + growthSign * column * CONFIG.FORMATION_SLOT_SPACING_X;
-    unit.slotY = CONFIG.GROUND_Y - file * CONFIG.FORMATION_SLOT_SPACING_Y;
+    unit.slotY = CONFIG.GROUND_Y - file * fileSpacingY;
   });
 }
