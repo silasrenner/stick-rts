@@ -2,25 +2,13 @@
 
 Cross-session context carrier. Keep current scope, recovery state, and dirty-worktree warnings here. Completed work belongs in `HISTORY.md`; detailed durable findings live in focused `docs/analysis/` documents.
 
-## Integrated local-main scope — attack vision, Catapult sight, full-map zoom, and 3× core presentation
+## Integrated main scope — base spacing, built-turret formations, and Catapult refinement
 
-Owner approved LAN review and promotion: 2026-09-02. Merged from `agent/attack-vision-catapult-core-local` into local `main` as `561f1de`.
+Owner-approved LAN review and promotion: 2026-09-02. The owner-reviewed branch `agent/core-turret-miner-map-spacing-local` fast-forwarded to `main` in `a3e8cd5` and is pushed with this documentation reconciliation.
 
-**Included:** Renderer-only Player attack-target disclosure for enemy mobiles as well as statics, ending when the Player unit no longer retains that target; Catapult team vision at its `900` acquisition range; minimum camera zoom derived from current viewport/world width so it frames all `6200` world pixels; a named visual-only 3× core scale for both live and fogged-known core paths, including scaled health-bar placement.
+**Included:** `WORLD_WIDTH` is `7000`; miners retain core-owned economy but use the separated delivery lane. The core, starting turret, miner lane, deposits, and buildable turrets are mirrored and readable. Buildable turrets are offset `700, 1220, 1740, 2260`: the first built-turret formation screens all troop lines ahead, while later selected buildable turrets keep all lines behind. Catapult is 3× visual scale, costs `1050`, moves at `90`, fires every `4.5s`, and uses a `9px` projectile at `110px/s`; static-first targeting remains unchanged.
 
-**Evidence:** `tools/attack-vision-core-scale-check.mjs`, Player fog, vision/fog Canvas, vision sustain, Catapult production/combat, core-shield, and the 5,000-tick headless invariant pass; `git diff --check` passes. Cache-disabled Chrome/CDP rendered a full-map fixture with a Player Catapult targeting a distant AI Warrior. LAN hashes for `config.js`, `spectatorVision.js`, and `structures.js` matched the reviewed candidate. Generated browser screenshot/script remain local-only. Remote promotion is authorized and follows this documentation reconciliation.
-
-## Current approved scope — Player static attack disclosure and health bars
-
-Owner approval: 2026-08-30. Isolated worktree: `C:/Users/simcr/projects/stick-rts/worktrees/static-attack-disclosure` on `agent/static-attack-disclosure-local`, based on synchronized `main` `a68aa2e`.
-
-**Included:** Player-vs-AI presentation for an enemy core, structure, and turret that is currently revealed either by normal Player vision or a Player-owned active attack target: render its live art and health bar; ensure the target's ordinary configured vision radius clears the Player fog while the Player attack target remains active. Add a focused red→green deterministic/Canvas regression for all three static types and a real cache-busted browser/LAN fixture that exercises the actual target/attack path and visually verifies fog clearance plus health-bar visibility.
-
-**Deliberate exclusions:** simulation/team vision and AI knowledge, combat targeting/statistics, fog color/bounds/history, global hidden-static HP disclosure, Watch-AI presentation, unrelated artifacts/worktrees, remote push, and generated screenshot versioning.
-
-**Evidence gates:** focused regression must fail on the exact missing health-bar/disclosure behavior before source change, then prove all three static classes through normal vision and Player attack disclosure while an unattacked hidden static remains a state-free silhouette. Retain relevant fog/combat checks, run `git diff --check`, and serve/hash-verify the exact candidate from a new LAN server before owner review. Commit locally only after owner approval; do not push.
-
-**Integrated release:** owner LAN review approved the renderer-only Player static-health disclosure. The red→green regression covers core, structure, and turret target disclosure/removal; retained core/fog/Canvas checks pass. Cache-disabled Chrome exercised real Archer acquisition of each static class and verified each configured reveal radius plus exact health-bar draw geometry. Source and reusable checks are fast-forwarded to local `main` in `4d845fc`; generated screenshot evidence remains local-only.
+**Evidence:** focused geometry/formation/Catapult checks, retained mine/guide/vision regressions, 5,000-tick headless invariant, `git diff --check`, and full desktop/mobile release gate pass. Cache-disabled Chrome fixtures verify first/later formation side placement, Catapult statistics/projectile radius, and base geometry; all changed runtime assets SHA-256-match the LAN candidate. Generated screenshots and the local scope record remain unversioned by design. The concise release entry is in `HISTORY.md`.
 
 ## Current approved scope — landing Raven fog clearance and elevated Canvas UI
 
