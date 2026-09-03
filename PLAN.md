@@ -2,6 +2,14 @@
 
 Cross-session context carrier. Keep current scope, recovery state, and dirty-worktree warnings here. Completed work belongs in `HISTORY.md`; detailed durable findings live in focused `docs/analysis/` documents.
 
+## Integrated local-main scope — attack vision, Catapult sight, full-map zoom, and 3× core presentation
+
+Owner approved LAN review and promotion: 2026-09-02. Merged from `agent/attack-vision-catapult-core-local` into local `main` as `561f1de`.
+
+**Included:** Renderer-only Player attack-target disclosure for enemy mobiles as well as statics, ending when the Player unit no longer retains that target; Catapult team vision at its `900` acquisition range; minimum camera zoom derived from current viewport/world width so it frames all `6200` world pixels; a named visual-only 3× core scale for both live and fogged-known core paths, including scaled health-bar placement.
+
+**Evidence:** `tools/attack-vision-core-scale-check.mjs`, Player fog, vision/fog Canvas, vision sustain, Catapult production/combat, core-shield, and the 5,000-tick headless invariant pass; `git diff --check` passes. Cache-disabled Chrome/CDP rendered a full-map fixture with a Player Catapult targeting a distant AI Warrior. LAN hashes for `config.js`, `spectatorVision.js`, and `structures.js` matched the reviewed candidate. Generated browser screenshot/script remain local-only. Remote promotion is authorized and follows this documentation reconciliation.
+
 ## Current approved scope — Player static attack disclosure and health bars
 
 Owner approval: 2026-08-30. Isolated worktree: `C:/Users/simcr/projects/stick-rts/worktrees/static-attack-disclosure` on `agent/static-attack-disclosure-local`, based on synchronized `main` `a68aa2e`.
