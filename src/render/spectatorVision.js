@@ -24,15 +24,16 @@ export function isEntityVisibleInPlayerView(world, entity) {
   return isEntityVisibleToTeam(world, 'player', entity);
 }
 
-// Renderer-only disclosure: Player attacks against enemy static objectives
-// reveal the target's ordinary vision bubble in Player presentation. This is
-// not a simulation vision source and cannot affect AI knowledge.
+// Renderer-only disclosure: Player units with an active enemy target reveal
+// the target's ordinary vision bubble in Player presentation. This covers
+// mobile enemies as well as static objectives without becoming a simulation
+// vision source or affecting AI knowledge.
 export function getPlayerAttackTargetRevealSources(world) {
   const targets = new Map();
   for (const unit of world.units) {
     if (unit.team !== 'player' || !isAliveEntity(unit) || unit.targetId == null) continue;
     const target = findEntityById(world, unit.targetId);
-    if (target?.team === 'ai' && (target.isStatue || target.isStructure) && isAliveEntity(target)) targets.set(target.id, target);
+    if (target?.team === 'ai' && isAliveEntity(target)) targets.set(target.id, target);
   }
   return [...targets.values()]
     .map((target) => ({ entityId: target.id, x: target.x, y: target.y, radius: getVisionRadius(target), playerAttackReveal: true }))
