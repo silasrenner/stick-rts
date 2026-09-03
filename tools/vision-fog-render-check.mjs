@@ -70,7 +70,7 @@ expect(!mainCalls.includes('composite:destination-out'), 'Vision subtraction mus
 expect(fogCalls.includes('composite:destination-out'), 'Vision bubbles must subtract from the isolated fog surface.');
 expect(fogCalls.filter((call) => call === 'arc').length === 2, 'Both overlapping vision bubbles must be independently subtracted.');
 expect(fogCalls.includes(`linearStop:0.08450704225352113,${CONFIG.PLAYER_FOG_COLOR}`), `Player fog boundary must fade into configured pale color; got ${CONFIG.PLAYER_FOG_COLOR}.`);
-expect(fogCalls.includes('fillRect:0,330,5000,142'), 'At 0.5x zoom, Player fog top must project from world y=220 to screen y=330 while retaining the UI bottom boundary.');
+expect(fogCalls.includes(`fillRect:0,330,${CONFIG.WORLD_WIDTH},142`), 'At 0.5x zoom, Player fog top must project from world y=220 to screen y=330 while retaining the UI bottom boundary.');
 expect(CONFIG.PLAYER_FOG_TOP === 220, `Player fog must begin halfway up the world at y=220; got ${CONFIG.PLAYER_FOG_TOP}.`);
 expect(CONFIG.PLAYER_FOG_COLOR === 'rgba(225, 232, 240, 0.075)', `Player fog must use the requested half-opacity 0.075 veil; got ${CONFIG.PLAYER_FOG_COLOR}.`);
 expect(CONFIG.PLAYER_FOG_FEATHER === 36 && CONFIG.PLAYER_FOG_BOUNDARY_FEATHER === 24, 'Fog visual feathers must be world-space values scaled by camera zoom.');

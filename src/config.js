@@ -1,8 +1,11 @@
+const VIEWPORT_WIDTH = 1400;
+const WORLD_WIDTH = 6200;
+
 export const CONFIG = {
   TICK_HZ: 60,
 
-  VIEWPORT_WIDTH: 1400, // what the canvas element actually renders
-  WORLD_WIDTH: 6200, // longer battlefield; travel and reinforcement time scale with this
+  VIEWPORT_WIDTH, // what the canvas element actually renders
+  WORLD_WIDTH, // longer battlefield; travel and reinforcement time scale with this
   CANVAS_HEIGHT: 540,
   GROUND_Y: 440, // shared baseline for units, statues, structures, mines — leaves room below for legend/build menu
 
@@ -10,7 +13,7 @@ export const CONFIG = {
   IDLE_ANIM_HZ: 0.6,
 
   PLAYER_HOME_X: 100,
-  AI_HOME_X: 6200 - 100, // WORLD_WIDTH - 100
+  AI_HOME_X: WORLD_WIDTH - 100,
   PLAYER_FLEE_X: 40,
   AI_FLEE_X: 6200 - 40, // WORLD_WIDTH - 40
 
@@ -18,7 +21,7 @@ export const CONFIG = {
   EDGE_SCROLL_SPEED: 900, // px/s
   CAMERA_CULL_MARGIN: 100, // px beyond the viewport edge before an entity stops being drawn
   CAMERA_ZOOM: 0.7, // S8: render-time scale only — sim stays in unscaled world px. <1 shows more battlefield at once. S10: now just the starting value — camera.zoom is runtime state.
-  CAMERA_ZOOM_MIN: 1400 / 5000, // VIEWPORT_WIDTH / WORLD_WIDTH — entire map at min zoom
+  CAMERA_ZOOM_MIN: VIEWPORT_WIDTH / WORLD_WIDTH, // entire map at min zoom
   CAMERA_ZOOM_MAX: 1.4, // S10: 2x the starting zoom; tunable if it feels too tight/loose
 
   AI_SIGHT_RANGE: 260, // px; how close an AI unit must be to see an enemy for scouting purposes
@@ -29,7 +32,7 @@ export const CONFIG = {
 
   // Shared team vision — every entity and Raven reveal radius is 25% larger.
   VISION_RANGES: {
-    units: { miner: 325, warrior: 425, archer: 475 },
+    units: { miner: 325, warrior: 425, archer: 475, catapult: 900 },
     hero: 525,
     core: 525,
     turret: 450,
@@ -105,6 +108,7 @@ export const CONFIG = {
   STRUCTURE_SLOT_OFFSETS: [40, 80, 120, 160, 200], // px from homeX, toward the battlefield
 
   STATUE_HP: 2000,
+  CORE_RENDER_SCALE: 3, // visual-only: does not change core mechanics or vision
   STATUE_WARNING_DURATION: 3, // seconds the "statue under attack" signal stays lit after the last hit
   MINE_OFFSET: 240, // px from homeX, toward the battlefield, past the last structure slot
   MINE_DEPOSIT_SPACING: 38, // px either side of the original mine center; visible split without crowding the first turret

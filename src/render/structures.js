@@ -9,30 +9,39 @@ const MINE_RADIUS = 10;
 
 export function drawStatue(ctx, statue, { showHealth = true } = {}) {
   const isDestroyed = statue.state === 'destroyed';
+  const { width, height } = getCoreDimensions();
   ctx.save();
   ctx.globalAlpha = isDestroyed ? 0.3 : 1;
 
   ctx.fillStyle = '#33333c';
-  ctx.fillRect(statue.x - STATUE_WIDTH / 2, statue.y - STATUE_HEIGHT, STATUE_WIDTH, STATUE_HEIGHT);
+  ctx.fillRect(statue.x - width / 2, statue.y - height, width, height);
   ctx.strokeStyle = TEAM_COLORS[statue.team] ?? '#cccccc';
   ctx.lineWidth = 3;
-  ctx.strokeRect(statue.x - STATUE_WIDTH / 2, statue.y - STATUE_HEIGHT, STATUE_WIDTH, STATUE_HEIGHT);
+  ctx.strokeRect(statue.x - width / 2, statue.y - height, width, height);
 
   ctx.restore();
 
-  if (showHealth && !isDestroyed) drawHealthBar(ctx, statue.x, statue.y - STATUE_HEIGHT - 12, statue.hp, statue.maxHp, 40);
+  if (showHealth && !isDestroyed) drawHealthBar(ctx, statue.x, statue.y - height - 12, statue.hp, statue.maxHp, 40 * CONFIG.CORE_RENDER_SCALE);
 }
 
 // Enemy base locations remain known outside vision, but this intentionally
 // ignores hp/state so it cannot reveal live core information.
 export function drawKnownBase(ctx, statue) {
+  const { width, height } = getCoreDimensions();
   ctx.save();
   ctx.fillStyle = '#25252c';
-  ctx.fillRect(statue.x - STATUE_WIDTH / 2, statue.y - STATUE_HEIGHT, STATUE_WIDTH, STATUE_HEIGHT);
+  ctx.fillRect(statue.x - width / 2, statue.y - height, width, height);
   ctx.strokeStyle = '#60606c';
   ctx.lineWidth = 2;
-  ctx.strokeRect(statue.x - STATUE_WIDTH / 2, statue.y - STATUE_HEIGHT, STATUE_WIDTH, STATUE_HEIGHT);
+  ctx.strokeRect(statue.x - width / 2, statue.y - height, width, height);
   ctx.restore();
+}
+
+function getCoreDimensions() {
+  return {
+    width: STATUE_WIDTH * CONFIG.CORE_RENDER_SCALE,
+    height: STATUE_HEIGHT * CONFIG.CORE_RENDER_SCALE,
+  };
 }
 
 export function drawStructure(ctx, structure, { showHealth = true } = {}) {
