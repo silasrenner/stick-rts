@@ -59,13 +59,13 @@ export const CONFIG = {
   RAVEN: {
     cost: 1200,
     preparationTime: 2,
-    movementSpeed: 560,
-    movingVisionRadius: 562.5, // 50% above the prior 375 while flying
+    movementSpeed: 448, // 20% slower at every player-facing game-speed setting
+    movingVisionRadius: 562.5,
     enemyBaseRevealRadius: 1000,
     revealDuration: 10,
     cooldown: 45,
     flightAltitude: 250,
-    exitSpeed: 700,
+    exitSpeed: 560, // retains the same 20% movement reduction while exiting
     exitDistance: 350,
   },
 
@@ -127,7 +127,8 @@ export const CONFIG = {
   MINE_DEPOSIT_SPACING: 38, // px either side of the original mine center; visible split without crowding the first turret
   MINE_SLOTS: 4, // team-wide simultaneous extraction cap across all deposits
   MINE_CYCLE_TIME: 3, // seconds to extract one load
-  GOLD_PER_TRIP: 23, // restored original completed-trip yield after gameplay review
+  GOLD_PER_TRIP: 23, // original route's reference completed-trip yield
+  MINER_INCOME_REFERENCE_SPEED: 80, // pre-mobility-reduction speed used to preserve normal-route income
   UNIT_KILL_REWARD_RATE: 0.10,
 
   // Damaged non-core entities wait out this no-damage interval, then recover
@@ -212,7 +213,7 @@ export const CONFIG = {
       damage: 0,
       range: 0,
       attackCooldown: 0,
-      speed: 80,
+      speed: 64, // 20% slower; per-route delivery yield preserves normal mining income
       acquireRange: 0,
       threatRange: 150,
       projectileSpeed: 0,
@@ -223,7 +224,7 @@ export const CONFIG = {
       damage: 8.625, // +15%
       range: 22,
       attackCooldown: 0.5,
-      speed: 90,
+      speed: 72,
       acquireRange: 260,
       threatRange: 0,
       projectileSpeed: 0,
@@ -234,7 +235,7 @@ export const CONFIG = {
       damage: 16,
       range: 520,
       attackCooldown: 1.5,
-      speed: 90,
+      speed: 72,
       acquireRange: 520,
       threatRange: 0,
       projectileSpeed: 300,
@@ -249,7 +250,7 @@ export const CONFIG = {
       damage: 55,
       range: 800,
       attackCooldown: 4.5,
-      speed: 90,
+      speed: 72,
       acquireRange: 900,
       threatRange: 0,
       projectileSpeed: 180,
@@ -267,7 +268,7 @@ export const CONFIG = {
       damage: 4,
       range: 22,
       attackCooldown: 1.0,
-      speed: 70,
+      speed: 56,
       acquireRange: 200,
       threatRange: 0,
       projectileSpeed: 0,
@@ -277,7 +278,7 @@ export const CONFIG = {
       damage: 22,
       range: 320,
       attackCooldown: 0.9,
-      speed: 75,
+      speed: 60,
       acquireRange: 340,
       threatRange: 0,
       projectileSpeed: 320,
@@ -287,7 +288,7 @@ export const CONFIG = {
       damage: 16,
       range: 26,
       attackCooldown: 0.6,
-      speed: 85,
+      speed: 68,
       acquireRange: 260,
       threatRange: 0,
       projectileSpeed: 0,

@@ -1,4 +1,5 @@
 import { CONFIG } from '../config.js';
+import { getDisplayMatchTime } from '../gameSpeed.js';
 import { getPopulationState } from '../sim/systems/economy.js';
 import { getCap, livingStructures, livingTurrets } from '../sim/systems/supply.js';
 import { isAliveEntity, isWatchAiMatch } from '../sim/world.js';
@@ -47,7 +48,7 @@ export function drawMatchTelemetry(ctx, world, { showGoldDifferential = true } =
   ctx.textAlign = 'center';
   ctx.fillStyle = '#e8e8ee';
   ctx.font = 'bold 16px monospace';
-  ctx.fillText(formatMatchClock(world.matchElapsedTime), centerX, 20);
+  ctx.fillText(formatMatchClock(getDisplayMatchTime(world.matchElapsedTime)), centerX, 20);
   if (showGoldDifferential) {
     ctx.fillStyle = diff.team === 'player' ? TEAM_COLORS.player : diff.team === 'ai' ? TEAM_COLORS.ai : '#e8e8ee';
     ctx.font = 'bold 13px monospace';

@@ -3,7 +3,8 @@ import { UPDATE_LOG } from '../updateLog.js';
 import { canAfford, getOccupiedCap, getPopulationState, countQueued } from '../sim/systems/economy.js';
 import { getCap, livingStructures, livingTurrets } from '../sim/systems/supply.js';
 import { isAliveEntity, isWatchAiMatch } from '../sim/world.js';
-import { getGoldChartSegments } from '../sim/goldHistory.js';
+import { getDisplayMatchTime } from '../gameSpeed.js';
+import { formatGameTime, getGoldChartScale, getGoldChartSegments } from '../sim/goldHistory.js';
 import { drawStickFigure, TEAM_COLORS } from './stickFigure.js';
 
 const BUILD_MENU_ITEMS = [
@@ -698,6 +699,7 @@ export function drawGoldDifferenceChart(ctx, world) {
   if (samples.length < 2) return;
   const x = 260; const y = 70; const width = 880; const height = 140;
   const zeroY = y + height / 2;
+  const maxAbs = getGoldChartScale(samples);
   ctx.fillStyle = '#17171d'; ctx.fillRect(x, y, width, height);
   ctx.strokeStyle = '#555565'; ctx.strokeRect(x, y, width, height);
   ctx.strokeStyle = '#8a8a96'; ctx.beginPath(); ctx.moveTo(x, zeroY); ctx.lineTo(x + width, zeroY); ctx.stroke();
@@ -710,7 +712,12 @@ export function drawGoldDifferenceChart(ctx, world) {
   const difference = samples.at(-1).difference;
   ctx.textAlign = 'center'; ctx.font = '12px monospace'; ctx.fillStyle = difference >= 0 ? '#8fc8ff' : '#ff9a91';
   ctx.fillText(`${difference >= 0 ? 'BLUE' : 'RED'} GOLD LEAD: ${Math.abs(difference).toFixed(0)}`, x + width / 2, y - 10);
-  ctx.fillStyle = '#a8a8b4'; ctx.font = '10px monospace'; ctx.textAlign = 'left'; ctx.fillText('00:00', x, y + height + 14); ctx.textAlign = 'right'; ctx.fillText(`${Math.floor(samples.at(-1).time / 60)}:${String(samples.at(-1).time % 60).padStart(2, '0')}`, x + width, y + height + 14); ctx.textAlign = 'center';
+  ctx.save(); ctx.fillStyle = '#a8a8b4'; ctx.font = '10px monospace'; ctx.textAlign = 'right';
+  ctx.fillText(`+${maxAbs.toFixed(0)}`, x - 8, y + 4);
+  ctx.fillText('0', x - 8, zeroY + 4);
+  ctx.fillText(`−${maxAbs.toFixed(0)}`, x - 8, y + height);
+  ctx.translate(x - 42, zeroY); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.fillText('Gold', 0, 0); ctx.restore();
+  ctx.fillStyle = '#a8a8b4'; ctx.font = '10px monospace'; ctx.textAlign = 'left'; ctx.fillText('00:00', x, y + height + 14); ctx.textAlign = 'right'; ctx.fillText(formatGameTime(getDisplayMatchTime(samples.at(-1).time)), x + width, y + height + 14); ctx.textAlign = 'center';
 }
 
 export function drawWinLoseOverlay(ctx, world) {
@@ -720,7 +727,7 @@ export function drawWinLoseOverlay(ctx, world) {
   ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-  drawScreenTitle(ctx, world.matchState === 'won' ? 'Victory!' : 'Defeat', ctx.canvas.height / 2 - 20, { accent: world.matchState === 'won' ? '#79e6b0' : '#ff817a', size: 32 });
+  drawScreenTitle(ctx, `${world.matchState === 'won' ? 'Victory!' : 'Defeat'}  •  Game Time: ${formatGameTime(getDisplayMatchTime(world.matchElapsedTime))}`, ctx.canvas.height / 2 - 20, { accent: world.matchState === 'won' ? '#79e6b0' : '#ff817a', size: 24 });
 
   if (isWatchAiMatch(world)) {
     drawMenuButton(ctx, getBackToMenuButtonRect(ctx.canvas), 'Back to Menu');

@@ -18,48 +18,43 @@ await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Esca
 await evaluate(`window.__playerPauseCheckBefore = { tick: window.__tickCount(), gold: window.__world.teams.player.gold, elapsed: window.__world.matchElapsedTime, paused: window.__uiState.paused, speed: window.__uiState.speed };`);
 const playerInitial = await evaluate('window.__playerPauseCheckBefore');
 if (!playerInitial.paused) throw new Error(`Escape must open the Player-vs-AI pause menu: ${JSON.stringify(playerInitial)}`);
-if (playerInitial.speed !== 5) throw new Error(`Player-vs-AI must begin at 5×: ${JSON.stringify(playerInitial)}`);
+if (playerInitial.speed !== 1) throw new Error(`Player-vs-AI must begin at 1×: ${JSON.stringify(playerInitial)}`);
 // Intended center of the new pause-overlay Game Speed button; it must not trigger Resume.
 await click(700, 285);
 const playerAfterSpeedClick = await evaluate(`({ tick: window.__tickCount(), gold: window.__world.teams.player.gold, elapsed: window.__world.matchElapsedTime, paused: window.__uiState.paused, speed: window.__uiState.speed })`);
-if (!playerAfterSpeedClick.paused || playerAfterSpeedClick.speed !== 10 || playerAfterSpeedClick.tick !== playerInitial.tick || playerAfterSpeedClick.gold !== playerInitial.gold || playerAfterSpeedClick.elapsed !== playerInitial.elapsed) throw new Error(`Pause-menu speed control must select 10× while simulation stays frozen: ${JSON.stringify({ playerInitial, playerAfterSpeedClick })}`);
+if (!playerAfterSpeedClick.paused || playerAfterSpeedClick.speed !== 2 || playerAfterSpeedClick.tick !== playerInitial.tick || playerAfterSpeedClick.gold !== playerInitial.gold || playerAfterSpeedClick.elapsed !== playerInitial.elapsed) throw new Error(`Pause-menu speed control must select 2× while simulation stays frozen: ${JSON.stringify({ playerInitial, playerAfterSpeedClick })}`);
 const screenshot = await send('Page.captureScreenshot', { format: 'png' });
 const screenshotPath = join('artifacts', 'screenshots', 'pvai-pause-speed-overlay.png');
 mkdirSync(join('artifacts', 'screenshots'), { recursive: true });
 writeFileSync(screenshotPath, screenshot.data, 'base64');
 await click(700, 333);
 const playerResumed = await evaluate(`({ paused: window.__uiState.paused, speed: window.__uiState.speed })`);
-if (playerResumed.paused || playerResumed.speed !== 10) throw new Error(`Resume must preserve the selected speed: ${JSON.stringify(playerResumed)}`);
+if (playerResumed.paused || playerResumed.speed !== 2) throw new Error(`Resume must preserve the selected speed: ${JSON.stringify(playerResumed)}`);
 await evaluate(`window.__forceTicks(60);`);
 const playerAdvanced = await evaluate(`({ tick: window.__tickCount(), elapsed: window.__world.matchElapsedTime })`);
 if (playerAdvanced.tick <= playerAfterSpeedClick.tick || playerAdvanced.elapsed <= playerAfterSpeedClick.elapsed) throw new Error(`Resume must continue the same Player-vs-AI match: ${JSON.stringify({ playerAfterSpeedClick, playerAdvanced })}`);
 
-// A fresh Player-vs-AI match restores the requested 5× baseline.
+// A fresh Player-vs-AI match restores the requested 1× baseline.
 await evaluate(`window.__resetMatch('medium'); window.__playerResetSpeed = window.__uiState.speed;`);
-if (await evaluate('window.__playerResetSpeed') !== 5) throw new Error('Fresh Player-vs-AI match must reset speed to 5×');
+if (await evaluate('window.__playerResetSpeed') !== 1) throw new Error('Fresh Player-vs-AI match must reset speed to 1×');
 
-// A controlled frame-time seam proves the fixed-timestep accumulator receives the selected rate.
-const speedRatio = await evaluate(`const fiveStart = window.__tickCount(); window.__advanceSimulation(100); const fiveTicks = window.__tickCount() - fiveStart; window.__uiState.speed = 10; const tenStart = window.__tickCount(); window.__advanceSimulation(100); const tenTicks = window.__tickCount() - tenStart; window.__togglePause(); const pausedStart = window.__tickCount(); window.__advanceSimulation(100); ({ fiveTicks, tenTicks, pausedTicks: window.__tickCount() - pausedStart, paused: window.__uiState.paused })`);
-if (speedRatio.fiveTicks <= 0 || speedRatio.tenTicks !== speedRatio.fiveTicks * 2 || speedRatio.pausedTicks !== 0 || !speedRatio.paused) throw new Error(`Selected rate must scale fixed ticks and pause must advance none: ${JSON.stringify(speedRatio)}`);
+// A controlled frame-time seam proves the fixed-timestep accumulator maps 1×/2× to the former 5×/10× real rates.
+const speedRatio = await evaluate(`const oneStart = window.__tickCount(); window.__advanceSimulation(100); const oneTicks = window.__tickCount() - oneStart; window.__uiState.speed = 2; const twoStart = window.__tickCount(); window.__advanceSimulation(100); const twoTicks = window.__tickCount() - twoStart; window.__togglePause(); const pausedStart = window.__tickCount(); window.__advanceSimulation(100); ({ oneTicks, twoTicks, pausedTicks: window.__tickCount() - pausedStart, paused: window.__uiState.paused })`);
+if (speedRatio.oneTicks <= 0 || speedRatio.twoTicks !== speedRatio.oneTicks * 2 || speedRatio.pausedTicks !== 0 || !speedRatio.paused) throw new Error(`Selected rate must scale fixed ticks and pause must advance none: ${JSON.stringify(speedRatio)}`);
 await evaluate('window.__togglePause()');
 
 // Watch AI starts at the same baseline, preserves pause behavior, and its compact selector still cycles.
 await evaluate(`window.__startWatchAiMatch('easy', 'hard', 1); window.__forceTicks(30); window.__togglePause(); const before = { tick: window.__tickCount(), elapsed: window.__world.matchElapsedTime, paused: window.__uiState.paused, speed: window.__uiState.speed }; window.__watchPauseCheck = { before, after: { tick: window.__tickCount(), elapsed: window.__world.matchElapsedTime, paused: window.__uiState.paused, speed: window.__uiState.speed } };`);
 const watch = await evaluate('window.__watchPauseCheck');
-if (watch.before.speed !== 5 || !watch.before.paused || watch.after.tick !== watch.before.tick || watch.after.elapsed !== watch.before.elapsed) throw new Error(`Watch AI must begin at 5× and pause must freeze simulation: ${JSON.stringify(watch)}`);
+if (watch.before.speed !== 1 || !watch.before.paused || watch.after.tick !== watch.before.tick || watch.after.elapsed !== watch.before.elapsed) throw new Error(`Watch AI must begin at 1× and pause must freeze simulation: ${JSON.stringify(watch)}`);
 await evaluate('window.__togglePause()');
 await click(33, 521);
 const watchSpeed = await evaluate('window.__uiState.speed');
-if (watchSpeed !== 10) throw new Error(`Watch speed selector must cycle from 5× to 10×: ${watchSpeed}`);
+if (watchSpeed !== 2) throw new Error(`Watch speed selector must cycle from 1× to 2×: ${watchSpeed}`);
 await click(108, 521);
 const watchPauseButton = await evaluate('window.__uiState.paused');
 if (!watchPauseButton) throw new Error('Watch pause button beside the speed multiplier did not pause the match');
 await click(108, 521);
 if (await evaluate('window.__uiState.paused')) throw new Error('Watch pause button did not resume the paused match');
 
-await evaluate('window.__backToMenu()');
-await click(700, 318);
-if (await evaluate('window.__uiState.menuScreen') !== 'updates') throw new Error('Update Log menu entry did not open');
-await click(60, 34);
-if (await evaluate('window.__uiState.menuScreen') !== 'main') throw new Error('Centered Update Log Back button did not return to the menu');
 ws.close(); if (errors.length) throw new Error(`Browser errors: ${JSON.stringify(errors)}`); console.log(JSON.stringify({ playerInitial, playerAfterSpeedClick, playerResumed, speedRatio, watch }, null, 2));

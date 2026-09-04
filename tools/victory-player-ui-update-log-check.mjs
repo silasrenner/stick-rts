@@ -31,6 +31,7 @@ for (let i = 1; i < UPDATE_LOG.length; i += 1) {
 
 const resultWorld = createWorld(91);
 resultWorld.matchState = 'won';
+resultWorld.matchElapsedTime = 625;
 resultWorld.teams.ai.difficulty = 'hard';
 const resultCapture = createContext();
 drawWinLoseOverlay(resultCapture.ctx, resultWorld);

@@ -1,4 +1,5 @@
 import { CONFIG } from './config.js';
+import { DEFAULT_GAME_SPEED, GAME_SPEEDS, getSimulationTimeScale } from './gameSpeed.js';
 import { createWorld, createUnit, isWatchAiMatch } from './sim/world.js';
 import { createAccumulator } from './sim/loop.js';
 import { runTick } from './sim/tick.js';
@@ -34,8 +35,6 @@ import { bindClick, pointInRect, bindMouseMove, bindCameraGestures, bindWheel } 
 import { createKeyState } from './input/keyState.js';
 
 const DEFAULT_DIFFICULTY = 'medium';
-const GAME_SPEEDS = [1, 5, 10, 20];
-const DEFAULT_GAME_SPEED = 5;
 
 const canvas = document.getElementById('game');
 canvas.width = CONFIG.VIEWPORT_WIDTH;
@@ -516,7 +515,7 @@ function tick(dt) {
 
 function advanceSimulation(deltaMs) {
   if (uiState.paused) return;
-  accumulator.advance(deltaMs * (world.matchState === 'playing' ? uiState.speed : 1), tick);
+  accumulator.advance(deltaMs * (world.matchState === 'playing' ? getSimulationTimeScale(uiState.speed) : 1), tick);
 }
 
 function frame(time) {

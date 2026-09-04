@@ -28,6 +28,16 @@ function assignedDeposit(world, unit) {
   return deposits[unit.mineDepositIndex] ?? deposits[1];
 }
 
+// Each deposit has a different travel distance. Preserve the pre-slowdown
+// steady-state income for that exact normal mine → delivery → mine route,
+// while leaving mining time, slots, and disruption/retreat behavior unchanged.
+export function getMinerTripYield(world, unit) {
+  const distance = Math.abs(assignedDeposit(world, unit).x - getCoreDeliveryX(unit.team));
+  const referenceCycle = CONFIG.MINE_CYCLE_TIME + 2 * distance / CONFIG.MINER_INCOME_REFERENCE_SPEED;
+  const slowedCycle = CONFIG.MINE_CYCLE_TIME + 2 * distance / unit.speed;
+  return CONFIG.GOLD_PER_TRIP * slowedCycle / referenceCycle;
+}
+
 // Runs before movement: decides/advances each gold-mining unit's toMine ->
 // mining -> toBase -> toMine cycle. Movement.js reads the resulting
 // miningState via getMinerDesiredX to know where to walk (unless a miner's
@@ -46,7 +56,8 @@ export function updateMining(world, dt) {
       unit.mineTimer -= dt;
       if (unit.mineTimer <= 0) {
         const multiplier = unit.kind === 'forgemaster' ? CONFIG.FORGEMASTER_MINE_MULTIPLIER : 1;
-        unit.carrying = CONFIG.GOLD_PER_TRIP * multiplier;
+        const tripYield = unit.isMiner ? getMinerTripYield(world, unit) : CONFIG.GOLD_PER_TRIP;
+        unit.carrying = tripYield * multiplier;
         unit.miningState = 'toBase';
       }
     } else if (unit.miningState === 'toBase') {
