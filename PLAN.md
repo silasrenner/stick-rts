@@ -2,6 +2,16 @@
 
 Cross-session context carrier. Keep current scope, recovery state, and dirty-worktree warnings here. Completed work belongs in `HISTORY.md`; detailed durable findings live in focused `docs/analysis/` documents.
 
+## Released main scope — 1× baseline pacing and Player end-screen time/Gold axis
+
+Released locally: 2026-09-04. Source commit `1299f60` fast-forwarded into `main`; this document’s release ledger update follows as a separate commit before push.
+
+**Included:** player-facing `1×`, `2×`, and `4×` retain former actual `5×`, `10×`, and `20×` fixed-timestep rates, while HUD/result/chart clocks display wall-clock-equivalent 1×/2×/4× time. Player results show game time; the gold-delta chart has a labeled/scaled Gold y-axis. All game-world units and gameplay Raven are 20% slower. Normal Miner-route income is preserved by distance-specific delivery yield while mining time/slots and ordinary threat disruption remain unchanged.
+
+**Evidence:** focused speed/display-clock/movement-income/chart checks; retained mining/Raven/headless checks; real Chrome/CDP pause/fixed-timestep, live HUD, and end-overlay proof; source-to-LAN hash provenance. Detailed record: `docs/analysis/time-scale-end-screen-review-2026-09-04.md`.
+
+**Generated artifacts excluded:** browser screenshots and all unrelated root local artifacts remain untracked.
+
 ## Integrated main scope — base spacing, built-turret formations, and Catapult refinement
 
 Owner-approved LAN review and promotion: 2026-09-02. The owner-reviewed branch `agent/core-turret-miner-map-spacing-local` fast-forwarded to `main` in `a3e8cd5` and is pushed with this documentation reconciliation.
