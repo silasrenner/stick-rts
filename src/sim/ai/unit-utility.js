@@ -2,7 +2,7 @@ import { CONFIG } from '../../config.js';
 import { DIFFICULTIES } from './difficulties.js';
 
 function isCombatUnit(candidate) {
-  return candidate.kind === 'warrior' || candidate.kind === 'archer';
+  return candidate.kind === 'warrior' || candidate.kind === 'archer' || candidate.kind === 'catapult';
 }
 
 export function getCheapestFeasibleCombatCost(candidateStates) {
@@ -42,7 +42,7 @@ function getCounterWeightMultiplier(goal, assessment) {
   return 0.25 + 0.75 * progress;
 }
 
-function scoreCandidate(candidateState, weights, counterKind, buildCycleKind, cheapestCombatCost, economicNeed, counterWeightMultiplier) {
+function scoreCandidate(candidateState, weights, counterKind, buildCycleKind, cheapestCombatCost, economicNeed, counterWeightMultiplier, deepTurretLine) {
   const { candidate, feasibility } = candidateState;
   if (!feasibility.feasible) return { ...candidateState, utility: null };
 
@@ -53,16 +53,18 @@ function scoreCandidate(candidateState, weights, counterKind, buildCycleKind, ch
   const contextualCounterWeight = counterValue * weights.counterValue * counterWeightMultiplier;
   const buildCycleBias = candidate.kind === buildCycleKind ? 1 : 0;
   const candidateEconomicNeed = candidate.kind === 'miner' ? economicNeed : 0;
+  const siegeOpportunity = candidate.kind === 'catapult' && deepTurretLine ? 1 : 0;
   const weightedTotal =
     recoveryProgress * weights.recoveryProgress
     + combatEfficiency * weights.combatEfficiency
     + contextualCounterWeight
     + buildCycleBias * weights.buildCycleBias
-    + candidateEconomicNeed * (weights.economicNeed ?? 0);
+    + candidateEconomicNeed * (weights.economicNeed ?? 0)
+    + siegeOpportunity * (weights.siegeOpportunity ?? 0);
 
   return {
     ...candidateState,
-    utility: { recoveryProgress, combatEfficiency, counterValue, contextualCounterWeight, buildCycleBias, economicNeed: candidateEconomicNeed, weightedTotal },
+    utility: { recoveryProgress, combatEfficiency, counterValue, contextualCounterWeight, buildCycleBias, economicNeed: candidateEconomicNeed, siegeOpportunity, weightedTotal },
   };
 }
 
@@ -75,8 +77,10 @@ export function selectFeasibleUnitPurchase({ goal, difficulty, candidateStates, 
   const cheapestCombatCost = getCheapestFeasibleCombatCost(candidateStates);
   const economicNeed = getEconomicNeed(assessment, DIFFICULTIES[difficulty].economicNeed, cheapestCombatCost);
   const counterWeightMultiplier = getCounterWeightMultiplier(goal, assessment);
+  const observedTurrets = assessment?.enemyMemory?.rememberedStructures?.filter((structure) => structure.isTurret).length ?? 0;
+  const deepTurretLine = observedTurrets >= 2;
   const scoredCandidates = candidateStates.map((candidateState) =>
-    scoreCandidate(candidateState, weights, counterKind, buildCycleKind, cheapestCombatCost, economicNeed, counterWeightMultiplier),
+    scoreCandidate(candidateState, weights, counterKind, buildCycleKind, cheapestCombatCost, economicNeed, counterWeightMultiplier, deepTurretLine),
   );
   const feasible = scoredCandidates.filter(({ feasibility }) => feasibility.feasible);
   if (feasible.length === 0) {

@@ -49,7 +49,7 @@ function runDecision(world, team, difficulty) {
   // Turrets retain their existing scheduled side path and priority. Unit
   // feasibility is assessed after that attempt so utility never scores a
   // queue slot the turret just consumed.
-  const turretAttempt = maybeBuyTurret(world, team, difficulty);
+  const turretAttempt = maybeBuyTurret(world, team, difficulty, assessment);
   const candidateStates = createPurchaseCandidates().map((candidate) => ({
     candidate,
     feasibility: getPurchaseFeasibility(world, team, candidate),
@@ -67,6 +67,7 @@ function runDecision(world, team, difficulty) {
   const heroAttempt = CONFIG.HEROES_ENABLED ? maybeManageHero(world, team, difficulty) : null;
   const command = pickCommand(world, team, difficulty, assessment);
   setTeamCommand(world, team, command);
+  applyHardDefensiveEngagement(world, team, difficulty, command, assessment);
 
   world.teams[team].lastAiDecision = createDecisionRecord({
     assessment,
@@ -78,6 +79,18 @@ function runDecision(world, team, difficulty) {
     command,
     attackCommitment: describeAttackCommitment(assessment, difficulty, command),
   });
+}
+
+function applyHardDefensiveEngagement(world, team, difficulty, command, assessment) {
+  const pressure = difficulty === DIFFICULTIES.hard && command === 'defend'
+    ? assessment.defense.rangedPressure
+    : null;
+  for (const unit of world.units) {
+    if (unit.team !== team || unit.kind !== 'warrior') continue;
+    unit.defensiveEngagement = pressure?.requiresDefensiveResponse
+      ? { targetId: pressure.target.id, x: pressure.engagementX }
+      : null;
+  }
 }
 
 function describeAttackCommitment(assessment, difficulty, command) {
@@ -284,14 +297,17 @@ export function applyBuildCycleProgression(world, team, selection) {
     : 'no-normal-unit-commit';
 }
 
-function maybeBuyTurret(world, team, difficulty) {
+function maybeBuyTurret(world, team, difficulty, assessment) {
   const buildTimes = difficulty.turretBuildTimes;
   if (!buildTimes) return null;
   const turretIndex =
     world.structures.filter((entity) => entity.team === team && entity.isTurret && !entity.isStartingTurret).length +
     world.teams[team].productionQueue.filter((item) => item.action === 'turret').length;
+  if (turretIndex >= CONFIG.TURRET_SLOT_OFFSETS.length) return { candidate: createPurchaseCandidate('turret'), feasibility: null, result: { ok: false, reason: 'max-turrets' }, deferred: 'max-turrets' };
   if (world.matchElapsedTime < buildTimes[turretIndex]) return null;
-
+  if (assessment.combatUnits >= difficulty.attackLaunchCombatUnits) {
+    return { candidate: createPurchaseCandidate('turret'), feasibility: null, result: { ok: false, reason: 'force-ready' }, deferred: 'force-ready' };
+  }
   const candidate = createPurchaseCandidate('turret');
   const feasibility = getPurchaseFeasibility(world, team, candidate);
   return { candidate, feasibility, result: buyTurret(world, team) };

@@ -5,7 +5,7 @@ import { getCap } from '../systems/supply.js';
 import { buildInformationState } from './scouting.js';
 
 function countLivingKinds(world, team) {
-  const counts = { miner: 0, warrior: 0, archer: 0, hero: 0 };
+  const counts = { miner: 0, warrior: 0, archer: 0, catapult: 0, hero: 0 };
   for (const unit of world.units) {
     if (unit.team !== team || !isAliveEntity(unit)) continue;
     if (unit.isHero) counts.hero += 1;
@@ -19,7 +19,7 @@ function copyComposition(composition = {}) {
 }
 
 function getCombatUnitCount(living) {
-  return living.warrior + living.archer + living.hero;
+  return living.warrior + living.archer + living.catapult + living.hero;
 }
 
 function getFriendlyPower(world, team) {
@@ -114,6 +114,51 @@ function isEnemyNearHome(team, visibleEnemies, threshold) {
   );
 }
 
+function clamp(value, lower, upper) {
+  return Math.max(lower, Math.min(upper, value));
+}
+
+// Tactical defensive pressure is derived only from current copied team-visible
+// observations and friendly authoritative positions. Remembered mobile enemies
+// may inform strategy elsewhere, but never issue a live engagement instruction.
+function buildRangedDefensePressure(world, team, visibleEnemies) {
+  const sign = team === 'player' ? 1 : -1;
+  const homeX = getHomeX(team);
+  const anchorIndex = Math.min(world.teams[team].defendAnchorIndex ?? 0, CONFIG.TURRET_SLOT_OFFSETS.length - 1);
+  const turretX = homeX + sign * CONFIG.TURRET_SLOT_OFFSETS[anchorIndex];
+  const anchorX = turretX + sign * (anchorIndex === 0 ? CONFIG.DEFEND_FIRST_BUILD_TURRET_FRONT_COLUMNS : -CONFIG.DEFEND_LATER_BUILD_TURRET_BACK_COLUMNS) * CONFIG.FORMATION_SLOT_SPACING_X;
+  const nextTurretOffset = CONFIG.TURRET_SLOT_OFFSETS[Math.min(anchorIndex + 1, CONFIG.TURRET_SLOT_OFFSETS.length - 1)];
+  const outerCoverageX = homeX + sign * nextTurretOffset;
+  const lowerBound = Math.min(anchorX, outerCoverageX);
+  const upperBound = Math.max(anchorX, outerCoverageX);
+  const defendingWarriors = world.units.filter((unit) =>
+    unit.team === team && unit.kind === 'warrior' && isAliveEntity(unit) && unit.command === 'defend',
+  );
+  const threats = visibleEnemies
+    .map((enemy) => ({ enemy, stats: CONFIG.UNIT_STATS[enemy.kind] ?? CONFIG.HERO_STATS[enemy.kind] }))
+    .filter(({ stats }) => stats?.range > 0)
+    .filter(({ enemy, stats }) => defendingWarriors.some((warrior) => {
+      const distance = Math.abs(enemy.x - warrior.x);
+      return distance <= stats.range && distance > warrior.acquireRange;
+    }))
+    .sort((left, right) => Math.abs(left.enemy.x - anchorX) - Math.abs(right.enemy.x - anchorX) || left.enemy.id - right.enemy.id);
+  const selected = threats[0]?.enemy ?? null;
+  const warriorRange = CONFIG.UNIT_STATS.warrior.range;
+  const engagementX = selected
+    ? clamp(selected.x - sign * warriorRange, lowerBound, upperBound)
+    : null;
+  return {
+    anchorX,
+    outerCoverageX,
+    lowerBound,
+    upperBound,
+    visibleThreatCount: threats.length,
+    requiresDefensiveResponse: selected !== null,
+    target: selected ? { id: selected.id, kind: selected.kind, x: selected.x, range: CONFIG.UNIT_STATS[selected.kind]?.range ?? CONFIG.HERO_STATS[selected.kind]?.range ?? 0 } : null,
+    engagementX,
+  };
+}
+
 function copyObservation(enemy, now) {
   return {
     id: enemy.id,
@@ -199,6 +244,7 @@ export function buildAiAssessment(world, team, difficulty = null) {
       underpowered,
       friendlyPower,
       estimatedEnemyPower,
+      rangedPressure: buildRangedDefensePressure(world, team, visibleEnemies),
     },
   };
 }

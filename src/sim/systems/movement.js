@@ -45,6 +45,11 @@ export function updateMovement(world, dt) {
         } else {
           desiredX = target.x; // combat approach stays 1D — y is formation-only, not a combat dimension
         }
+      } else if (unit.defensiveEngagement) {
+        // This point is supplied only by Hard's current-visible ranged-pressure
+        // assessment and is bounded to first-to-second-turret coverage. Do not
+        // substitute target.x here: that would grant generic pursuit authority.
+        desiredX = unit.defensiveEngagement.x;
       } else if (unit.minesGold) {
         // forgemaster: no combat target right now, so work the mine
         const decision = getMinerDesiredX(unit, world);

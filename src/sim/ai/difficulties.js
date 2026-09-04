@@ -92,18 +92,18 @@ export const DIFFICULTIES = {
     heroPurchaseDelay: 20,
     heroKind: 'auto',
     defendMineThreshold: 400,
-    turretBuildTimes: [CONFIG.HARD_TURRET_FIRST_TIME, CONFIG.HARD_TURRET_SECOND_TIME, CONFIG.HARD_TURRET_THIRD_TIME],
+    turretBuildTimes: [CONFIG.HARD_TURRET_FIRST_TIME, CONFIG.HARD_TURRET_SECOND_TIME, CONFIG.HARD_TURRET_THIRD_TIME, CONFIG.HARD_TURRET_FOURTH_TIME],
     unitUtilityWeights: {
       recover: { recoveryProgress: 1.00, combatEfficiency: 0.75, counterValue: 0.25, buildCycleBias: 0.10, economicNeed: 1.00 },
       // Below minArmyToAttack, Build Army must convert friendly-state combat
       // deficit into an affordable force even without enemy composition.
       // Counter value still decides warrior versus archer; the cycle is only a
       // secondary tie-break once readiness is satisfied by a candidate.
-      buildArmy: { recoveryProgress: 1.00, combatEfficiency: 0.75, counterValue: 1.00, buildCycleBias: 0.10, economicNeed: 1.00 },
-      defend: { recoveryProgress: 0, combatEfficiency: 0, counterValue: 1.00, buildCycleBias: 0.25, economicNeed: 1.00 },
+      buildArmy: { recoveryProgress: 1.00, combatEfficiency: 0.75, counterValue: 1.00, buildCycleBias: 0.10, economicNeed: 1.00, siegeOpportunity: 1.25 },
+      defend: { recoveryProgress: 0, combatEfficiency: 0, counterValue: 1.00, buildCycleBias: 0.25, economicNeed: 1.00, siegeOpportunity: 1.25 },
       // Maintain an actively committed standing force through the same utility
       // framework; counters still select its composition and cycle stays minor.
-      attack: { recoveryProgress: 1.00, combatEfficiency: 0.75, counterValue: 1.00, buildCycleBias: 0.10, economicNeed: 1.00 },
+      attack: { recoveryProgress: 1.00, combatEfficiency: 0.75, counterValue: 1.00, buildCycleBias: 0.10, economicNeed: 1.00, siegeOpportunity: 1.25 },
     },
   },
 };
