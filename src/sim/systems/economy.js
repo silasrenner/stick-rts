@@ -137,6 +137,7 @@ export function buyRaven(world, team) {
   if (!feasibility.feasible) return purchaseResult(feasibility);
   spend(world, team, CONFIG.RAVEN.cost);
   world.teams[team].ravenCooldownTimer = CONFIG.RAVEN.cooldown;
+  world.teams[team].lastRavenPurchaseAt = world.matchElapsedTime;
   world.ravens.push(createRaven(team));
   return { ok: true };
 }

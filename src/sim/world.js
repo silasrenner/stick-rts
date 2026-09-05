@@ -12,14 +12,28 @@ function createMineField(centerX, y, direction) {
   };
 }
 
+function createTurretExpansionPlan(rng) {
+  const config = CONFIG.HARD_TURRET_EXPANSION;
+  const targetCount = config.minCount + Math.floor(rng.next() * (config.maxCount - config.minCount + 1));
+  const eligibleAt = [rng.nextRange(config.firstEligibleMin, config.firstEligibleMax)];
+  if (targetCount === 2) eligibleAt.push(rng.nextRange(config.secondEligibleMin, config.secondEligibleMax));
+  return { targetCount, eligibleAt };
+}
+
 // Each team gets its own RNG stream, derived from one master seed but never
 // sharing a draw counter — same seed reproduces an identical trace for both
 // teams regardless of which team's decision timer happens to elapse first
 // on a given tick (see sim/ai/behavior.js's jitter consumer).
 export function createWorld(seed = Date.now()) {
   const masterRng = createRng(seed);
-  const playerRng = createRng(masterRng.next() * 2 ** 32);
-  const aiRng = createRng(masterRng.next() * 2 ** 32);
+  const playerSeed = masterRng.next() * 2 ** 32;
+  const aiSeed = masterRng.next() * 2 ** 32;
+  const playerRng = createRng(playerSeed);
+  const aiRng = createRng(aiSeed);
+  // Keep planning draws isolated from the decision-jitter streams so one
+  // team's plan cannot alter the other team's decision cadence.
+  const playerTurretPlan = createTurretExpansionPlan(createRng(playerSeed ^ 0x6d2b79f5));
+  const aiTurretPlan = createTurretExpansionPlan(createRng(aiSeed ^ 0x6d2b79f5));
 
   return {
     units: [],
@@ -50,6 +64,8 @@ export function createWorld(seed = Date.now()) {
         lastAiDecision: null, // Latest bounded explanation record; never participates in simulation rules.
         productionQueue: [], // S8: sequential FIFO — see sim/systems/production.js
         ravenCooldownTimer: 0, // Raven is a separate temporary scouting action, not queue production.
+        lastRavenPurchaseAt: null,
+        turretExpansionPlan: playerTurretPlan,
         rng: playerRng,
       },
       ai: {
@@ -70,6 +86,8 @@ export function createWorld(seed = Date.now()) {
         lastAiDecision: null,
         productionQueue: [],
         ravenCooldownTimer: 0,
+        lastRavenPurchaseAt: null,
+        turretExpansionPlan: aiTurretPlan,
         rng: aiRng,
       },
     },

@@ -730,6 +730,7 @@ export function drawWinLoseOverlay(ctx, world) {
   drawScreenTitle(ctx, `${world.matchState === 'won' ? 'Victory!' : 'Defeat'}  •  Game Time: ${formatGameTime(getDisplayMatchTime(world.matchElapsedTime))}`, ctx.canvas.height / 2 - 20, { accent: world.matchState === 'won' ? '#79e6b0' : '#ff817a', size: 24 });
 
   if (isWatchAiMatch(world)) {
+    drawGoldDifferenceChart(ctx, world);
     drawMenuButton(ctx, getBackToMenuButtonRect(ctx.canvas), 'Back to Menu');
     ctx.restore();
     return;

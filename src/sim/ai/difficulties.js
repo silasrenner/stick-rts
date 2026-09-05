@@ -70,10 +70,12 @@ export const DIFFICULTIES = {
     // normal-unit build-cycle entry. All fields consume only team-visible
     // current observations and bounded memory age.
     scouting: {
-      staleTime: 60,
+      staleTime: 180,
+      minimumIntervalSeconds: 180,
+      investmentMargin: 0.25,
       stalenessWeight: 0.60,
       coverageWeight: 0.40,
-      utilityScale: 2.50,
+      utilityScale: 2.25,
       // Build Army scouting is an optional information investment. The simple
       // triangular timing multiplier peaks mid-build, leaving baseline combat
       // preferred at very low progress and avoiding routine near-launch delay.

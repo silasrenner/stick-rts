@@ -168,7 +168,9 @@ function pickPurchase(world, team, difficulty, goal, assessment, candidateStates
     ? getRavenUtility({ assessment, goal, difficulty, cheapestCombatCost })
     : null;
   const normalUtility = utilityDecision.selected?.utility?.weightedTotal ?? -Infinity;
-  const ravenSelected = ravenUtility !== null && ravenUtility.weightedTotal > normalUtility;
+  const ravenSelected = ravenUtility !== null
+    && ravenUtility.intervalEligible
+    && ravenUtility.weightedTotal > normalUtility + difficulty.scouting.investmentMargin;
   const scoredRaven = ravenCandidateState ? {
     ...ravenCandidateState,
     utility: ravenUtility ? { ...ravenUtility, selected: ravenSelected } : null,
@@ -298,16 +300,15 @@ export function applyBuildCycleProgression(world, team, selection) {
 }
 
 function maybeBuyTurret(world, team, difficulty, assessment) {
-  const buildTimes = difficulty.turretBuildTimes;
-  if (!buildTimes) return null;
+  if (!difficulty.turretBuildTimes) return null;
+  const plan = world.teams[team].turretExpansionPlan;
+  if (!plan) return null;
   const turretIndex =
     world.structures.filter((entity) => entity.team === team && entity.isTurret && !entity.isStartingTurret).length +
     world.teams[team].productionQueue.filter((item) => item.action === 'turret').length;
-  if (turretIndex >= CONFIG.TURRET_SLOT_OFFSETS.length) return { candidate: createPurchaseCandidate('turret'), feasibility: null, result: { ok: false, reason: 'max-turrets' }, deferred: 'max-turrets' };
-  if (world.matchElapsedTime < buildTimes[turretIndex]) return null;
-  if (assessment.combatUnits >= difficulty.attackLaunchCombatUnits) {
-    return { candidate: createPurchaseCandidate('turret'), feasibility: null, result: { ok: false, reason: 'force-ready' }, deferred: 'force-ready' };
-  }
+  if (turretIndex >= plan.targetCount) return { candidate: createPurchaseCandidate('turret'), feasibility: null, result: { ok: false, reason: 'planComplete' }, deferred: 'plan-complete' };
+  if (world.matchElapsedTime < plan.eligibleAt[turretIndex]) return null;
+  if (assessment.combatUnits < CONFIG.HARD_TURRET_COMBAT_RESERVE) return { candidate: createPurchaseCandidate('turret'), feasibility: null, result: { ok: false, reason: 'combatReserve' }, deferred: 'combat-reserve' };
   const candidate = createPurchaseCandidate('turret');
   const feasibility = getPurchaseFeasibility(world, team, candidate);
   return { candidate, feasibility, result: buyTurret(world, team) };

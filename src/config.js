@@ -110,6 +110,23 @@ export const CONFIG = {
   HARD_TURRET_SECOND_TIME: 13 * 60,
   HARD_TURRET_THIRD_TIME: 20 * 60,
   HARD_TURRET_FOURTH_TIME: 27 * 60,
+  // Hard samples one or two non-starting turret commitments once per team at
+  // world creation. Timings vary by seed but remain bounded and replayable.
+  HARD_TURRET_EXPANSION: {
+    minCount: 1,
+    maxCount: 2,
+    firstEligibleMin: 6 * 60,
+    firstEligibleMax: 9 * 60,
+    secondEligibleMin: 14 * 60,
+    secondEligibleMax: 18 * 60,
+  },
+  // A planned expansion may proceed after this friendly combat foundation;
+  // unlike the retired force-ready gate, launch readiness does not suppress a
+  // due, affordable defensive commitment.
+  HARD_TURRET_COMBAT_RESERVE: 3,
+  // Ravens are strategic information investments: their purchase comparison
+  // protects at least this many affordable combat units.
+  HARD_RAVEN_RESERVE_COMBAT_UNITS: 4,
   STRUCTURE_CAP_BONUS: 13,
   MAX_STRUCTURES: 5,
   STRUCTURE_HP: 200,

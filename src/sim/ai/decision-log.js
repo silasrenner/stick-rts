@@ -26,6 +26,8 @@ function copyUtility(utility) {
     scoutingTimingMultiplier: utility.scoutingTimingMultiplier ?? null,
     scoutingAffordability: utility.scoutingAffordability ?? null,
     protectedCombatReserve: utility.protectedCombatReserve ?? null,
+    timeSinceLastPurchase: utility.timeSinceLastPurchase ?? null,
+    intervalEligible: utility.intervalEligible ?? null,
     selected: utility.selected ?? false,
     weightedTotal: utility.weightedTotal,
   } : null;

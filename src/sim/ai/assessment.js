@@ -239,6 +239,12 @@ export function buildAiAssessment(world, team, difficulty = null) {
       lastScoutedAt: memory.lastScoutedAt ?? null,
     },
     information,
+    raven: {
+      lastPurchaseAt: state.lastRavenPurchaseAt ?? null,
+      timeSinceLastPurchase: state.lastRavenPurchaseAt === null || state.lastRavenPurchaseAt === undefined
+        ? Infinity
+        : Math.max(0, world.matchElapsedTime - state.lastRavenPurchaseAt),
+    },
     defense: {
       enemyNearHome,
       underpowered,

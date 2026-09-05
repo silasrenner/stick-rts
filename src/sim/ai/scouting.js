@@ -75,11 +75,14 @@ export function getRavenUtility({ assessment, goal, difficulty, cheapestCombatCo
     : 1;
   const readinessShortfall = Math.max(0, difficulty.attackLaunchCombatUnits - assessment.combatUnits);
   const protectedCombatReserve = cheapestCombatCost * Math.max(
+    CONFIG.HARD_RAVEN_RESERVE_COMBAT_UNITS,
     difficulty.economicNeed.reserveCombatUnits,
     readinessShortfall,
   );
   const scoutingAffordability = clamp01((assessment.gold - protectedCombatReserve) / CONFIG.RAVEN.cost);
   const { scoutingNeed, informationStaleness, currentEnemyCoverage } = assessment.information;
+  const timeSinceLastPurchase = assessment.raven?.timeSinceLastPurchase ?? Infinity;
+  const intervalEligible = timeSinceLastPurchase >= scouting.minimumIntervalSeconds;
   return {
     scoutingNeed,
     informationStaleness,
@@ -89,6 +92,10 @@ export function getRavenUtility({ assessment, goal, difficulty, cheapestCombatCo
     scoutingTimingMultiplier,
     scoutingAffordability,
     protectedCombatReserve,
-    weightedTotal: scouting.utilityScale * scoutingNeed * strategicScoutingWeight * scoutingTimingMultiplier * scoutingAffordability,
+    timeSinceLastPurchase,
+    intervalEligible,
+    weightedTotal: intervalEligible
+      ? scouting.utilityScale * scoutingNeed * strategicScoutingWeight * scoutingTimingMultiplier * scoutingAffordability
+      : 0,
   };
 }
